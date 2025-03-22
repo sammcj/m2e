@@ -157,21 +157,70 @@ function HighlightedTextarea({
                 });
             }
 
-            // Find all occurrences of words to highlight in the text
+            // Use a more comprehensive approach to find words
             for (const word of wordsToHighlight) {
-                // Create a regex to match this word with word boundaries
-                // Use a case-insensitive regex to match any case
-                const wordRegex = new RegExp(`\\b${word}\\b`, 'gi');
+                // Escape special regex characters in the word
+                const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-                // Find all matches in the original text
-                let match;
-                while ((match = wordRegex.exec(value)) !== null) {
-                    highlightItems.push({
-                        index: match.index,
-                        length: match[0].length,
-                        text: match[0],
-                        type: 'word'
-                    });
+                // Create several regex patterns to match different cases
+                const patterns = [
+                    // Match the word as-is with word boundaries
+                    new RegExp(`\\b${escapedWord}\\b`, 'gi'),
+
+                    // Match the word with quotes around it
+                    new RegExp(`["']${escapedWord}["']`, 'gi'),
+
+                    // Match the word with a quote at the beginning
+                    new RegExp(`["']${escapedWord}\\b`, 'gi'),
+
+                    // Match the word with a quote at the end
+                    new RegExp(`\\b${escapedWord}["']`, 'gi'),
+
+                    // Match the word with punctuation at the end
+                    new RegExp(`\\b${escapedWord}[,.;:!?)]`, 'gi'),
+
+                    // Match the word with punctuation at the beginning
+                    new RegExp(`[([{]${escapedWord}\\b`, 'gi')
+                ];
+
+                // Try each pattern
+                for (const pattern of patterns) {
+                    let match;
+                    while ((match = pattern.exec(value)) !== null) {
+                        const matchedText = match[0];
+
+                        // Determine the actual word to highlight
+                        let startOffset = 0;
+                        let endOffset = 0;
+
+                        // Check if the match starts with a non-letter character
+                        if (matchedText.length > 0 && !(/[a-zA-Z0-9]/).test(matchedText[0])) {
+                            startOffset = 1;
+                        }
+
+                        // Check if the match ends with a non-letter character
+                        if (matchedText.length > 0 && !(/[a-zA-Z0-9]/).test(matchedText[matchedText.length - 1])) {
+                            endOffset = 1;
+                        }
+
+                        // Calculate the actual word position and length
+                        const actualIndex = match.index + startOffset;
+                        const actualLength = matchedText.length - startOffset - endOffset;
+
+                        // Only add if we haven't already added this exact highlight
+                        const isDuplicate = highlightItems.some(item =>
+                            item.index === actualIndex && item.length === actualLength
+                        );
+
+                        if (!isDuplicate) {
+                            highlightItems.push({
+                                index: actualIndex,
+                                length: actualLength,
+                                text: matchedText.substring(startOffset, matchedText.length - endOffset),
+                                type: 'word'
+                            });
+                        }
+                    }
                 }
             }
         }
