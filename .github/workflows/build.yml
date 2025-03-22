@@ -51,27 +51,20 @@ jobs:
           export MACOSX_DEPLOYMENT_TARGET=15.0
           wails build -platform darwin/arm64 -o "Murican to English" -ldflags="-s -w" -trimpath -tags "production"
 
-      - name: Get version from package.json
+      - name: Get version from frontend package.json
         id: version
-        # run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
-        run: echo "version=latest" >> $GITHUB_OUTPUT
+        run: echo "version=$(node -p "require('./frontend/package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Set default version if not found
+        if: steps.version.outputs.version == ''
+        run: echo "version=$(date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
 
       - name: Create Git tag
-        continue-on-error: true
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          # for replace the tag if it is latest
-          git tag -d latest
           git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
           git push origin "v${{ steps.version.outputs.version }}"
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: Release v${{ steps.version.outputs.version }}
-          generate_release_notes: true
 
       - name: Create ZIP archive
         run: |
@@ -86,10 +79,12 @@ jobs:
           path: build/bin/murican-to-english-arm64.zip
           retention-days: 7
 
-      - name: Create Release
+      - name: Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
           files: |
             build/bin/murican-to-english-arm64.zip
           draft: false
