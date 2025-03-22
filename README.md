@@ -9,16 +9,16 @@ A modern, lightweight application for converting text from American to English s
 - Fast and responsive
 - Native desktop application for macOS
 
-## Screenshots
-
-![Application Screenshot](screenshots/app-screenshot.png)
+![smaller trucks please](screenshots/app-screenshot.png)
 
 ## Technology Stack
 
-- **Backend**: Go
-- **Frontend**: React
+- **Backend**: Go >= 1.24
+- **Frontend**: React >= 18
 - **Framework**: Wails v2.10
 - **Build System**: Go modules and npm
+
+---
 
 ## Development
 
