@@ -4,12 +4,13 @@ A modern, lightweight application for converting text from American to English s
 
 ## Features
 
-- Convert text from American to English (and in reverse)
+- Convert text from American to English
 - Clean, modern user interface
 - Fast and responsive
 - Native desktop application for macOS
+- Also gets rid of those pesky "smart" quotes and em-dashes that break everything
 
-![smaller trucks please](screenshots/app-screenshot.png)
+![smaller cars please](screenshots/app-screenshot.png)
 
 ## Technology Stack
 
