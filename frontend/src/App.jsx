@@ -31,21 +31,21 @@ function App() {
         import("../wailsjs/go/main/App").then(({ GetAmericanToBritishDictionary, GetBritishToAmericanDictionary }) => {
             // Get the American to British dictionary
             GetAmericanToBritishDictionary().then(dict => {
-                console.log("American to British dictionary loaded:", Object.keys(dict).length, "words");
+                // American to British dictionary loaded successfully
                 setAmericanToBritishDict(dict);
             }).catch(err => {
-                console.error("Error loading American to British dictionary:", err);
+                // Handle error loading American to British dictionary
             });
 
             // Get the British to American dictionary
             GetBritishToAmericanDictionary().then(dict => {
-                console.log("British to American dictionary loaded:", Object.keys(dict).length, "words");
+                // British to American dictionary loaded successfully
                 setBritishToAmericanDict(dict);
             }).catch(err => {
-                console.error("Error loading British to American dictionary:", err);
+                // Handle error loading British to American dictionary
             });
         }).catch(err => {
-            console.error("Error importing App methods:", err);
+            // Handle error importing App methods
         });
 
         const smartQuotesMap = {
@@ -212,7 +212,7 @@ function App() {
                 alert('Text copied to clipboard!');
             })
             .catch(err => {
-                console.error('Failed to copy text: ', err);
+                // Handle error copying text to clipboard
                 alert('Failed to copy text to clipboard');
             });
     };

@@ -142,7 +142,6 @@ function HighlightedTextarea({
             if (isMuricanSide) {
                 // This is the 'Murican side (americanToBritishDict)
                 // Highlight American words (keys)
-                console.log("'Murican side - highlighting American words (keys)");
                 // Add all keys from the dictionary (American words)
                 Object.keys(dictionary).forEach(americanWord => {
                     wordsToHighlight.push(americanWord);
@@ -150,7 +149,6 @@ function HighlightedTextarea({
             } else {
                 // This is the British side (britishToAmericanDict)
                 // Highlight American words (values)
-                console.log("British side - highlighting American words (values)");
                 // Add all values from the dictionary (American words)
                 Object.values(dictionary).forEach(americanWord => {
                     if (americanWord) {
@@ -158,8 +156,6 @@ function HighlightedTextarea({
                     }
                 });
             }
-
-            console.log("Words to highlight:", wordsToHighlight.length);
 
             // Find all occurrences of words to highlight in the text
             for (const word of wordsToHighlight) {
@@ -169,19 +165,13 @@ function HighlightedTextarea({
 
                 // Find all matches in the original text
                 let match;
-                let matchesFound = false;
                 while ((match = wordRegex.exec(value)) !== null) {
-                    matchesFound = true;
-                    console.log(`Match found for word "${word}": "${match[0]}" at index ${match.index}`);
                     highlightItems.push({
                         index: match.index,
                         length: match[0].length,
                         text: match[0],
                         type: 'word'
                     });
-                }
-                if (!matchesFound) {
-                    console.log(`No matches found for word "${word}"`);
                 }
             }
         }
