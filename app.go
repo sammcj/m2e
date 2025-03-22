@@ -7,6 +7,8 @@ import (
 	"os"
 
 	"murican-to-english/pkg/converter"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -49,6 +51,12 @@ func (a *App) startup(ctx context.Context) {
 			os.Exit(0)
 		}
 	}
+}
+
+// domReady is called when the DOM is ready
+func (a *App) domReady(ctx context.Context) {
+	// Center the window when the DOM is ready
+	runtime.WindowCenter(ctx)
 }
 
 // ConvertToBritish converts American English text to British English
@@ -128,4 +136,9 @@ func (a *App) GetCurrentFilePath() string {
 // ClearCurrentFile clears the current file path
 func (a *App) ClearCurrentFile() {
 	a.filePath = ""
+}
+
+// shutdown is called when the app is closing
+func (a *App) shutdown(ctx context.Context) {
+	// Perform any cleanup or save settings here
 }

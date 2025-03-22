@@ -10,5 +10,12 @@
   "author": {
     "name": "Sam",
     "email": "sammcj@users.noreply.github.com"
+  },
+  "window": {
+    "width": 1800,
+    "height": 1024,
+    "centred": true,
+    "x": null,
+    "y": null
   }
 }
