@@ -1,57 +1,46 @@
+/* Container for the editable div */
 .highlighted-textarea-container {
-  position: relative;
   width: 100%;
   height: 100%;
+  position: relative;
 }
 
-.highlight-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
+/* Editable div that replaces the textarea */
+.editable-content {
   width: 100%;
   height: 100%;
-  color: transparent;
+  padding: 10px;
+  box-sizing: border-box;
+  border: none;
+  outline: none;
   overflow: auto;
   white-space: pre-wrap;
   word-wrap: break-word;
-  box-sizing: border-box;
-  padding: 10px;
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;
-  pointer-events: none;
-  z-index: 2; /* Higher z-index to show highlights above the textarea */
+  text-align: left; /* Ensure text is left-aligned */
 }
 
-.text-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-  background-color: transparent;
-  resize: none;
-  padding: 10px;
-  box-sizing: border-box;
-  z-index: 1; /* Lower z-index to allow highlights to show */
-  color: inherit;
-  border: none;
-  outline: none;
-}
-
+/* Highlight styles */
 .highlight-word {
   background-color: rgba(255, 165, 0, 0.5);
   border-radius: 2px;
-  color: transparent;
-  display: inline;
+  text-align: inherit; /* Inherit text alignment from parent */
 }
 
 .highlight-quote {
   background-color: rgba(0, 128, 255, 0.5);
   border-radius: 2px;
-  color: transparent;
-  display: inline;
+  text-align: inherit; /* Inherit text alignment from parent */
+}
+
+/* Placeholder style */
+.placeholder {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: #999;
+  pointer-events: none;
+  text-align: left; /* Ensure placeholder is left-aligned */
 }
