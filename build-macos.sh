@@ -36,11 +36,11 @@ if command -v create-dmg &>/dev/null; then
     --window-pos 200 120 \
     --window-size 800 400 \
     --icon-size 100 \
-    --icon "murican-to-english.app" 200 190 \
-    --hide-extension "murican-to-english.app" \
+    --icon "Murican to English.app" 200 190 \
+    --hide-extension "Murican to English.app" \
     --app-drop-link 600 185 \
     "build/bin/murican-to-english-arm64.dmg" \
-    "build/bin/murican-to-english.app"
+    "build/bin/Murican to English.app"
   echo "DMG created at build/bin/murican-to-english-arm64.dmg"
 else
   echo "create-dmg not found. Skipping DMG creation."
@@ -50,12 +50,12 @@ fi
 # Create a zip archive as an alternative
 echo "Creating ZIP archive..."
 cd build/bin
-zip -r "murican-to-english-arm64.zip" "murican-to-english.app"
+zip -r "murican-to-english-arm64.zip" "Murican to English.app"
 cd ../..
 
 echo "Build completed successfully!"
 echo "Application available at:"
-echo "  - build/bin/murican-to-english.app"
+echo "  - build/bin/Murican to English.app"
 echo "  - build/bin/murican-to-english-arm64.zip"
 if command -v create-dmg &>/dev/null; then
   echo "  - build/bin/murican-to-english-arm64.dmg"
