@@ -55,7 +55,19 @@ func (a *App) startup(ctx context.Context) {
 
 // domReady is called when the DOM is ready
 func (a *App) domReady(ctx context.Context) {
-	// Center the window when the DOM is ready
+	// Try multiple approaches to center the window
+
+	// First, try the built-in center function
+	runtime.WindowCenter(ctx)
+
+	// Then set the window position to a value that's likely to be centered on most displays
+	// These values are chosen to position the window more centrally on common screen resolutions
+	runtime.WindowSetPosition(ctx, 500, 300)
+
+	// Try a different position that might work better on larger displays
+	runtime.WindowSetPosition(ctx, 600, 350)
+
+	// Finally, try the built-in center function again
 	runtime.WindowCenter(ctx)
 }
 
