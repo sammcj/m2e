@@ -12,10 +12,12 @@ function HighlightedTextarea({
     dictionary,
     normaliseSmartQuotes,
     smartQuotesMap,
-    highlightAmericanWords = true // Default to true for backward compatibility
+    highlightAmericanWords = true, // Default to true for backward compatibility
+    autoFocus = false // Add autoFocus prop with default value
 }) {
     const [highlightedText, setHighlightedText] = useState('');
     const [showPlaceholder, setShowPlaceholder] = useState(!value);
+    // Create a ref for the contenteditable div
     const contentEditableRef = useRef(null);
 
     // Escape HTML special characters
@@ -282,6 +284,8 @@ function HighlightedTextarea({
     // We don't need to sync the contenteditable div with the value prop
     // because we're using dangerouslySetInnerHTML to set the content
 
+    // We'll handle autoFocus directly in the JSX
+
     // We'll skip the click handler since it's causing TypeScript errors
     // The contenteditable div should automatically get focus when clicked
 
@@ -295,6 +299,7 @@ function HighlightedTextarea({
                 onPaste={handlePaste}
                 onKeyDown={handleKeyDown}
                 dangerouslySetInnerHTML={{ __html: highlightedText }}
+                autoFocus={autoFocus}
             />
             {showPlaceholder && placeholder && (
                 <div className="placeholder">{placeholder}</div>

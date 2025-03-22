@@ -226,33 +226,19 @@ function App() {
             onDragOver={handleDrag}
             onDrop={handleDrop}
         >
-            <header className="app-header">
-                <div className="header-content">
-                    <h3>Murican English Conversion</h3>
-                    <div className="header-controls">
-                        <label className="checkbox-container">
-                            <input
-                                type="checkbox"
-                                checked={normaliseSmartQuotes}
-                                onChange={toggleNormaliseSmartQuotes}
-                            />
-                            <span className="checkbox-text">Normalise smart quotes and dashes</span>
-                        </label>
-
-                        {currentFilePath && (
-                            <div className="file-controls">
-                                <span className="current-file">Current file: {currentFilePath}</span>
-                                <button className="save-file-button" onClick={handleSaveFile}>
-                                    Save File
-                                </button>
-                                <button className="clear-file-button" onClick={handleClearFile}>
-                                    Clear File
-                                </button>
-                            </div>
-                        )}
+            {currentFilePath && (
+                <div className="file-controls-container">
+                    <div className="file-controls">
+                        <span className="current-file">Current file: {currentFilePath}</span>
+                        <button className="save-file-button" onClick={handleSaveFile}>
+                            Save File
+                        </button>
+                        <button className="clear-file-button" onClick={handleClearFile}>
+                            Clear File
+                        </button>
                     </div>
                 </div>
-            </header>
+            )}
 
             {fileError && (
                 <div className="error-message">
@@ -269,6 +255,7 @@ function App() {
             )}
 
             <div className="controls-row">
+                <h3 className="app-title">Murican English Conversion</h3>
                 <div className="button-group">
                     <button
                         className="convert-button american-to-british"
@@ -282,29 +269,11 @@ function App() {
                     >
                         Copy
                     </button>
-                </div>
-
-                <div className="language-label">'Murican</div>
-                <button
-                    className="clear-button"
-                    onClick={handleClear}
-                >
-                    Clear All
-                </button>
-
-                <div className="language-label">English</div>
-                <div className="button-group">
                     <button
-                        className="convert-button british-to-american"
-                        onClick={handleBritishToAmerican}
+                        className="clear-button"
+                        onClick={handleClear}
                     >
-                        Convert to 'Murican
-                    </button>
-                    <button
-                        className="copy-button"
-                        onClick={() => copyToClipboard(britishText)}
-                    >
-                        Copy
+                        Clear
                     </button>
                 </div>
             </div>
@@ -319,6 +288,7 @@ function App() {
                         normaliseSmartQuotes={normaliseSmartQuotes}
                         smartQuotesMap={smartQuotesMap}
                         highlightAmericanWords={true} // Explicitly tell the component to highlight American words
+                        autoFocus={true} // Auto-focus this field when the app launches
                     />
                 </div>
 
