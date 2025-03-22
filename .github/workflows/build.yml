@@ -5,6 +5,10 @@ on:
     branches: [ main ]
     tags: [ 'v*' ]
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   build-macos:
     runs-on: macos-latest
@@ -44,10 +48,27 @@ jobs:
           export MACOSX_DEPLOYMENT_TARGET=15.0
           wails build -platform darwin/arm64 -o "murican-to-english" -ldflags="-s -w" -trimpath -tags "production"
 
+      - name: Get version from package.json
+        id: version
+        # run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        run: echo "version=latest" >> $GITHUB_OUTPUT
 
-      # create a tag for the release
-      - name: Create tag
-        run: git tag v${{ github.run_number }}
+      - name: Create Git tag
+        continue-on-error: true
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          # for replace the tag if it is latest
+          git tag -d latest
+          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          generate_release_notes: true
 
       - name: Create ZIP archive
         run: |
