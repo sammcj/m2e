@@ -62,7 +62,7 @@ var SmartQuotesMap = map[string]string{
 	"\u2018": "'",  // Left single quote to normal single quote
 	"\u2019": "'",  // Right single quote to normal single quote
 	"\u2013": "-",  // En-dash to hyphen
-	"\u2014": "--", // Em-dash to double hyphen
+	"\u2014": "--", // Em-dash to hyphen
 }
 
 // NewConverter creates a new Converter instance

@@ -54,7 +54,7 @@ function App() {
             "\u2018": "'",  // Left single quote
             "\u2019": "'",  // Right single quote
             "\u2013": "-",  // En-dash
-            "\u2014": "--"  // Em-dash
+            "\u2014": "-"  // Em-dash
         };
 
         setSmartQuotesMap(smartQuotesMap);

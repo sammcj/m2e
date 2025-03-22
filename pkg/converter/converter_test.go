@@ -86,7 +86,7 @@ func TestNormaliseSmartQuotes(t *testing.T) {
 		{
 			name:     "Em-dash",
 			input:    "This is a sentence\u2014with an em-dash",
-			expected: "This is a sentence--with an em-dash",
+			expected: "This is a sentence-with an em-dash",
 		},
 		{
 			name:     "En-dash",
@@ -96,7 +96,7 @@ func TestNormaliseSmartQuotes(t *testing.T) {
 		{
 			name:     "Mixed quotes and dashes",
 			input:    "\u201CHello\u201D\u2014he said\u2014\u2018how are you?\u2019",
-			expected: "\"Hello\"--he said--'how are you?'",
+			expected: "\"Hello\"-he said-'how are you?'",
 		},
 	}
 
