@@ -46,12 +46,12 @@
   background-color: rgba(255, 165, 0, 0.5);
   border-radius: 2px;
   color: transparent;
-  padding: 2px 0;
+  display: inline;
 }
 
 .highlight-quote {
   background-color: rgba(0, 128, 255, 0.5);
   border-radius: 2px;
   color: transparent;
-  padding: 2px 0;
+  display: inline;
 }

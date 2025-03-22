@@ -41,65 +41,53 @@ function HighlightedTextarea({
             return escapeHtml(value).replace(/\n/g, '<br>');
         }
 
-        // Create a set of words to highlight (case-insensitive)
+        // Create a simple HTML version of the text with newlines replaced
+        let html = escapeHtml(value).replace(/\n/g, '<br>');
+
+        // Create a set of words to highlight
         const wordsToHighlight = new Set();
-        for (const word in dictionary) {
-            wordsToHighlight.add(word.toLowerCase());
+
+        // Add both British and American words to the set
+        for (const britishWord in dictionary) {
+            wordsToHighlight.add(britishWord.toLowerCase());
+            const americanWord = dictionary[britishWord];
+            if (americanWord) {
+                wordsToHighlight.add(americanWord.toLowerCase());
+            }
         }
 
-        // Create a set of smart quotes to highlight if normaliseSmartQuotes is enabled
-        const quotesToHighlight = new Set();
+        // Create a temporary DOM element to work with the HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        // Get the text content of the div
+        const textContent = tempDiv.textContent || tempDiv.innerText;
+
+        // Find all words in the text
+        const wordMatches = textContent.match(/\b[a-zA-Z]+\b/g) || [];
+
+        // For each word, check if it's in the dictionary
+        for (const word of wordMatches) {
+            if (wordsToHighlight.has(word.toLowerCase()) && word.length > 1) {
+                // Replace the word with a highlighted version
+                // Use a regex with word boundaries to ensure we only match whole words
+                const regex = new RegExp(`\\b${word}\\b`, 'g');
+                html = html.replace(regex, `<span class="highlight-word">$&</span>`);
+            }
+        }
+
+        // Handle smart quotes if enabled
         if (normaliseSmartQuotes && smartQuotesMap) {
             for (const quote in smartQuotesMap) {
-                quotesToHighlight.add(quote);
+                // Escape the quote for use in regex
+                const escapedQuote = escapeHtml(quote);
+
+                // Replace all occurrences with highlighted version
+                html = html.split(escapedQuote).join(`<span class="highlight-quote">${escapedQuote}</span>`);
             }
         }
 
-        // Split the text into words and preserve whitespace
-        const words = value.split(/(\s+)/);
-
-        // Highlight words that match the dictionary
-        let html = '';
-        for (const word of words) {
-            const trimmedWord = word.trim().toLowerCase();
-            const punctuationMatch = trimmedWord.match(/^(\w+)([^\w]*)$/);
-
-            let wordToCheck = trimmedWord;
-            let punctuation = '';
-
-            if (punctuationMatch) {
-                wordToCheck = punctuationMatch[1];
-                punctuation = punctuationMatch[2];
-            }
-
-            // Check if the word should be highlighted
-            if (wordsToHighlight.has(wordToCheck)) {
-                html += `<span class="highlight-word">${escapeHtml(word)}</span>`;
-            }
-            // Check if the word contains smart quotes to highlight
-            else if (normaliseSmartQuotes) {
-                let hasQuote = false;
-                let highlightedWord = escapeHtml(word);
-
-                for (const quote of quotesToHighlight) {
-                    if (word.includes(quote)) {
-                        hasQuote = true;
-                        highlightedWord = highlightedWord.replace(
-                            new RegExp(quote, 'g'),
-                            `<span class="highlight-quote">${quote}</span>`
-                        );
-                    }
-                }
-
-                html += hasQuote ? highlightedWord : highlightedWord;
-            }
-            else {
-                html += escapeHtml(word);
-            }
-        }
-
-        // Replace newlines with <br> for proper display
-        return html.replace(/\n/g, '<br>');
+        return html;
     }, [value, dictionary, normaliseSmartQuotes, smartQuotesMap]);
 
     return (
