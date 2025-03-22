@@ -46,7 +46,7 @@ jobs:
           export GOOS=darwin
           export GOARCH=arm64
           export MACOSX_DEPLOYMENT_TARGET=15.0
-          wails build -platform darwin/arm64 -o "murican-to-english" -ldflags="-s -w" -trimpath -tags "production"
+          wails build -platform darwin/arm64 -o "Murican to English" -ldflags="-s -w" -trimpath -tags "production"
 
       - name: Get version from package.json
         id: version
@@ -73,7 +73,7 @@ jobs:
       - name: Create ZIP archive
         run: |
           cd build/bin
-          zip -r "murican-to-english-arm64.zip" "murican-to-english.app"
+          zip -r "murican-to-english-arm64.zip" "Murican to English.app"
           cd ../..
 
       - name: Upload app as artifact
