@@ -95,6 +95,22 @@ func (c *Converter) ConvertToAmerican(text string, normaliseSmartQuotes bool) st
 	return result
 }
 
+// GetAmericanToBritishDictionary returns the American to British dictionary
+func (c *Converter) GetAmericanToBritishDictionary() map[string]string {
+	if c.dict == nil {
+		return map[string]string{}
+	}
+	return c.dict.AmericanToBritish
+}
+
+// GetBritishToAmericanDictionary returns the British to American dictionary
+func (c *Converter) GetBritishToAmericanDictionary() map[string]string {
+	if c.dict == nil {
+		return map[string]string{}
+	}
+	return c.dict.BritishToAmerican
+}
+
 // NormaliseSmartQuotes converts smart quotes and em-dashes to their normal equivalents
 func (c *Converter) normaliseSmartQuotes(text string) string {
 	result := text

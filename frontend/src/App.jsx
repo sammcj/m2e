@@ -26,35 +26,27 @@ function App() {
             }
         });
 
-        // For development/testing, we'll use these dictionaries
-        // In a real implementation, you would fetch these from the backend
-        const americanToBritish = {
-            "color": "colour",
-            "center": "centre",
-            "favorite": "favourite",
-            "humor": "humour",
-            "labor": "labour",
-            "neighbor": "neighbour",
-            "traveled": "travelled",
-            "defense": "defence",
-            "organize": "organise",
-            "realize": "realise",
-            "theater": "theatre"
-        };
+        // Get the dictionaries directly from the backend
+        // We've added methods to the backend to expose the dictionaries
+        import("../wailsjs/go/main/App").then(({ GetAmericanToBritishDictionary, GetBritishToAmericanDictionary }) => {
+            // Get the American to British dictionary
+            GetAmericanToBritishDictionary().then(dict => {
+                console.log("American to British dictionary loaded:", Object.keys(dict).length, "words");
+                setAmericanToBritishDict(dict);
+            }).catch(err => {
+                console.error("Error loading American to British dictionary:", err);
+            });
 
-        const britishToAmerican = {
-            "colour": "color",
-            "centre": "center",
-            "favourite": "favorite",
-            "humour": "humor",
-            "labour": "labor",
-            "neighbour": "neighbor",
-            "travelled": "traveled",
-            "defence": "defense",
-            "organise": "organize",
-            "realise": "realize",
-            "theatre": "theater"
-        };
+            // Get the British to American dictionary
+            GetBritishToAmericanDictionary().then(dict => {
+                console.log("British to American dictionary loaded:", Object.keys(dict).length, "words");
+                setBritishToAmericanDict(dict);
+            }).catch(err => {
+                console.error("Error loading British to American dictionary:", err);
+            });
+        }).catch(err => {
+            console.error("Error importing App methods:", err);
+        });
 
         const smartQuotesMap = {
             "\u201C": "\"", // Left double quote
@@ -65,8 +57,6 @@ function App() {
             "\u2014": "--"  // Em-dash
         };
 
-        setAmericanToBritishDict(americanToBritish);
-        setBritishToAmericanDict(britishToAmerican);
         setSmartQuotesMap(smartQuotesMap);
     }, []);
 
@@ -328,6 +318,7 @@ function App() {
                         dictionary={americanToBritishDict}
                         normaliseSmartQuotes={normaliseSmartQuotes}
                         smartQuotesMap={smartQuotesMap}
+                        highlightAmericanWords={true} // Explicitly tell the component to highlight American words
                     />
                 </div>
 
@@ -339,6 +330,7 @@ function App() {
                         dictionary={britishToAmericanDict}
                         normaliseSmartQuotes={normaliseSmartQuotes}
                         smartQuotesMap={smartQuotesMap}
+                        highlightAmericanWords={true} // Explicitly tell the component to highlight American words
                     />
                 </div>
             </div>

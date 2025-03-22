@@ -18,6 +18,14 @@ export function ConvertToBritish(arg1, arg2) {
   return window['go']['main']['App']['ConvertToBritish'](arg1, arg2);
 }
 
+export function GetAmericanToBritishDictionary() {
+  return window['go']['main']['App']['GetAmericanToBritishDictionary']();
+}
+
+export function GetBritishToAmericanDictionary() {
+  return window['go']['main']['App']['GetBritishToAmericanDictionary']();
+}
+
 export function GetCurrentFilePath() {
   return window['go']['main']['App']['GetCurrentFilePath']();
 }

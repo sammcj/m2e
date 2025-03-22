@@ -11,7 +11,8 @@ function HighlightedTextarea({
     placeholder,
     dictionary,
     normaliseSmartQuotes,
-    smartQuotesMap
+    smartQuotesMap,
+    highlightAmericanWords = true // Default to true for backward compatibility
 }) {
     const [highlightedText, setHighlightedText] = useState('');
     const [showPlaceholder, setShowPlaceholder] = useState(!value);
@@ -129,33 +130,58 @@ function HighlightedTextarea({
         // Collect all items to highlight
         const highlightItems = [];
 
-        // Add American words to highlight
-        if (dictionary && Object.keys(dictionary).length > 0) {
-            // Get all American words (values in the dictionary)
-            const americanWords = [];
-            for (const britishWord in dictionary) {
-                const americanWord = dictionary[britishWord];
-                if (americanWord) {
-                    americanWords.push(americanWord);
-                }
+        // Add words to highlight based on the dictionary
+        if (highlightAmericanWords && dictionary && Object.keys(dictionary).length > 0) {
+            // Get all words to highlight (either American or British depending on the dictionary)
+            const wordsToHighlight = [];
+
+            // Check if this is the left ('Murican) or right (British) side
+            // We can determine this by checking if the dictionary has "color" as a key
+            const isMuricanSide = Object.keys(dictionary).includes("color");
+
+            if (isMuricanSide) {
+                // This is the 'Murican side (americanToBritishDict)
+                // Highlight American words (keys)
+                console.log("'Murican side - highlighting American words (keys)");
+                // Add all keys from the dictionary (American words)
+                Object.keys(dictionary).forEach(americanWord => {
+                    wordsToHighlight.push(americanWord);
+                });
+            } else {
+                // This is the British side (britishToAmericanDict)
+                // Highlight American words (values)
+                console.log("British side - highlighting American words (values)");
+                // Add all values from the dictionary (American words)
+                Object.values(dictionary).forEach(americanWord => {
+                    if (americanWord) {
+                        wordsToHighlight.push(americanWord);
+                    }
+                });
             }
 
-            // Find all occurrences of American words in the text
-            if (americanWords.length > 0) {
-                for (const americanWord of americanWords) {
-                    // Create a regex to match this American word with word boundaries
-                    const wordRegex = new RegExp(`\\b${americanWord}\\b`, 'gi');
+            console.log("Words to highlight:", wordsToHighlight.length);
 
-                    // Find all matches in the original text
-                    let match;
-                    while ((match = wordRegex.exec(value)) !== null) {
-                        highlightItems.push({
-                            index: match.index,
-                            length: match[0].length,
-                            text: match[0],
-                            type: 'word'
-                        });
-                    }
+            // Find all occurrences of words to highlight in the text
+            for (const word of wordsToHighlight) {
+                // Create a regex to match this word with word boundaries
+                // Use a case-insensitive regex to match any case
+                const wordRegex = new RegExp(`\\b${word}\\b`, 'gi');
+
+                // Find all matches in the original text
+                let match;
+                let matchesFound = false;
+                while ((match = wordRegex.exec(value)) !== null) {
+                    matchesFound = true;
+                    console.log(`Match found for word "${word}": "${match[0]}" at index ${match.index}`);
+                    highlightItems.push({
+                        index: match.index,
+                        length: match[0].length,
+                        text: match[0],
+                        type: 'word'
+                    });
+                }
+                if (!matchesFound) {
+                    console.log(`No matches found for word "${word}"`);
                 }
             }
         }
@@ -212,7 +238,7 @@ function HighlightedTextarea({
         }
 
         setHighlightedText(result);
-    }, [value, dictionary, normaliseSmartQuotes, smartQuotesMap]);
+    }, [value, dictionary, normaliseSmartQuotes, smartQuotesMap, highlightAmericanWords]);
 
     // We don't need to sync the contenteditable div with the value prop
     // because we're using dangerouslySetInnerHTML to set the content

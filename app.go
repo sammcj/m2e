@@ -18,6 +18,9 @@ type App struct {
 	filePath  string // Store the path of the file being processed
 }
 
+// Dictionary represents a mapping between words
+type Dictionary map[string]string
+
 // NewApp creates a new App application struct
 func NewApp() *App {
 	return &App{}
@@ -148,6 +151,22 @@ func (a *App) GetCurrentFilePath() string {
 // ClearCurrentFile clears the current file path
 func (a *App) ClearCurrentFile() {
 	a.filePath = ""
+}
+
+// GetAmericanToBritishDictionary returns the American to British dictionary
+func (a *App) GetAmericanToBritishDictionary() Dictionary {
+	if a.converter == nil {
+		return Dictionary{}
+	}
+	return a.converter.GetAmericanToBritishDictionary()
+}
+
+// GetBritishToAmericanDictionary returns the British to American dictionary
+func (a *App) GetBritishToAmericanDictionary() Dictionary {
+	if a.converter == nil {
+		return Dictionary{}
+	}
+	return a.converter.GetBritishToAmericanDictionary()
 }
 
 // shutdown is called when the app is closing

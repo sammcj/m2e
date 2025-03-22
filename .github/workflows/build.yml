@@ -44,6 +44,11 @@ jobs:
           export MACOSX_DEPLOYMENT_TARGET=15.0
           wails build -platform darwin/arm64 -o "murican-to-english" -ldflags="-s -w" -trimpath -tags "production"
 
+
+      # create a tag for the release
+      - name: Create tag
+        run: git tag v${{ github.run_number }}
+
       - name: Create ZIP archive
         run: |
           cd build/bin
