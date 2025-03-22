@@ -309,6 +309,37 @@ html, body {
   transform: none;
 }
 
+/* Eagle animation */
+.eagle-emoji {
+  position: absolute;
+  font-size: 2rem;
+  opacity: 0;
+  z-index: 10;
+  pointer-events: none;
+  animation-duration: 1.5s;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: forwards;
+}
+
+.eagle-fly {
+  animation-name: eagleFly;
+}
+
+@keyframes eagleFly {
+  0% {
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+  }
+}
+
 /* Responsive design */
 @media (max-width: 1024px) {
   .converter-container {

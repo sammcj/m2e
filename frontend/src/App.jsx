@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 import { ConvertToBritish, HandleDroppedFile, SaveConvertedFile, GetCurrentFilePath, ClearCurrentFile } from "../wailsjs/go/main/App";
 import HighlightedTextarea from './components/HighlightedTextarea';
@@ -13,8 +13,10 @@ function App() {
     const [americanToBritishDict, setAmericanToBritishDict] = useState({});
     const [smartQuotesMap, setSmartQuotesMap] = useState({});
     const [isTranslating, setIsTranslating] = useState(false); // Flag to prevent infinite loops
+    const [showEagle, setShowEagle] = useState(false); // State to control eagle animation
 
     const appContainerRef = useRef(null);
+    const eagleRef = useRef(null);
 
     // Check if a file was opened with the app and load dictionaries
     useEffect(() => {
@@ -152,12 +154,39 @@ function App() {
         if (!freedomText.trim()) return;
         if (isTranslating) return;
 
+        // Trigger eagle animation
+        triggerEagleAnimation();
+
         setIsTranslating(true);
         ConvertToBritish(freedomText, normaliseSmartQuotes).then((result) => {
             setBritishText(result);
             setIsTranslating(false);
         });
     };
+
+    // Function to trigger the eagle animation
+    const triggerEagleAnimation = useCallback(() => {
+        // Reset animation by removing and re-adding the class
+        if (eagleRef.current) {
+            eagleRef.current.classList.remove('eagle-fly');
+            // Force a reflow to restart the animation
+            void eagleRef.current.offsetWidth;
+        }
+
+        setShowEagle(true);
+
+        // Add the animation class after a short delay
+        setTimeout(() => {
+            if (eagleRef.current) {
+                eagleRef.current.classList.add('eagle-fly');
+            }
+        }, 10);
+
+        // Hide the eagle after animation completes
+        setTimeout(() => {
+            setShowEagle(false);
+        }, 1600); // Slightly longer than animation duration
+    }, []);
 
 
     // Toggle normalise smart quotes option
@@ -293,6 +322,16 @@ function App() {
                     <div className="drag-message">
                         Drop text file here to convert
                     </div>
+                </div>
+            )}
+
+            {/* Eagle emoji animation */}
+            {showEagle && (
+                <div
+                    ref={eagleRef}
+                    className="eagle-emoji"
+                >
+                    🦅
                 </div>
             )}
 
