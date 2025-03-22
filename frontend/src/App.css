@@ -197,6 +197,7 @@ html, body {
   display: flex;
   flex-direction: column;
   width: 100%; /* Take full width of parent */
+  min-height: 300px; /* Minimum height */
 }
 
 .text-column h2 {
@@ -205,13 +206,12 @@ html, body {
   text-align: center;
 }
 
-.text-area {
+/* Styles for both regular textarea and highlighted textarea */
+.text-area, .highlighted-textarea-container {
   flex: 1;
-  padding: 15px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
-  resize: none;
   min-height: 300px; /* 50% taller */
   width: 100%; /* Take full width of parent */
   background-color: white;
@@ -219,10 +219,21 @@ html, body {
   transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-.text-area:focus {
+.text-area {
+  padding: 15px;
+  resize: none;
+}
+
+.text-area:focus, .highlighted-textarea-container:focus-within {
   outline: none;
   border-color: #3498db;
   box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+}
+
+/* Additional styles for highlighted textarea */
+.highlighted-textarea-container .text-input {
+  font-size: 1rem;
+  padding: 15px;
 }
 
 /* Button styles */

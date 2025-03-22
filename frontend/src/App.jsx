@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { ConvertToBritish, ConvertToAmerican, HandleDroppedFile, SaveConvertedFile, GetCurrentFilePath, ClearCurrentFile } from "../wailsjs/go/main/App";
+import HighlightedTextarea from './components/HighlightedTextarea';
 
 function App() {
     const [freedomText, setAmericanText] = useState('');
@@ -9,26 +10,104 @@ function App() {
     const [currentFilePath, setCurrentFilePath] = useState('');
     const [dragActive, setDragActive] = useState(false);
     const [fileError, setFileError] = useState('');
+    const [americanToBritishDict, setAmericanToBritishDict] = useState({});
+    const [britishToAmericanDict, setBritishToAmericanDict] = useState({});
+    const [smartQuotesMap, setSmartQuotesMap] = useState({});
+    const [isTranslating, setIsTranslating] = useState(false); // Flag to prevent infinite loops
 
     const appContainerRef = useRef(null);
 
-    // Check if a file was opened with the app
+    // Check if a file was opened with the app and load dictionaries
     useEffect(() => {
+        // Check for file path
         GetCurrentFilePath().then(path => {
             if (path) {
                 setCurrentFilePath(path);
             }
         });
+
+        // For development/testing, we'll use these dictionaries
+        // In a real implementation, you would fetch these from the backend
+        const americanToBritish = {
+            "color": "colour",
+            "center": "centre",
+            "favorite": "favourite",
+            "humor": "humour",
+            "labor": "labour",
+            "neighbor": "neighbour",
+            "traveled": "travelled",
+            "defense": "defence",
+            "organize": "organise",
+            "realize": "realise",
+            "theater": "theatre"
+        };
+
+        const britishToAmerican = {
+            "colour": "color",
+            "centre": "center",
+            "favourite": "favorite",
+            "humour": "humor",
+            "labour": "labor",
+            "neighbour": "neighbor",
+            "travelled": "traveled",
+            "defence": "defense",
+            "organise": "organize",
+            "realise": "realize",
+            "theatre": "theater"
+        };
+
+        const smartQuotesMap = {
+            "\u201C": "\"", // Left double quote
+            "\u201D": "\"", // Right double quote
+            "\u2018": "'",  // Left single quote
+            "\u2019": "'",  // Right single quote
+            "\u2013": "-",  // En-dash
+            "\u2014": "--"  // Em-dash
+        };
+
+        setAmericanToBritishDict(americanToBritish);
+        setBritishToAmericanDict(britishToAmerican);
+        setSmartQuotesMap(smartQuotesMap);
     }, []);
 
-    // Update the American English text area
+    // Update the American English text area and automatically translate
     const updateAmericanText = (e) => {
-        setAmericanText(e.target.value);
+        const newText = e.target.value;
+        setAmericanText(newText);
+
+        // Prevent infinite loops by checking if we're already translating
+        if (isTranslating) return;
+
+        // Automatically translate to British English when text changes
+        if (newText.trim()) {
+            setIsTranslating(true);
+            ConvertToBritish(newText, normaliseSmartQuotes).then((result) => {
+                setBritishText(result);
+                setIsTranslating(false);
+            });
+        } else {
+            setBritishText('');
+        }
     };
 
-    // Update the British English text area
+    // Update the British English text area and automatically translate
     const updateBritishText = (e) => {
-        setBritishText(e.target.value);
+        const newText = e.target.value;
+        setBritishText(newText);
+
+        // Prevent infinite loops by checking if we're already translating
+        if (isTranslating) return;
+
+        // Automatically translate to American English when text changes
+        if (newText.trim()) {
+            setIsTranslating(true);
+            ConvertToAmerican(newText, normaliseSmartQuotes).then((result) => {
+                setAmericanText(result);
+                setIsTranslating(false);
+            });
+        } else {
+            setAmericanText('');
+        }
     };
 
     // Handle drag events
@@ -66,8 +145,10 @@ function App() {
                     }
 
                     // Automatically convert to British English
+                    setIsTranslating(true);
                     ConvertToBritish(content, normaliseSmartQuotes).then(result => {
                         setBritishText(result);
+                        setIsTranslating(false);
                     });
                 }
             };
@@ -102,18 +183,24 @@ function App() {
     // Convert from American to British English
     const handleAmericanToBritish = () => {
         if (!freedomText.trim()) return;
+        if (isTranslating) return;
 
+        setIsTranslating(true);
         ConvertToBritish(freedomText, normaliseSmartQuotes).then((result) => {
             setBritishText(result);
+            setIsTranslating(false);
         });
     };
 
     // Convert from British to American English
     const handleBritishToAmerican = () => {
         if (!britishText.trim()) return;
+        if (isTranslating) return;
 
+        setIsTranslating(true);
         ConvertToAmerican(britishText, normaliseSmartQuotes).then((result) => {
             setAmericanText(result);
+            setIsTranslating(false);
         });
     };
 
@@ -234,20 +321,24 @@ function App() {
 
             <div className="converter-container">
                 <div className="text-column">
-                    <textarea
-                        className="text-area"
+                    <HighlightedTextarea
                         value={freedomText}
                         onChange={updateAmericanText}
                         placeholder="Enter freedom text here or drop a text file..."
+                        dictionary={americanToBritishDict}
+                        normaliseSmartQuotes={normaliseSmartQuotes}
+                        smartQuotesMap={smartQuotesMap}
                     />
                 </div>
 
                 <div className="text-column">
-                    <textarea
-                        className="text-area"
+                    <HighlightedTextarea
                         value={britishText}
                         onChange={updateBritishText}
                         placeholder="Enter British English text here..."
+                        dictionary={britishToAmericanDict}
+                        normaliseSmartQuotes={normaliseSmartQuotes}
+                        smartQuotesMap={smartQuotesMap}
                     />
                 </div>
             </div>
