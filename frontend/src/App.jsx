@@ -16,6 +16,7 @@ function App() {
     const [showEagle, setShowEagle] = useState(false); // State to control eagle animation
 
     const appContainerRef = useRef(null);
+    // Create a ref for the eagle element
     const eagleRef = useRef(null);
 
     // Check if a file was opened with the app and load dictionaries
@@ -166,26 +167,18 @@ function App() {
 
     // Function to trigger the eagle animation
     const triggerEagleAnimation = useCallback(() => {
-        // Reset animation by removing and re-adding the class
-        if (eagleRef.current) {
-            eagleRef.current.classList.remove('eagle-fly');
-            // Force a reflow to restart the animation
-            void eagleRef.current.offsetWidth;
-        }
+        // Hide any existing eagle first
+        setShowEagle(false);
 
-        setShowEagle(true);
-
-        // Add the animation class after a short delay
+        // Then show a new eagle after a brief delay
         setTimeout(() => {
-            if (eagleRef.current) {
-                eagleRef.current.classList.add('eagle-fly');
-            }
+            setShowEagle(true);
+
+            // Hide the eagle after animation completes
+            setTimeout(() => {
+                setShowEagle(false);
+            }, 1500); // Animation duration
         }, 10);
-
-        // Hide the eagle after animation completes
-        setTimeout(() => {
-            setShowEagle(false);
-        }, 1600); // Slightly longer than animation duration
     }, []);
 
 
@@ -329,7 +322,7 @@ function App() {
             {showEagle && (
                 <div
                     ref={eagleRef}
-                    className="eagle-emoji"
+                    className="eagle-emoji eagle-fly"
                 >
                     🦅
                 </div>
