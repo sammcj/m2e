@@ -1,0 +1,347 @@
+/* Base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1;
+  color: #333;
+  background-color: #f5f5f5;
+  height: 100%;
+  overflow: hidden; /* Prevent default scrollbar */
+}
+
+/* App container */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 2800px;
+  margin: 0 auto;
+  padding: 12px;
+  overflow: auto; /* Only show scrollbar when needed */
+  position: relative; /* For drag overlay positioning */
+}
+
+/* Drag and drop styles */
+.drag-active {
+  border: 2px dashed #3498db;
+  background-color: rgba(52, 152, 219, 0.05);
+}
+
+.drag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(52, 152, 219, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.drag-message {
+  background-color: white;
+  padding: 20px 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #3498db;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 10px 15px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  border: 1px solid #f5c6cb;
+}
+
+/* File controls */
+.header-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.file-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.current-file {
+  font-size: 0.9rem;
+  color: #555;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+.save-file-button, .clear-file-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.save-file-button {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.save-file-button:hover {
+  background-color: #27ae60;
+}
+
+.clear-file-button {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.clear-file-button:hover {
+  background-color: #c0392b;
+}
+
+/* Header */
+.app-header {
+  margin-bottom: 12px;
+  padding: 5px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.app-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  text-align: left;
+}
+
+.app-header p {
+  font-size: 1rem;
+  color: #7f8c8d;
+}
+
+/* Controls row */
+.controls-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 8px;
+  padding: 0 10px;
+}
+
+/* Button group */
+.button-group {
+  display: flex;
+  gap: 5px;
+}
+
+/* Checkbox container */
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.checkbox-container input[type="checkbox"] {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.checkbox-text {
+  user-select: none;
+}
+
+/* Language labels */
+.language-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1rem;
+  color: #333;
+}
+
+/* Converter container */
+.converter-container {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  margin-bottom: 1px;
+}
+
+/* Text columns */
+.text-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%; /* Take full width of parent */
+}
+
+.text-column h2 {
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.text-area {
+  flex: 1;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  resize: none;
+  min-height: 300px; /* 50% taller */
+  width: 100%; /* Take full width of parent */
+  background-color: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.text-area:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+}
+
+/* Button styles */
+.convert-button, .clear-button, .copy-button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.1s;
+}
+
+.convert-button {
+  flex: 1;
+  max-width: 200px;
+  color: white;
+}
+
+.convert-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.american-to-british {
+  background-color: #3498db; /* Blue */
+}
+
+.american-to-british:hover:not(:disabled) {
+  background-color: #2980b9;
+}
+
+.british-to-american {
+  background-color: #e74c3c; /* Red */
+}
+
+.british-to-american:hover:not(:disabled) {
+  background-color: #c0392b;
+}
+
+.copy-button {
+  background-color: #2ecc71; /* Green */
+  color: white;
+  width: 80px;
+  font-size: 0.9rem;
+}
+
+.copy-button:hover:not(:disabled) {
+  background-color: #27ae60;
+  transform: translateY(-2px);
+}
+
+.copy-button:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.clear-button {
+  background-color: #95a5a6;
+  color: white;
+  max-width: 150px;
+  flex: 1;
+}
+
+.clear-button:hover:not(:disabled) {
+  background-color: #7f8c8d;
+}
+
+.convert-button:disabled, .clear-button:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .converter-container {
+    flex-direction: column;
+  }
+
+  .controls-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .button-group {
+    width: 100%;
+  }
+
+  .convert-button, .clear-button, .copy-button {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .text-area {
+    min-height: 200px;
+  }
+
+  .file-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .current-file {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .app-header p {
+    font-size: 1rem;
+  }
+}
