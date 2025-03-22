@@ -1,0 +1,94 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          check-latest: true
+
+      - name: Install dependencies
+        run: |
+          brew install gnu-tar
+          echo "PATH=/opt/homebrew/opt/gnu-tar/libexec/gnubin:$PATH" >> $GITHUB_ENV
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.1
+
+      - name: Install frontend dependencies
+        run: cd frontend && npm install
+
+      - name: Build for macOS (Apple Silicon)
+        run: |
+          export CGO_ENABLED=1
+          export GOOS=darwin
+          export GOARCH=arm64
+          export MACOSX_DEPLOYMENT_TARGET=15.0
+          wails build -platform darwin/arm64 -o "Murican to English" -ldflags="-s -w" -trimpath -tags "production"
+
+      - name: Get version from frontend package.json
+        id: version
+        run: echo "version=$(node -p "require('./frontend/package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Set default version if not found
+        if: steps.version.outputs.version == ''
+        run: echo "version=$(date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
+
+      - name: Create Git tag
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}" --force
+          git push origin "v${{ steps.version.outputs.version }}" --force
+
+      - name: Create ZIP archive
+        run: |
+          cd build/bin
+          zip -r "murican-to-english-arm64.zip" "Murican to English.app"
+          cd ../..
+
+      - name: Upload app as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: murican-to-english-macos-arm64
+          path: build/bin/murican-to-english-arm64.zip
+          retention-days: 7
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          files: |
+            build/bin/murican-to-english-arm64.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

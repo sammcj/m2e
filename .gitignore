@@ -1,0 +1,7 @@
+**/node_modules
+**/dist
+**/murican-to-english
+**/.env
+**/.log
+**/.tmp
+build/bin/**

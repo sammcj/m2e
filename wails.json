@@ -1,0 +1,21 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "Murican to English",
+  "outputfilename": "Murican to English",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "icon": "appicon.png",
+  "author": {
+    "name": "Sam",
+    "email": "sammcj@users.noreply.github.com"
+  },
+  "window": {
+    "width": 1800,
+    "height": 1024,
+    "centred": true,
+    "x": null,
+    "y": null
+  }
+}
