@@ -18,4 +18,8 @@ export function GetCurrentFilePath():Promise<string>;
 
 export function HandleDroppedFile(arg1:string):Promise<string>;
 
+export function HandleFileService(arg1:string):Promise<void>;
+
+export function HandleService(arg1:string,arg2:string):Promise<string>;
+
 export function SaveConvertedFile(arg1:string):Promise<void>;

@@ -8,6 +8,7 @@ A modern, lightweight application for converting text from American to English s
 - Clean, modern user interface
 - Fast and responsive
 - Native desktop application for macOS
+- macOS Services integration - right-click on text or files to convert them
 - Also gets rid of those pesky "smart" quotes and em-dashes that break everything
 
 ![smaller cars please](screenshots/app-screenshot.png)
@@ -95,6 +96,15 @@ murican-to-english/
 ## How It Works
 
 The application uses JSON dictionaries to map between American and English spellings. The conversion logic is implemented in Go, which provides fast and efficient text processing. The frontend is built with React, providing a modern and responsive user interface.
+
+### macOS Services Integration
+
+The application integrates with macOS Services, allowing you to:
+
+1. **Convert selected text**: Select text in any application, right-click, and choose "Convert to British English" from the Services menu.
+2. **Convert files**: Right-click on a file in Finder, and select "Convert File to British English" from the Services menu to convert the file's contents.
+
+This feature makes it easy to convert text without having to open the application directly. After installation, you may need to log out and log back in for the services to be registered with macOS.
 
 ## License
 

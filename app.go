@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"murican-to-english/pkg/converter"
 
@@ -16,6 +17,12 @@ type App struct {
 	ctx       context.Context
 	converter *converter.Converter
 	filePath  string // Store the path of the file being processed
+}
+
+// ServiceHandler represents a macOS service handler
+type ServiceHandler interface {
+	HandleService(pboard string, userData string) string
+	HandleFileService(fileURL string) error
 }
 
 // Dictionary represents a mapping between words
@@ -167,6 +174,41 @@ func (a *App) GetBritishToAmericanDictionary() Dictionary {
 		return Dictionary{}
 	}
 	return a.converter.GetBritishToAmericanDictionary()
+}
+
+// HandleService processes text from the macOS service menu
+func (a *App) HandleService(pboard string, userData string) string {
+	// Convert the text to British English
+	if a.converter == nil {
+		// Initialize the converter if it's not already initialized
+		var err error
+		a.converter, err = converter.NewConverter()
+		if err != nil {
+			return "Error initializing converter: " + err.Error()
+		}
+	}
+
+	// Convert the text
+	return a.ConvertToBritish(pboard, true)
+}
+
+// HandleFileService processes a file from the macOS service menu
+func (a *App) HandleFileService(fileURL string) error {
+	// Convert the file URL to a file path
+	// macOS file URLs are in the format "file:///path/to/file"
+	filePath := strings.TrimPrefix(fileURL, "file://")
+
+	// Initialize the converter if it's not already initialized
+	if a.converter == nil {
+		var err error
+		a.converter, err = converter.NewConverter()
+		if err != nil {
+			return fmt.Errorf("error initializing converter: %w", err)
+		}
+	}
+
+	// Convert the file
+	return a.ConvertFileToEnglish(filePath)
 }
 
 // shutdown is called when the app is closing

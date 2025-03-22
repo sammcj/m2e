@@ -27,6 +27,10 @@ cd frontend && npm install && cd ..
 echo "Building application..."
 wails build -platform darwin/arm64 -o "murican-to-english" -ldflags="-s -w" -trimpath -tags "production"
 
+# Copy custom Info.plist to the app bundle
+echo "Applying custom Info.plist with macOS service support..."
+cp build/darwin/custom-Info.plist "build/bin/Murican to English.app/Contents/Info.plist"
+
 # Create a DMG for distribution (requires create-dmg)
 if command -v create-dmg &>/dev/null; then
   echo "Creating DMG..."

@@ -34,6 +34,14 @@ export function HandleDroppedFile(arg1) {
   return window['go']['main']['App']['HandleDroppedFile'](arg1);
 }
 
+export function HandleFileService(arg1) {
+  return window['go']['main']['App']['HandleFileService'](arg1);
+}
+
+export function HandleService(arg1, arg2) {
+  return window['go']['main']['App']['HandleService'](arg1, arg2);
+}
+
 export function SaveConvertedFile(arg1) {
   return window['go']['main']['App']['SaveConvertedFile'](arg1);
 }
