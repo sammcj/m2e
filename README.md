@@ -4,9 +4,8 @@ A modern, lightweight application for converting text from American to Internati
 
 ## Features
 
-- Convert text from American to International English
-- Clean, modern user interface
-- Fast and responsive
+- Converts pasted text from American to International English
+- Fast and responsive and minimalist interface
 - Native desktop application for macOS
 - Also gets rid of those pesky "smart" quotes and em-dashes that break everything
 - macOS Services integration (WIP)
@@ -15,14 +14,20 @@ A modern, lightweight application for converting text from American to Internati
 
 Simply paste your freedom text in the left and on the right you'll find the international English spelling.
 
+Note: There is a known issue with typing directly in the freedom text box, I'll get to it eventually but for now pasting works fine.
+
+## Installation
+
+- Visit [releases](https://github.com/sammcj/murican-to-english/releases) and download the latest zip
+
+---
+
 ## Technology Stack
 
 - **Backend**: Go >= 1.24
 - **Frontend**: React >= 18
 - **Framework**: Wails v2.10
 - **Build System**: Go modules and npm
-
----
 
 ## Development
 
