@@ -89,13 +89,6 @@ func (a *App) ConvertToBritish(text string, normaliseSmartQuotes bool) string {
 	return a.converter.ConvertToBritish(text, normaliseSmartQuotes)
 }
 
-// ConvertToAmerican converts British English text to American English
-func (a *App) ConvertToAmerican(text string, normaliseSmartQuotes bool) string {
-	if a.converter == nil {
-		return "Error: Converter not initialized"
-	}
-	return a.converter.ConvertToAmerican(text, normaliseSmartQuotes)
-}
 
 // ConvertFileToEnglish converts a file's content from American to British English and saves it back
 func (a *App) ConvertFileToEnglish(filePath string) error {
@@ -168,13 +161,6 @@ func (a *App) GetAmericanToBritishDictionary() Dictionary {
 	return a.converter.GetAmericanToBritishDictionary()
 }
 
-// GetBritishToAmericanDictionary returns the British to American dictionary
-func (a *App) GetBritishToAmericanDictionary() Dictionary {
-	if a.converter == nil {
-		return Dictionary{}
-	}
-	return a.converter.GetBritishToAmericanDictionary()
-}
 
 // HandleService processes text from the macOS service menu
 func (a *App) HandleService(pboard string, userData string) string {

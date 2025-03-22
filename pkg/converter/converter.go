@@ -12,13 +12,12 @@ import (
 //go:embed data/*.json
 var dictFS embed.FS
 
-// Dictionaries holds the mapping between American and British English spellings
+// Dictionaries holds the mapping for American to British English spellings
 type Dictionaries struct {
 	AmericanToBritish map[string]string
-	BritishToAmerican map[string]string
 }
 
-// LoadDictionaries loads the spelling dictionaries from the embedded JSON files
+// LoadDictionaries loads the American to British spelling dictionary from the embedded JSON file
 func LoadDictionaries() (*Dictionaries, error) {
 	// Load American to British dictionary
 	amToBrData, err := dictFS.ReadFile("data/american_spellings.json")
@@ -26,27 +25,15 @@ func LoadDictionaries() (*Dictionaries, error) {
 		return nil, fmt.Errorf("failed to read American spellings dictionary: %w", err)
 	}
 
-	// Load British to American dictionary
-	brToAmData, err := dictFS.ReadFile("data/british_spellings.json")
-	if err != nil {
-		return nil, fmt.Errorf("failed to read British spellings dictionary: %w", err)
-	}
-
-	// Parse the dictionaries
+	// Parse the dictionary
 	amToBr := make(map[string]string)
-	brToAm := make(map[string]string)
 
 	if err := json.Unmarshal(amToBrData, &amToBr); err != nil {
 		return nil, fmt.Errorf("failed to parse American spellings dictionary: %w", err)
 	}
 
-	if err := json.Unmarshal(brToAmData, &brToAm); err != nil {
-		return nil, fmt.Errorf("failed to parse British spellings dictionary: %w", err)
-	}
-
 	return &Dictionaries{
 		AmericanToBritish: amToBr,
-		BritishToAmerican: brToAm,
 	}, nil
 }
 
@@ -62,7 +49,7 @@ var SmartQuotesMap = map[string]string{
 	"\u2018": "'",  // Left single quote to normal single quote
 	"\u2019": "'",  // Right single quote to normal single quote
 	"\u2013": "-",  // En-dash to hyphen
-	"\u2014": "--", // Em-dash to hyphen
+	"\u2014": "-", // Em-dash to hyphen
 }
 
 // NewConverter creates a new Converter instance
@@ -90,18 +77,6 @@ func (c *Converter) ConvertToBritish(text string, normaliseSmartQuotes bool) str
 	return result
 }
 
-// ConvertToAmerican converts British English text to American English
-func (c *Converter) ConvertToAmerican(text string, normaliseSmartQuotes bool) string {
-	// First normalise smart quotes if needed
-	processedText := text
-	if normaliseSmartQuotes {
-		processedText = c.normaliseSmartQuotes(text)
-	}
-
-	// Then convert the text
-	result := c.convert(processedText, c.dict.BritishToAmerican)
-	return result
-}
 
 // GetAmericanToBritishDictionary returns the American to British dictionary
 func (c *Converter) GetAmericanToBritishDictionary() map[string]string {
@@ -111,13 +86,6 @@ func (c *Converter) GetAmericanToBritishDictionary() map[string]string {
 	return c.dict.AmericanToBritish
 }
 
-// GetBritishToAmericanDictionary returns the British to American dictionary
-func (c *Converter) GetBritishToAmericanDictionary() map[string]string {
-	if c.dict == nil {
-		return map[string]string{}
-	}
-	return c.dict.BritishToAmerican
-}
 
 // NormaliseSmartQuotes converts smart quotes and em-dashes to their normal equivalents
 func (c *Converter) normaliseSmartQuotes(text string) string {

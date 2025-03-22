@@ -222,7 +222,7 @@ html, body {
 }
 
 /* Button styles */
-.convert-button, .clear-button, .copy-button {
+.convert-button, .clear-button, .copy-button, .paste-button {
   padding: 6px 18px;
   border: none;
   border-radius: 4px;
@@ -260,19 +260,33 @@ html, body {
   background-color: #c0392b;
 }
 
-.copy-button {
-  background-color: #2ecc71; /* Green */
+.copy-button, .paste-button {
   color: white;
   width: 80px;
   font-size: 0.9rem;
 }
 
-.copy-button:hover:not(:disabled) {
-  background-color: #27ae60;
+.copy-button {
+  background-color: #2ecc71; /* Green */
+}
+
+.paste-button {
+  background-color: #9b59b6; /* Purple */
+}
+
+.copy-button:hover:not(:disabled), .paste-button:hover:not(:disabled) {
   transform: translateY(-2px);
 }
 
-.copy-button:disabled {
+.copy-button:hover:not(:disabled) {
+  background-color: #27ae60;
+}
+
+.paste-button:hover:not(:disabled) {
+  background-color: #8e44ad;
+}
+
+.copy-button:disabled, .paste-button:disabled {
   background-color: #bdc3c7;
   cursor: not-allowed;
   transform: none;
@@ -320,7 +334,7 @@ html, body {
     width: 100%;
   }
 
-  .convert-button, .clear-button, .copy-button {
+  .convert-button, .clear-button, .copy-button, .paste-button {
     max-width: 100%;
     width: 100%;
   }

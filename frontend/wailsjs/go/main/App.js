@@ -10,20 +10,12 @@ export function ConvertFileToEnglish(arg1) {
   return window['go']['main']['App']['ConvertFileToEnglish'](arg1);
 }
 
-export function ConvertToAmerican(arg1, arg2) {
-  return window['go']['main']['App']['ConvertToAmerican'](arg1, arg2);
-}
-
 export function ConvertToBritish(arg1, arg2) {
   return window['go']['main']['App']['ConvertToBritish'](arg1, arg2);
 }
 
 export function GetAmericanToBritishDictionary() {
   return window['go']['main']['App']['GetAmericanToBritishDictionary']();
-}
-
-export function GetBritishToAmericanDictionary() {
-  return window['go']['main']['App']['GetBritishToAmericanDictionary']();
 }
 
 export function GetCurrentFilePath() {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
-import { ConvertToBritish, ConvertToAmerican, HandleDroppedFile, SaveConvertedFile, GetCurrentFilePath, ClearCurrentFile } from "../wailsjs/go/main/App";
+import { ConvertToBritish, HandleDroppedFile, SaveConvertedFile, GetCurrentFilePath, ClearCurrentFile } from "../wailsjs/go/main/App";
 import HighlightedTextarea from './components/HighlightedTextarea';
 
 function App() {
@@ -11,7 +11,6 @@ function App() {
     const [dragActive, setDragActive] = useState(false);
     const [fileError, setFileError] = useState('');
     const [americanToBritishDict, setAmericanToBritishDict] = useState({});
-    const [britishToAmericanDict, setBritishToAmericanDict] = useState({});
     const [smartQuotesMap, setSmartQuotesMap] = useState({});
     const [isTranslating, setIsTranslating] = useState(false); // Flag to prevent infinite loops
 
@@ -26,23 +25,15 @@ function App() {
             }
         });
 
-        // Get the dictionaries directly from the backend
-        // We've added methods to the backend to expose the dictionaries
-        import("../wailsjs/go/main/App").then(({ GetAmericanToBritishDictionary, GetBritishToAmericanDictionary }) => {
+        // Get the dictionary directly from the backend
+        // We've added methods to the backend to expose the dictionary
+        import("../wailsjs/go/main/App").then(({ GetAmericanToBritishDictionary }) => {
             // Get the American to British dictionary
             GetAmericanToBritishDictionary().then(dict => {
                 // American to British dictionary loaded successfully
                 setAmericanToBritishDict(dict);
             }).catch(err => {
                 // Handle error loading American to British dictionary
-            });
-
-            // Get the British to American dictionary
-            GetBritishToAmericanDictionary().then(dict => {
-                // British to American dictionary loaded successfully
-                setBritishToAmericanDict(dict);
-            }).catch(err => {
-                // Handle error loading British to American dictionary
             });
         }).catch(err => {
             // Handle error importing App methods
@@ -80,24 +71,10 @@ function App() {
         }
     };
 
-    // Update the British English text area and automatically translate
+    // Update the British English text area
     const updateBritishText = (e) => {
         const newText = e.target.value;
         setBritishText(newText);
-
-        // Prevent infinite loops by checking if we're already translating
-        if (isTranslating) return;
-
-        // Automatically translate to American English when text changes
-        if (newText.trim()) {
-            setIsTranslating(true);
-            ConvertToAmerican(newText, normaliseSmartQuotes).then((result) => {
-                setAmericanText(result);
-                setIsTranslating(false);
-            });
-        } else {
-            setAmericanText('');
-        }
     };
 
     // Handle drag events
@@ -182,17 +159,6 @@ function App() {
         });
     };
 
-    // Convert from British to American English
-    const handleBritishToAmerican = () => {
-        if (!britishText.trim()) return;
-        if (isTranslating) return;
-
-        setIsTranslating(true);
-        ConvertToAmerican(britishText, normaliseSmartQuotes).then((result) => {
-            setAmericanText(result);
-            setIsTranslating(false);
-        });
-    };
 
     // Toggle normalise smart quotes option
     const toggleNormaliseSmartQuotes = () => {
@@ -215,6 +181,82 @@ function App() {
                 // Handle error copying text to clipboard
                 alert('Failed to copy text to clipboard');
             });
+    };
+
+    // Reference to the American text area
+    const americanTextareaRef = useRef(null);
+
+    // Paste from clipboard - tries multiple approaches
+    const pasteFromClipboard = () => {
+        try {
+            // First, try to focus the textarea
+            const textareaElement = document.querySelector('.text-column:first-child .highlighted-textarea-container textarea');
+            if (textareaElement) {
+                /** @type {HTMLTextAreaElement} */ (textareaElement).focus();
+
+                // Try to execute the paste command
+                const successful = document.execCommand('paste');
+
+                if (successful) {
+                    // The paste was successful, but we need to manually trigger the onChange event
+                    // to update the state and convert the text
+                    setTimeout(() => {
+                        // Get the text from the textarea
+                        const text = /** @type {HTMLTextAreaElement} */ (textareaElement).value;
+
+                        // Update the American text
+                        setAmericanText(text);
+
+                        // Automatically convert to British English
+                        if (text.trim()) {
+                            setIsTranslating(true);
+                            ConvertToBritish(text, normaliseSmartQuotes).then((result) => {
+                                setBritishText(result);
+                                setIsTranslating(false);
+                            });
+                        } else {
+                            setBritishText('');
+                        }
+                    }, 100); // Small delay to ensure the paste has completed
+
+                    return;
+                }
+            }
+
+            // If execCommand failed or no textarea was found, try the Clipboard API
+            navigator.clipboard.readText()
+                .then(text => {
+                    // Update the American text
+                    setAmericanText(text);
+
+                    // Automatically convert to British English
+                    if (text.trim()) {
+                        setIsTranslating(true);
+                        ConvertToBritish(text, normaliseSmartQuotes).then((result) => {
+                            setBritishText(result);
+                            setIsTranslating(false);
+                        });
+                    } else {
+                        setBritishText('');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error reading from clipboard:', err);
+
+                    // If all else fails, just focus the textarea
+                    if (textareaElement) {
+                        /** @type {HTMLTextAreaElement} */ (textareaElement).focus();
+                    }
+                });
+        } catch (err) {
+            console.error('Error in paste function:', err);
+
+            // If all else fails, just focus the textarea
+            const textareaElement = document.querySelector('.text-column:first-child .highlighted-textarea-container textarea');
+            if (textareaElement) {
+                /** @type {HTMLTextAreaElement} */ (textareaElement).focus();
+            }
+        }
     };
 
     return (
@@ -270,6 +312,12 @@ function App() {
                         Copy
                     </button>
                     <button
+                        className="paste-button"
+                        onClick={pasteFromClipboard}
+                    >
+                        Paste
+                    </button>
+                    <button
                         className="clear-button"
                         onClick={handleClear}
                     >
@@ -296,8 +344,8 @@ function App() {
                     <HighlightedTextarea
                         value={britishText}
                         onChange={updateBritishText}
-                        placeholder="Enter British English text here..."
-                        dictionary={britishToAmericanDict}
+                        placeholder="English with less Zs will appear here..."
+                        dictionary={{}}
                         normaliseSmartQuotes={normaliseSmartQuotes}
                         smartQuotesMap={smartQuotesMap}
                         highlightAmericanWords={true} // Explicitly tell the component to highlight American words

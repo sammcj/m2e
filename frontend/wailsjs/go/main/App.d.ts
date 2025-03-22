@@ -6,13 +6,9 @@ export function ClearCurrentFile():Promise<void>;
 
 export function ConvertFileToEnglish(arg1:string):Promise<void>;
 
-export function ConvertToAmerican(arg1:string,arg2:boolean):Promise<string>;
-
 export function ConvertToBritish(arg1:string,arg2:boolean):Promise<string>;
 
 export function GetAmericanToBritishDictionary():Promise<main.Dictionary>;
-
-export function GetBritishToAmericanDictionary():Promise<main.Dictionary>;
 
 export function GetCurrentFilePath():Promise<string>;
 
