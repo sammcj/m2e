@@ -49,7 +49,7 @@ var SmartQuotesMap = map[string]string{
 	"\u2018": "'",  // Left single quote to normal single quote
 	"\u2019": "'",  // Right single quote to normal single quote
 	"\u2013": "-",  // En-dash to hyphen
-	"\u2014": "-", // Em-dash to hyphen
+	"\u2014": "-",  // Em-dash to hyphen
 }
 
 // NewConverter creates a new Converter instance
@@ -66,6 +66,12 @@ func NewConverter() (*Converter, error) {
 
 // ConvertToBritish converts American English text to British English
 func (c *Converter) ConvertToBritish(text string, normaliseSmartQuotes bool) string {
+	// Use code-aware processing for all text
+	return c.ProcessCodeAware(text, normaliseSmartQuotes)
+}
+
+// ConvertToBritishSimple converts text without code-awareness (for internal use)
+func (c *Converter) ConvertToBritishSimple(text string, normaliseSmartQuotes bool) string {
 	// First normalise smart quotes if needed
 	processedText := text
 	if normaliseSmartQuotes {
@@ -77,7 +83,6 @@ func (c *Converter) ConvertToBritish(text string, normaliseSmartQuotes bool) str
 	return result
 }
 
-
 // GetAmericanToBritishDictionary returns the American to British dictionary
 func (c *Converter) GetAmericanToBritishDictionary() map[string]string {
 	if c.dict == nil {
@@ -85,7 +90,6 @@ func (c *Converter) GetAmericanToBritishDictionary() map[string]string {
 	}
 	return c.dict.AmericanToBritish
 }
-
 
 // NormaliseSmartQuotes converts smart quotes and em-dashes to their normal equivalents
 func (c *Converter) normaliseSmartQuotes(text string) string {
@@ -258,7 +262,7 @@ func (c *Converter) convert(text string, dict map[string]string) string {
 						for end := start + 2; end <= len(word); end++ {
 							if end < len(word) && word[end] == '\'' {
 								// Found a potential word surrounded by single quotes
-								innerWord := word[start+1:end]
+								innerWord := word[start+1 : end]
 								if replacement, ok := dict[strings.ToLower(innerWord)]; ok {
 									// Preserve the original case
 									if isCapitalized(innerWord) {
@@ -292,7 +296,7 @@ func (c *Converter) convert(text string, dict map[string]string) string {
 						if inQuote {
 							// End of a quoted section
 							// Extract the word, but also handle the case where there's a comma inside the quotes
-							quotedText := word[startIndex+1:i]
+							quotedText := word[startIndex+1 : i]
 
 							// Check if the quoted text has a comma
 							commaIndex := strings.LastIndex(quotedText, ",")

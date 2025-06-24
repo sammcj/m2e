@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -89,11 +88,10 @@ func (a *App) ConvertToBritish(text string, normaliseSmartQuotes bool) string {
 	return a.converter.ConvertToBritish(text, normaliseSmartQuotes)
 }
 
-
 // ConvertFileToEnglish converts a file's content from American to British English and saves it back
 func (a *App) ConvertFileToEnglish(filePath string) error {
 	// Read the file
-	content, err := ioutil.ReadFile(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("error reading file: %w", err)
 	}
@@ -102,7 +100,7 @@ func (a *App) ConvertFileToEnglish(filePath string) error {
 	convertedContent := a.ConvertToBritish(string(content), true)
 
 	// Write the converted content back to the file
-	err = ioutil.WriteFile(filePath, []byte(convertedContent), 0644)
+	err = os.WriteFile(filePath, []byte(convertedContent), 0644)
 	if err != nil {
 		return fmt.Errorf("error writing file: %w", err)
 	}
@@ -116,7 +114,7 @@ func (a *App) HandleDroppedFile(filePath string) (string, error) {
 	a.filePath = filePath
 
 	// Read the file
-	content, err := ioutil.ReadFile(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return "", fmt.Errorf("error reading file: %w", err)
 	}
@@ -132,7 +130,7 @@ func (a *App) SaveConvertedFile(content string) error {
 	}
 
 	// Write the content back to the file
-	err := ioutil.WriteFile(a.filePath, []byte(content), 0644)
+	err := os.WriteFile(a.filePath, []byte(content), 0644)
 	if err != nil {
 		return fmt.Errorf("error writing file: %w", err)
 	}
@@ -160,7 +158,6 @@ func (a *App) GetAmericanToBritishDictionary() Dictionary {
 	}
 	return a.converter.GetAmericanToBritishDictionary()
 }
-
 
 // HandleService processes text from the macOS service menu
 func (a *App) HandleService(pboard string, userData string) string {

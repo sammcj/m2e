@@ -5,3 +5,5 @@
 **/.log
 **/.tmp
 build/bin/**
+coverage.html
+coverage.out

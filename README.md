@@ -8,7 +8,13 @@ A modern, lightweight application for converting text from American to Internati
 - Fast and responsive and minimalist interface
 - Native desktop application for macOS
 - Also gets rid of those pesky "smart" quotes and em-dashes that break everything
+- CLI support for file conversion
+- Code-aware conversion that preserves code syntax while converting comments (BETA)
 - macOS Services integration (WIP)
+
+Coming soon:
+- API for programmatic access to conversion functionality
+- MCP (~~Murican Conversion Protocol~~ Model Context Protocol) for integration with AI / Agents
 
 ![smaller cars please](screenshots/app-screenshot.png)
 
@@ -33,7 +39,7 @@ Note: There is a known issue with typing directly in the freedom text box, I'll 
 
 ### Prerequisites
 
-- Go 1.23 or later
+- Go 1.24 or later
 - Node.js 22 or later
 - Wails CLI v2.10.1 or later
 
@@ -58,6 +64,18 @@ cd murican-to-english
 wails dev
 ```
 
+### Development Commands
+
+The project includes a Makefile for common development tasks:
+
+```bash
+make          # Run lint, test, and build (default)
+make lint     # Run linter and format check
+make test     # Run all tests
+make build    # Build the application
+make clean    # Clean build artifacts
+```
+
 ### Development Mode
 
 To run the application in development mode:
@@ -73,6 +91,8 @@ This will start the application with hot reloading for both frontend and backend
 To build the application for production:
 
 ```bash
+make build
+# or
 ./build-macos.sh
 ```
 
@@ -94,7 +114,13 @@ murican-to-english/
 ├── pkg/
 │   └── converter/        # Go package for conversion logic
 │       ├── converter.go  # Main conversion functionality
+│       ├── codeaware.go  # Code-aware conversion with syntax highlighting
 │       └── data/         # JSON dictionaries
+├── tests/                # Test files
+│   ├── converter_test.go # Basic conversion tests
+│   ├── codeaware_test.go # Code-aware functionality tests
+│   └── chroma_test.go    # Syntax highlighting tests
+├── Makefile              # Development automation
 ├── main.go               # Main application entry
 ├── app.go                # Application setup and binding to frontend
 └── wails.json            # Wails configuration

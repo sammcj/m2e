@@ -1,0 +1,76 @@
+.PHONY: help lint fmt test build clean all
+
+# Default target
+all: lint test build
+
+# Help target
+help:
+	@echo "Available targets:"
+	@echo "  lint   - Run linter and check formatting"
+	@echo "  fmt    - Format code with gofmt"
+	@echo "  test   - Run all tests"
+	@echo "  build  - Build the application"
+	@echo "  clean  - Clean build artifacts"
+	@echo "  all    - Run lint, test, and build (default)"
+
+# Format code with gofmt
+fmt:
+	@echo "Formatting code..."
+	gofmt -w .
+
+# Lint and check formatting
+lint: fmt
+	@echo "Running linter..."
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run; \
+	else \
+		echo "golangci-lint not found, running basic checks..."; \
+		go vet ./...; \
+		gofmt -l . | grep -v "^$$" && echo "Files not formatted properly" && exit 1 || echo "All files properly formatted"; \
+	fi
+
+# Run tests
+test:
+	@echo "Running tests..."
+	go test -v ./tests/...
+
+# Build the application
+build:
+	@echo "Building application..."
+	wails build
+
+# Clean build artifacts
+clean:
+	@echo "Cleaning build artifacts..."
+	rm -rf build/bin/
+	go clean ./...
+
+# Install development dependencies
+install-deps:
+	@echo "Installing development dependencies..."
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "Installing golangci-lint..."; \
+		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+	fi
+
+# Run tests with coverage
+test-coverage:
+	@echo "Running tests with coverage..."
+	go test -v -coverprofile=coverage.out ./tests/...
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
+# Check for security vulnerabilities
+security:
+	@echo "Checking for security vulnerabilities..."
+	@if command -v govulncheck >/dev/null 2>&1; then \
+		govulncheck ./...; \
+	else \
+		echo "govulncheck not found, installing..."; \
+		go install golang.org/x/vuln/cmd/govulncheck@latest; \
+		govulncheck ./...; \
+	fi
+
+# Run all quality checks
+quality: lint test security
+	@echo "All quality checks passed!"

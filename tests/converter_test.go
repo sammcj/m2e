@@ -1,11 +1,12 @@
-package converter
+package tests
 
 import (
+	"murican-to-english/pkg/converter"
 	"testing"
 )
 
 func TestConvertToBritish(t *testing.T) {
-	converter, err := NewConverter()
+	conv, err := converter.NewConverter()
 	if err != nil {
 		t.Fatalf("Failed to create converter: %v", err)
 	}
@@ -54,7 +55,7 @@ func TestConvertToBritish(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := converter.ConvertToBritish(tt.input, false)
+			result := conv.ConvertToBritish(tt.input, false)
 			if result != tt.expected {
 				t.Errorf("ConvertToBritish(%q) = %q, expected %q", tt.input, result, tt.expected)
 			}
@@ -63,7 +64,7 @@ func TestConvertToBritish(t *testing.T) {
 }
 
 func TestNormaliseSmartQuotes(t *testing.T) {
-	converter, err := NewConverter()
+	conv, err := converter.NewConverter()
 	if err != nil {
 		t.Fatalf("Failed to create converter: %v", err)
 	}
@@ -74,37 +75,38 @@ func TestNormaliseSmartQuotes(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "Smart double quotes",
-			input:    "He said \u201Chello\u201D to me",
-			expected: "He said \"hello\" to me",
+			name:     "Smart double quotes with American word",
+			input:    "He said \u201chello color\u201d to me",
+			expected: "He said \"hello colour\" to me",
 		},
 		{
-			name:     "Smart single quotes",
-			input:    "It's \u2018quoted\u2019 text",
-			expected: "It's 'quoted' text",
+			name:     "Smart single quotes with American word",
+			input:    "It\u2019s \u2018color\u2019 quoted text",
+			expected: "It's 'colour' quoted text",
 		},
 		{
-			name:     "Em-dash",
-			input:    "This is a sentence\u2014with an em-dash",
-			expected: "This is a sentence-with an em-dash",
+			name:     "Em-dash with American word",
+			input:    "This is a sentence\u2014with color\u2014an em-dash",
+			expected: "This is a sentence-with colour-an em-dash",
 		},
 		{
-			name:     "En-dash",
-			input:    "Pages 125\u2013130",
-			expected: "Pages 125-130",
+			name:     "En-dash with American word",
+			input:    "Pages 125\u2013130 about color",
+			expected: "Pages 125-130 about colour",
 		},
 		{
-			name:     "Mixed quotes and dashes",
-			input:    "\u201CHello\u201D\u2014he said\u2014\u2018how are you?\u2019",
-			expected: "\"Hello\"-he said-'how are you?'",
+			name:     "Mixed quotes and dashes with American words",
+			input:    "\u201cHello color\u201d\u2014he said\u2014\u2018how are you color?\u2019",
+			expected: "\"Hello colour\"-he said-'how are you colour?'",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := converter.normaliseSmartQuotes(tt.input)
+			// Test that smart quotes are normalized AND American words are converted
+			result := conv.ConvertToBritish(tt.input, true)
 			if result != tt.expected {
-				t.Errorf("normaliseSmartQuotes(%q) = %q, expected %q", tt.input, result, tt.expected)
+				t.Errorf("ConvertToBritish(%q, true) = %q, expected %q", tt.input, result, tt.expected)
 			}
 		})
 	}
