@@ -13,8 +13,57 @@ permissions:
   packages: write
 
 jobs:
+  build-cli-tools:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            suffix: linux-amd64
+          - goos: linux
+            goarch: arm64
+            suffix: linux-arm64
+          - goos: darwin
+            goarch: arm64
+            suffix: darwin-arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          check-latest: true
+
+      - name: Build CLI tools
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          mkdir -p build/bin
+          go build -ldflags="-s -w" -trimpath -o build/bin/murican-to-english-cli-${{ matrix.suffix }} ./cmd/cli
+          go build -ldflags="-s -w" -trimpath -o build/bin/murican-to-english-server-${{ matrix.suffix }} ./cmd/server
+          go build -ldflags="-s -w" -trimpath -o build/bin/murican-to-english-mcp-${{ matrix.suffix }} ./cmd/mcp
+
+      - name: Create CLI tools archive
+        run: |
+          cd build/bin
+          tar -czf "murican-to-english-cli-tools-${{ matrix.suffix }}.tar.gz" murican-to-english-cli-${{ matrix.suffix }} murican-to-english-server-${{ matrix.suffix }} murican-to-english-mcp-${{ matrix.suffix }}
+          cd ../..
+
+      - name: Upload CLI tools as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: murican-to-english-cli-tools-${{ matrix.suffix }}
+          path: build/bin/murican-to-english-cli-tools-${{ matrix.suffix }}.*
+          retention-days: 7
+
   build-macos:
     runs-on: macos-latest
+    needs: build-cli-tools
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -51,6 +100,16 @@ jobs:
           export MACOSX_DEPLOYMENT_TARGET=15.0
           wails build -platform darwin/arm64 -o "Murican to English" -ldflags="-s -w" -trimpath -tags "production"
 
+      - name: Build CLI tools for macOS (Apple Silicon)
+        run: |
+          export CGO_ENABLED=1
+          export GOOS=darwin
+          export GOARCH=arm64
+          export MACOSX_DEPLOYMENT_TARGET=15.0
+          go build -ldflags="-s -w" -trimpath -o build/bin/murican-to-english-cli-arm64 ./cmd/cli
+          go build -ldflags="-s -w" -trimpath -o build/bin/murican-to-english-server-arm64 ./cmd/server
+          go build -ldflags="-s -w" -trimpath -o build/bin/murican-to-english-mcp-arm64 ./cmd/mcp
+
       - name: Get version from frontend package.json
         id: version
         run: echo "version=$(node -p "require('./frontend/package.json').version")" >> $GITHUB_OUTPUT
@@ -66,17 +125,29 @@ jobs:
           git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}" --force
           git push origin "v${{ steps.version.outputs.version }}" --force
 
-      - name: Create ZIP archive
+      - name: Download all CLI tool artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: murican-to-english-cli-tools-*
+          path: cli-artifacts
+          merge-multiple: true
+
+      - name: Create ZIP archives
         run: |
           cd build/bin
-          zip -r "murican-to-english-arm64.zip" "Murican to English.app"
+          # Create app archive
+          zip -r "murican-to-english-app-arm64.zip" "Murican to English.app"
+          # Create CLI tools archive
+          zip "murican-to-english-cli-tools-arm64.zip" murican-to-english-cli-arm64 murican-to-english-server-arm64 murican-to-english-mcp-arm64
           cd ../..
 
       - name: Upload app as artifact
         uses: actions/upload-artifact@v4
         with:
           name: murican-to-english-macos-arm64
-          path: build/bin/murican-to-english-arm64.zip
+          path: |
+            build/bin/murican-to-english-app-arm64.zip
+            build/bin/murican-to-english-cli-tools-arm64.zip
           retention-days: 7
 
       - name: Create GitHub Release
@@ -86,7 +157,9 @@ jobs:
           tag_name: v${{ steps.version.outputs.version }}
           name: Release v${{ steps.version.outputs.version }}
           files: |
-            build/bin/murican-to-english-arm64.zip
+            build/bin/murican-to-english-app-arm64.zip
+            build/bin/murican-to-english-cli-tools-arm64.zip
+            cli-artifacts/*
           draft: false
           prerelease: false
           generate_release_notes: true
