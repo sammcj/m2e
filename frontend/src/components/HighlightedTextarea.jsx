@@ -16,14 +16,19 @@ function HighlightedTextarea({
     smartQuotesMap,
     highlightAmericanWords = true, // Default to true for backward compatibility
     autoFocus = false, // Add autoFocus prop with default value
-    syntaxHighlighting = true, // Enable syntax highlighting
+    syntaxHighlighting = false, // Enable syntax highlighting (controlled by parent)
     language = "auto" // Programming language for syntax highlighting
 }) {
     const [highlightedText, setHighlightedText] = useState('');
     const [showPlaceholder, setShowPlaceholder] = useState(!value);
     // Create a ref for the contenteditable div
     const contentEditableRef = useRef(null);
+    // Create a ref for the typing timer
+    const typingTimerRef = useRef(null); // For JS, this is fine; for TS, use: useRef<number | null>(null)
     // Note: We're using a regular ref in a JSX file, which TypeScript might not fully understand
+
+    // Emergency rollback flag - set to true to disable all typing fixes
+    const USE_LEGACY_HIGHLIGHTING = false;
 
     // Escape HTML special characters
     const escapeHtml = (text) => {
@@ -124,7 +129,7 @@ function HighlightedTextarea({
         }
     };
 
-    // Update highlighting whenever relevant props change
+    // Update highlighting whenever relevant props change (with debouncing for typing)
     useEffect(() => {
         if (!value) {
             setHighlightedText('');
@@ -134,14 +139,39 @@ function HighlightedTextarea({
 
         setShowPlaceholder(false);
 
-        // If syntax highlighting is enabled, use that instead of word highlighting
-        if (syntaxHighlighting) {
-            handleSyntaxHighlighting();
+        // Emergency rollback: Use legacy immediate highlighting
+        if (USE_LEGACY_HIGHLIGHTING) {
+            if (syntaxHighlighting) {
+                handleSyntaxHighlighting();
+                return;
+            }
+            handleWordHighlighting();
             return;
         }
 
-        // Original word and quote highlighting logic
-        handleWordHighlighting();
+        // Clear existing timer
+        if (typingTimerRef.current) {
+            clearTimeout(typingTimerRef.current);
+        }
+
+        // Set new debounced timer - only update highlights after user stops typing
+        const timer = setTimeout(() => {
+            if (syntaxHighlighting) {
+                handleSyntaxHighlighting();
+            } else {
+                handleWordHighlighting();
+            }
+        }, 500); // 500ms delay
+
+        typingTimerRef.current = timer;
+
+        // Cleanup function to clear timer on unmount or dependency change
+        return () => {
+            if (typingTimerRef.current) {
+                clearTimeout(typingTimerRef.current);
+                typingTimerRef.current = null;
+            }
+        };
     }, [value, dictionary, normaliseSmartQuotes, smartQuotesMap, highlightAmericanWords, syntaxHighlighting, language]);
 
     // Handle syntax highlighting using Chroma

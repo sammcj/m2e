@@ -7,7 +7,7 @@ function App() {
     const [freedomText, setAmericanText] = useState('');
     const [britishText, setBritishText] = useState('');
     const [normaliseSmartQuotes, setNormaliseSmartQuotes] = useState(true);
-    const [syntaxHighlighting, setSyntaxHighlighting] = useState(false);
+    const [syntaxHighlighting, setSyntaxHighlighting] = useState(true);
     const [currentFilePath, setCurrentFilePath] = useState('');
     const [dragActive, setDragActive] = useState(false);
     const [fileError, setFileError] = useState('');
