@@ -356,22 +356,13 @@ func (c *Converter) processInlineCode(text string, normaliseSmartQuotes bool) st
 	// Use regex to find and preserve inline code while converting surrounding text
 	inlineRegex := regexp.MustCompile("`([^`\n]+)`")
 
-	parts := inlineRegex.Split(text, -1)
-	matches := inlineRegex.FindAllString(text, -1)
-
-	var result strings.Builder
-	for i, part := range parts {
-		// Convert the text part
-		converted := c.ConvertToBritishSimple(part, normaliseSmartQuotes)
-		result.WriteString(converted)
-
-		// Add back the inline code (unchanged)
-		if i < len(matches) {
-			result.WriteString(matches[i])
-		}
-	}
-
-	return result.String()
+	return inlineRegex.ReplaceAllStringFunc(text, func(match string) string {
+		// Get the content of the inline code block
+		content := match[1 : len(match)-1]
+		// Convert only the comments within the inline code
+		convertedContent := c.convertCommentsInCode(content, "", normaliseSmartQuotes)
+		return "`" + convertedContent + "`"
+	})
 }
 
 // TextPart represents a part of text that can be code or regular text

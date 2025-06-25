@@ -16,8 +16,6 @@ function App() {
     const [isTranslating, setIsTranslating] = useState(false); // Flag to prevent infinite loops
     const translationTimerRef = useRef(null); // For JS, this is fine; for TS, use: useRef<number | null>(null)
     const [showEagle, setShowEagle] = useState(false); // State to control eagle animation
-    const [isFocusLocked, setIsFocusLocked] = useState(false);
-    const activeElementRef = useRef(null);
 
     const appContainerRef = useRef(null);
     // Create a ref for the eagle element
@@ -63,10 +61,6 @@ function App() {
         const newText = e.target.value;
         setAmericanText(newText);
 
-        // Lock focus on the American textarea
-        setIsFocusLocked(true);
-        activeElementRef.current = document.activeElement;
-
         // Clear existing timer
         if (translationTimerRef.current) {
             clearTimeout(translationTimerRef.current);
@@ -79,15 +73,9 @@ function App() {
                 ConvertToBritish(newText, normaliseSmartQuotes).then((result) => {
                     setBritishText(result);
                     setIsTranslating(false);
-                    // Restore focus after translation
-                    if (isFocusLocked && activeElementRef.current) {
-                        activeElementRef.current.focus();
-                    }
-                    setIsFocusLocked(false);
                 });
             } else {
                 setBritishText('');
-                setIsFocusLocked(false);
             }
         }, 500); // 500ms delay
 

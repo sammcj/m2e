@@ -1,50 +1,56 @@
-/* Container for the editable div */
 .highlighted-textarea-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  overflow: hidden; /* Ensure content doesn't escape container */
+    position: relative;
+    width: 100%;
+    height: 100%;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
 }
 
-/* Editable div that replaces the textarea */
-.editable-content {
-  width: 100%;
-  height: 100%;
-  padding: 10px;
-  box-sizing: border-box;
-  border: none;
-  outline: none;
-  overflow: auto;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-  text-align: left; /* Ensure text is left-aligned */
-  max-height: 100%; /* Ensure content doesn't exceed container */
-  overflow-y: auto; /* Enable vertical scrolling when needed */
-  overflow-x: hidden; /* Prevent horizontal overflow */
+.highlighted-textarea-backdrop,
+.highlighted-textarea-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    text-align: left;
 }
 
-/* Highlight styles */
+.highlighted-textarea-input {
+    background-color: transparent;
+    color: transparent;
+    caret-color: black;
+    z-index: 1;
+    resize: none;
+}
+
+.highlighted-textarea-backdrop {
+    z-index: 0;
+    background-color: #fff;
+}
+
+.highlights {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: black;
+}
+
 .highlight-word {
-  background-color: rgba(255, 165, 0, 0.5);
-  border-radius: 2px;
-  text-align: inherit; /* Inherit text alignment from parent */
+    background-color: rgba(255, 165, 0, 0.5);
+    border-radius: 2px;
 }
 
 .highlight-quote {
-  background-color: rgba(0, 128, 255, 0.5);
-  border-radius: 2px;
-  text-align: inherit; /* Inherit text alignment from parent */
-}
-
-/* Placeholder style */
-.placeholder {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  color: #999;
-  pointer-events: none;
-  text-align: left; /* Ensure placeholder is left-aligned */
+    background-color: rgba(0, 128, 255, 0.5);
+    border-radius: 2px;
 }
