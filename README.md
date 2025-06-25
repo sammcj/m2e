@@ -9,7 +9,7 @@ A modern, lightweight application for converting text from American to Internati
 - Native desktop application for macOS
 - Also gets rid of those pesky "smart" quotes and em-dashes that break everything
 - CLI support for file conversion
-- MCP (Model Context Protocol) server for use with AI agents and tools
+- MCP (~~Muricon Conversion~~ Model Context Protocol) server for use with AI agents and tools
 - Code-aware conversion that preserves code syntax while converting comments (BETA)
 - macOS Services integration (WIP)
 
