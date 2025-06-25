@@ -16,7 +16,7 @@ function HighlightedTextarea({
     smartQuotesMap,
     highlightAmericanWords = true, // Default to true for backward compatibility
     autoFocus = false, // Add autoFocus prop with default value
-    syntaxHighlighting = false, // Enable syntax highlighting
+    syntaxHighlighting = true, // Enable syntax highlighting
     language = "auto" // Programming language for syntax highlighting
 }) {
     const [highlightedText, setHighlightedText] = useState('');
