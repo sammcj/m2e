@@ -9,12 +9,146 @@ A modern, lightweight application for converting text from American to Internati
 - Native desktop application for macOS
 - Also gets rid of those pesky "smart" quotes and em-dashes that break everything
 - CLI support for file conversion
+- MCP (Model Context Protocol) server for use with AI agents and tools
 - Code-aware conversion that preserves code syntax while converting comments (BETA)
 - macOS Services integration (WIP)
 
-Coming soon:
-- API for programmatic access to conversion functionality
-- MCP (~~Murican Conversion Protocol~~ Model Context Protocol) for integration with AI / Agents
+---
+
+- [Freedom Translator - 'Murican to English Converter](#freedom-translator---murican-to-english-converter)
+  - [Features](#features)
+    - [CLI Usage](#cli-usage)
+    - [API Usage](#api-usage)
+    - [MCP Server Usage](#mcp-server-usage)
+  - [Installation](#installation)
+  - [Technology Stack](#technology-stack)
+  - [Development](#development)
+    - [Prerequisites](#prerequisites)
+    - [Setup](#setup)
+    - [Development Commands](#development-commands)
+    - [Development Mode](#development-mode)
+    - [Building](#building)
+  - [Project Structure](#project-structure)
+  - [How It Works](#how-it-works)
+    - [macOS Services Integration](#macos-services-integration)
+  - [License](#license)
+
+### CLI Usage
+
+The application can be run from the command line to convert files or piped text.
+
+**Build the CLI:**
+```bash
+make build-cli
+```
+
+**Convert a file:**
+```bash
+./build/bin/murican-to-english-cli -input yourfile.txt -output converted.txt
+```
+
+**Convert piped text:**
+```bash
+echo "I love color and flavor." | ./build/bin/murican-to-english-cli
+```
+
+### API Usage
+
+The application can be run as an API server to provide conversion functionality programmatically.
+
+**Build the server:**
+```bash
+make build-server
+```
+
+**Run the server:**
+```bash
+./build/bin/murican-to-english-server
+```
+The server will start on port 8080 by default. You can change this by setting the `API_PORT` environment variable.
+
+**Endpoints:**
+
+- `POST /api/v1/convert`
+
+  Converts text from American to British English.
+
+  **Request Body:**
+  ```json
+  {
+    "text": "I love color and flavor."
+  }
+  ```
+
+  **Response:**
+  ```json
+  {
+    "text": "I love colour and flavour."
+  }
+  ```
+
+- `GET /api/v1/health`
+
+  Returns a 200 OK status if the server is running.
+
+### MCP Server Usage
+
+The application can be run as an MCP (Model Context Protocol) server to provide conversion functionality to AI agents and tools.
+
+**Build the MCP server:**
+```bash
+make build-mcp
+```
+
+**Run the MCP server in Streamable HTTP mode:**
+```bash
+./build/bin/murican-to-english-mcp
+```
+The server will serve up on /mcp and start on port 8081 by default. You can change this by setting the `MCP_PORT` environment variable.
+
+MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "murican-to-english": {
+      "timeout": 60,
+      "type": "streamableHttp",
+      "url": "http://localhost:8081/mcp",
+      "autoApprove": [
+        "convert_text"
+      ]
+    }
+  }
+}
+```
+
+**Run the MCP server in STDIO mode:**
+```bash
+MCP_TRANSPORT=stdio ./build/bin/murican-to-english-mcp
+```
+
+**Available Tools:**
+- `convert_text`: Converts American English text to British English
+  - Parameters: `text` (string, required) - The text to convert
+
+**Available Resources:**
+- `dictionary://american-to-british`: Access to the American-to-British dictionary mapping
+
+**Example MCP client usage:**
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "convert_text",
+    "arguments": {
+      "text": "I love color and flavor."
+    }
+  },
+  "id": 1
+}
+```
 
 ![smaller cars please](screenshots/app-screenshot.png)
 

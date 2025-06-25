@@ -39,6 +39,21 @@ build:
 	@echo "Building application..."
 	wails build
 
+# Build the CLI application
+build-cli:
+	@echo "Building CLI application..."
+	go build -o build/bin/murican-to-english-cli ./cmd/cli
+
+# Build the server application
+build-server:
+	@echo "Building server application..."
+	go build -o build/bin/murican-to-english-server ./cmd/server
+
+# Build the MCP server application
+build-mcp:
+	@echo "Building MCP server application..."
+	go build -o build/bin/murican-to-english-mcp ./cmd/mcp
+
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
