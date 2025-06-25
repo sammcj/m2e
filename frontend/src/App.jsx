@@ -14,7 +14,10 @@ function App() {
     const [americanToBritishDict, setAmericanToBritishDict] = useState({});
     const [smartQuotesMap, setSmartQuotesMap] = useState({});
     const [isTranslating, setIsTranslating] = useState(false); // Flag to prevent infinite loops
+    const translationTimerRef = useRef(null); // For JS, this is fine; for TS, use: useRef<number | null>(null)
     const [showEagle, setShowEagle] = useState(false); // State to control eagle animation
+    const [isFocusLocked, setIsFocusLocked] = useState(false);
+    const activeElementRef = useRef(null);
 
     const appContainerRef = useRef(null);
     // Create a ref for the eagle element
@@ -60,19 +63,35 @@ function App() {
         const newText = e.target.value;
         setAmericanText(newText);
 
-        // Prevent infinite loops by checking if we're already translating
-        if (isTranslating) return;
+        // Lock focus on the American textarea
+        setIsFocusLocked(true);
+        activeElementRef.current = document.activeElement;
 
-        // Automatically translate to British English when text changes
-        if (newText.trim()) {
-            setIsTranslating(true);
-            ConvertToBritish(newText, normaliseSmartQuotes).then((result) => {
-                setBritishText(result);
-                setIsTranslating(false);
-            });
-        } else {
-            setBritishText('');
+        // Clear existing timer
+        if (translationTimerRef.current) {
+            clearTimeout(translationTimerRef.current);
         }
+
+        // Set new debounced timer - only translate after user stops typing
+        const timer = setTimeout(() => {
+            if (newText.trim()) {
+                setIsTranslating(true);
+                ConvertToBritish(newText, normaliseSmartQuotes).then((result) => {
+                    setBritishText(result);
+                    setIsTranslating(false);
+                    // Restore focus after translation
+                    if (isFocusLocked && activeElementRef.current) {
+                        activeElementRef.current.focus();
+                    }
+                    setIsFocusLocked(false);
+                });
+            } else {
+                setBritishText('');
+                setIsFocusLocked(false);
+            }
+        }, 500); // 500ms delay
+
+        translationTimerRef.current = timer;
     };
 
     // Update the British English text area
@@ -385,6 +404,8 @@ function App() {
                     <HighlightedTextarea
                         value={freedomText}
                         onChange={updateAmericanText}
+                        onFocus={() => console.log('American textarea focused')}
+                        onBlur={() => console.log('American textarea blurred')}
                         placeholder="Enter freedom text here or drop a text file..."
                         dictionary={syntaxHighlighting ? {} : americanToBritishDict}
                         normaliseSmartQuotes={normaliseSmartQuotes}
@@ -400,6 +421,8 @@ function App() {
                     <HighlightedTextarea
                         value={britishText}
                         onChange={updateBritishText}
+                        onFocus={() => console.log('British textarea focused')}
+                        onBlur={() => console.log('British textarea blurred')}
                         placeholder="English with less Zs will appear here..."
                         dictionary={{}}
                         normaliseSmartQuotes={normaliseSmartQuotes}

@@ -10,6 +10,8 @@ import { GetSyntaxHighlightedHTML, DetectLanguage } from '../../wailsjs/go/main/
 function HighlightedTextarea({
     value,
     onChange,
+    onFocus,
+    onBlur,
     placeholder,
     dictionary,
     normaliseSmartQuotes,
@@ -129,6 +131,98 @@ function HighlightedTextarea({
         }
     };
 
+    // Helper function to save cursor position before DOM updates
+    const saveCursorPosition = () => {
+        const selection = window.getSelection();
+        const container = contentEditableRef.current;
+        if (!selection || !selection.rangeCount || !container) {
+            return null;
+        }
+
+        try {
+            const range = selection.getRangeAt(0);
+
+            // Calculate the text offset from the start of the contenteditable
+            let textOffset = 0;
+            const walker = document.createTreeWalker(
+                container,
+                NodeFilter.SHOW_TEXT
+            );
+
+            let node;
+            while (node = walker.nextNode()) {
+                if (node === range.startContainer) {
+                    textOffset += range.startOffset;
+                    break;
+                } else {
+                    textOffset += (node.textContent || '').length;
+                }
+            }
+
+            return {
+                textOffset,
+                scrollTop: container.scrollTop,
+                scrollLeft: container.scrollLeft,
+            };
+        } catch (error) {
+            console.warn('Error saving cursor position:', error);
+            return null;
+        }
+    };
+
+    // Helper function to restore cursor position after DOM updates
+    const restoreCursorPosition = (position) => {
+        if (!position || !contentEditableRef.current) {
+            return;
+        }
+
+        const { textOffset, scrollTop, scrollLeft } = position;
+        const container = contentEditableRef.current;
+
+        try {
+            const walker = document.createTreeWalker(
+                container,
+                NodeFilter.SHOW_TEXT
+            );
+
+            let currentOffset = 0;
+            let node;
+
+            while (node = walker.nextNode()) {
+                const nodeLength = (node.textContent || '').length;
+
+                if (currentOffset + nodeLength >= textOffset) {
+                    // Found the target node
+                    const selection = window.getSelection();
+                    if (!selection) return;
+
+                    const range = document.createRange();
+                    const offsetInNode = textOffset - currentOffset;
+
+                    range.setStart(node, Math.min(offsetInNode, nodeLength));
+                    range.collapse(true);
+
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    break; // Exit loop once cursor is placed
+                }
+
+                currentOffset += nodeLength;
+            }
+
+            // Restore scroll position
+            if (scrollTop !== undefined) {
+                container.scrollTop = scrollTop;
+            }
+            if (scrollLeft !== undefined) {
+                container.scrollLeft = scrollLeft;
+            }
+
+        } catch (error) {
+            console.warn('Error restoring cursor position:', error);
+        }
+    };
+
     // Update highlighting whenever relevant props change (with debouncing for typing)
     useEffect(() => {
         if (!value) {
@@ -156,12 +250,24 @@ function HighlightedTextarea({
 
         // Set new debounced timer - only update highlights after user stops typing
         const timer = setTimeout(() => {
+            // Save cursor position before highlighting update
+            const savedCursorPosition = saveCursorPosition();
+
             if (syntaxHighlighting) {
-                handleSyntaxHighlighting();
+                handleSyntaxHighlighting().then(() => {
+                    // Restore cursor position after DOM update
+                    setTimeout(() => {
+                        restoreCursorPosition(savedCursorPosition);
+                    }, 0);
+                });
             } else {
                 handleWordHighlighting();
+                // Restore cursor position after DOM update
+                setTimeout(() => {
+                    restoreCursorPosition(savedCursorPosition);
+                }, 0);
             }
-        }, 500); // 500ms delay
+        }, 500); // 500ms delay as user prefers
 
         typingTimerRef.current = timer;
 
@@ -400,6 +506,8 @@ function HighlightedTextarea({
                 onInput={handleInput}
                 onPaste={handlePaste}
                 onKeyDown={handleKeyDown}
+                onFocus={onFocus}
+                onBlur={onBlur}
                 dangerouslySetInnerHTML={{ __html: highlightedText }}
             />
             {showPlaceholder && placeholder && (
