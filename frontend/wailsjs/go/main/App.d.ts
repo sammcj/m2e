@@ -8,9 +8,13 @@ export function ConvertFileToEnglish(arg1:string):Promise<void>;
 
 export function ConvertToBritish(arg1:string,arg2:boolean):Promise<string>;
 
+export function DetectLanguage(arg1:string):Promise<string>;
+
 export function GetAmericanToBritishDictionary():Promise<main.Dictionary>;
 
 export function GetCurrentFilePath():Promise<string>;
+
+export function GetSyntaxHighlightedHTML(arg1:string,arg2:string):Promise<string>;
 
 export function HandleDroppedFile(arg1:string):Promise<string>;
 

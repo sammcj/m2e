@@ -8,6 +8,10 @@ import (
 
 	"murican-to-english/pkg/converter"
 
+	"github.com/alecthomas/chroma/v2"
+	"github.com/alecthomas/chroma/v2/formatters/html"
+	"github.com/alecthomas/chroma/v2/lexers"
+	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -192,6 +196,78 @@ func (a *App) HandleFileService(fileURL string) error {
 
 	// Convert the file
 	return a.ConvertFileToEnglish(filePath)
+}
+
+// GetSyntaxHighlightedHTML generates syntax-highlighted HTML for the given code
+func (a *App) GetSyntaxHighlightedHTML(code, language string) (string, error) {
+	if code == "" {
+		return "", nil
+	}
+
+	var lexer chroma.Lexer
+
+	// Get lexer by language name or detect automatically
+	if language != "" && language != "auto" {
+		lexer = lexers.Get(language)
+	}
+
+	// If no lexer found or auto-detection requested, analyze the code
+	if lexer == nil {
+		lexer = lexers.Analyse(code)
+	}
+
+	// Fallback to plaintext if no lexer found
+	if lexer == nil {
+		lexer = lexers.Fallback
+	}
+
+	// Configure the lexer with a sensible configuration
+	lexer = chroma.Coalesce(lexer)
+
+	// Create HTML formatter with CSS classes
+	formatter := html.New(
+		html.WithClasses(true),
+		html.WithLineNumbers(false),
+		html.TabWidth(4),
+	)
+
+	// Get a style (using github style as default)
+	style := styles.Get("github")
+	if style == nil {
+		style = styles.Fallback
+	}
+
+	// Tokenize the code
+	iterator, err := lexer.Tokenise(nil, code)
+	if err != nil {
+		return "", fmt.Errorf("failed to tokenize code: %w", err)
+	}
+
+	// Format to HTML
+	var buf strings.Builder
+	err = formatter.Format(&buf, style, iterator)
+	if err != nil {
+		return "", fmt.Errorf("failed to format code: %w", err)
+	}
+
+	return buf.String(), nil
+}
+
+// DetectLanguage attempts to detect the programming language of the given code
+func (a *App) DetectLanguage(code string) string {
+	if code == "" {
+		return "text"
+	}
+
+	lexer := lexers.Analyse(code)
+	if lexer != nil {
+		config := lexer.Config()
+		if config != nil {
+			return strings.ToLower(config.Name)
+		}
+	}
+
+	return "text"
 }
 
 // shutdown is called when the app is closing

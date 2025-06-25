@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './HighlightedTextarea.css';
+import './SyntaxHighlighting.css';
+import { GetSyntaxHighlightedHTML, DetectLanguage } from '../../wailsjs/go/main/App';
 
 /**
  * A completely rebuilt textarea component that highlights American words and smart quotes
@@ -13,7 +15,9 @@ function HighlightedTextarea({
     normaliseSmartQuotes,
     smartQuotesMap,
     highlightAmericanWords = true, // Default to true for backward compatibility
-    autoFocus = false // Add autoFocus prop with default value
+    autoFocus = false, // Add autoFocus prop with default value
+    syntaxHighlighting = false, // Enable syntax highlighting
+    language = "auto" // Programming language for syntax highlighting
 }) {
     const [highlightedText, setHighlightedText] = useState('');
     const [showPlaceholder, setShowPlaceholder] = useState(!value);
@@ -130,6 +134,49 @@ function HighlightedTextarea({
 
         setShowPlaceholder(false);
 
+        // If syntax highlighting is enabled, use that instead of word highlighting
+        if (syntaxHighlighting) {
+            handleSyntaxHighlighting();
+            return;
+        }
+
+        // Original word and quote highlighting logic
+        handleWordHighlighting();
+    }, [value, dictionary, normaliseSmartQuotes, smartQuotesMap, highlightAmericanWords, syntaxHighlighting, language]);
+
+    // Handle syntax highlighting using Chroma
+    const handleSyntaxHighlighting = async () => {
+        try {
+            let detectedLanguage = language;
+
+            // Auto-detect language if needed
+            if (language === "auto") {
+                try {
+                    detectedLanguage = await DetectLanguage(value);
+                } catch (err) {
+                    console.warn('Language detection failed:', err);
+                    detectedLanguage = "text";
+                }
+            }
+
+            // Get syntax highlighted HTML from backend
+            try {
+                const syntaxHTML = await GetSyntaxHighlightedHTML(value, detectedLanguage);
+                setHighlightedText(syntaxHTML);
+                return;
+            } catch (err) {
+                console.warn('Syntax highlighting failed:', err);
+            }
+        } catch (err) {
+            console.warn('Syntax highlighting error:', err);
+        }
+
+        // Fallback to escaped HTML if syntax highlighting fails
+        setHighlightedText(escapeHtml(value));
+    };
+
+    // Handle word and quote highlighting (original logic)
+    const handleWordHighlighting = () => {
         // Collect all items to highlight
         const highlightItems = [];
 
@@ -280,7 +327,7 @@ function HighlightedTextarea({
         }
 
         setHighlightedText(result);
-    }, [value, dictionary, normaliseSmartQuotes, smartQuotesMap, highlightAmericanWords]);
+    };
 
     // We don't need to sync the contenteditable div with the value prop
     // because we're using dangerouslySetInnerHTML to set the content

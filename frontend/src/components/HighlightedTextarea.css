@@ -3,6 +3,7 @@
   width: 100%;
   height: 100%;
   position: relative;
+  overflow: hidden; /* Ensure content doesn't escape container */
 }
 
 /* Editable div that replaces the textarea */
@@ -20,6 +21,9 @@
   font-size: inherit;
   line-height: inherit;
   text-align: left; /* Ensure text is left-aligned */
+  max-height: 100%; /* Ensure content doesn't exceed container */
+  overflow-y: auto; /* Enable vertical scrolling when needed */
+  overflow-x: hidden; /* Prevent horizontal overflow */
 }
 
 /* Highlight styles */

@@ -7,6 +7,7 @@ function App() {
     const [freedomText, setAmericanText] = useState('');
     const [britishText, setBritishText] = useState('');
     const [normaliseSmartQuotes, setNormaliseSmartQuotes] = useState(true);
+    const [syntaxHighlighting, setSyntaxHighlighting] = useState(false);
     const [currentFilePath, setCurrentFilePath] = useState('');
     const [dragActive, setDragActive] = useState(false);
     const [fileError, setFileError] = useState('');
@@ -358,17 +359,40 @@ function App() {
                 </div>
             </div>
 
+            <div className="settings-row">
+                <div className="settings-group">
+                    <label className="checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={normaliseSmartQuotes}
+                            onChange={toggleNormaliseSmartQuotes}
+                        />
+                        Normalise Smart Quotes
+                    </label>
+                    <label className="checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={syntaxHighlighting}
+                            onChange={(e) => setSyntaxHighlighting(e.target.checked)}
+                        />
+                        Code Syntax Highlighting
+                    </label>
+                </div>
+            </div>
+
             <div className="converter-container">
                 <div className="text-column">
                     <HighlightedTextarea
                         value={freedomText}
                         onChange={updateAmericanText}
                         placeholder="Enter freedom text here or drop a text file..."
-                        dictionary={americanToBritishDict}
+                        dictionary={syntaxHighlighting ? {} : americanToBritishDict}
                         normaliseSmartQuotes={normaliseSmartQuotes}
                         smartQuotesMap={smartQuotesMap}
-                        highlightAmericanWords={true} // Explicitly tell the component to highlight American words
+                        highlightAmericanWords={!syntaxHighlighting} // Only highlight American words if not using syntax highlighting
                         autoFocus={true} // Auto-focus this field when the app launches
+                        syntaxHighlighting={syntaxHighlighting}
+                        language="auto"
                     />
                 </div>
 
@@ -380,7 +404,9 @@ function App() {
                         dictionary={{}}
                         normaliseSmartQuotes={normaliseSmartQuotes}
                         smartQuotesMap={smartQuotesMap}
-                        highlightAmericanWords={true} // Explicitly tell the component to highlight American words
+                        highlightAmericanWords={!syntaxHighlighting} // Only highlight American words if not using syntax highlighting
+                        syntaxHighlighting={syntaxHighlighting}
+                        language="auto"
                     />
                 </div>
             </div>

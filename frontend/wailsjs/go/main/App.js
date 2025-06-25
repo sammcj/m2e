@@ -14,12 +14,20 @@ export function ConvertToBritish(arg1, arg2) {
   return window['go']['main']['App']['ConvertToBritish'](arg1, arg2);
 }
 
+export function DetectLanguage(arg1) {
+  return window['go']['main']['App']['DetectLanguage'](arg1);
+}
+
 export function GetAmericanToBritishDictionary() {
   return window['go']['main']['App']['GetAmericanToBritishDictionary']();
 }
 
 export function GetCurrentFilePath() {
   return window['go']['main']['App']['GetCurrentFilePath']();
+}
+
+export function GetSyntaxHighlightedHTML(arg1, arg2) {
+  return window['go']['main']['App']['GetSyntaxHighlightedHTML'](arg1, arg2);
 }
 
 export function HandleDroppedFile(arg1) {
