@@ -1,4 +1,4 @@
-.PHONY: help lint fmt test build clean all
+.PHONY: help lint fmt test build build-wails build-cli build-server build-mcp clean all
 
 # Default target
 all: lint test build
@@ -6,12 +6,16 @@ all: lint test build
 # Help target
 help:
 	@echo "Available targets:"
-	@echo "  lint   - Run linter and check formatting"
-	@echo "  fmt    - Format code with gofmt"
-	@echo "  test   - Run all tests"
-	@echo "  build  - Build the application"
-	@echo "  clean  - Clean build artifacts"
-	@echo "  all    - Run lint, test, and build (default)"
+	@echo "  lint        - Run linter and check formatting"
+	@echo "  fmt         - Format code with gofmt"
+	@echo "  test        - Run all tests"
+	@echo "  build       - Build all applications (Wails app, CLI, server, MCP)"
+	@echo "  build-wails - Build the Wails application only"
+	@echo "  build-cli   - Build the CLI application only"
+	@echo "  build-server- Build the server application only"
+	@echo "  build-mcp   - Build the MCP server application only"
+	@echo "  clean       - Clean build artifacts"
+	@echo "  all         - Run lint, test, and build (default)"
 
 # Format code with gofmt
 fmt:
@@ -34,25 +38,29 @@ test:
 	@echo "Running tests..."
 	go test -v ./tests/...
 
-# Build the application
-build:
-	@echo "Building application..."
+# Build all applications
+build: build-wails build-cli build-server build-mcp
+	@echo "All applications built successfully!"
+
+# Build the Wails application
+build-wails:
+	@echo "Building Wails application..."
 	wails build
 
 # Build the CLI application
 build-cli:
 	@echo "Building CLI application..."
-	go build -o build/bin/murican-to-english-cli ./cmd/cli
+	go build -o build/bin/m2e-cli ./cmd/cli
 
 # Build the server application
 build-server:
 	@echo "Building server application..."
-	go build -o build/bin/murican-to-english-server ./cmd/server
+	go build -o build/bin/m2e-server ./cmd/server
 
 # Build the MCP server application
 build-mcp:
 	@echo "Building MCP server application..."
-	go build -o build/bin/murican-to-english-mcp ./cmd/mcp
+	go build -o build/bin/m2e-mcp ./cmd/mcp
 
 # Clean build artifacts
 clean:

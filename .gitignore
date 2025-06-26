@@ -1,9 +1,14 @@
 **/node_modules
 **/dist
-**/murican-to-english
 **/.env
 **/.log
 **/.tmp
+
+**/m2e-cli
+**/m2e-mcp
+**/m2e-server
+**/m2e.app
+
 build/bin/**
 coverage.html
 coverage.out

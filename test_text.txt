@@ -1,3 +1,30 @@
+# This is a test file with American spellings.
+
 "Freedom isn't free, but the refills sure are!" as we like to say. God bless our troops, God bless capitalism, and God bless the U-S-A, where the portions are supersized, the football ain't soccer, and "we spell 'color,' 'flavor,' 'humor,' and 'neighbor' without that commie 'u'" because "ain't nobody got time for extra letters!"
 
 I’ll defend to the death my right to use "aluminum" instead of "aluminium," "realize" instead of "realise," and to put my kids through "pediatric" not "paediatric" care — "that's the flavor of liberty, y'all!"
+
+I need to organize my favorite colors and analyze the behavior of the program.
+The center of the theater has been modernized with new technology.
+We should prioritize optimization and recognize the importance of standardization.
+
+## Testing code comments
+
+Below we should replace all Americanisations in the comments:
+
+// This function optimizes the color algorithm
+/* We need to analyze the behavior here */
+
+## Testing "real" code
+
+Below we should not replace the constant naming:
+
+const mom = "mother"
+
+## Testing code inside markdown code blocks
+
+Below we should only replace comments:
+
+```python
+const mom = "mother" // But change this mom
+```

@@ -1,6 +1,6 @@
-# Freedom Translator - 'Murican to English Converter
+# M2E - 'Murican to English Converter
 
-A modern, lightweight application for converting text from American to International English spellings.
+A lightweight application for converting text from American to International English spellings.
 
 ## Features
 
@@ -9,13 +9,13 @@ A modern, lightweight application for converting text from American to Internati
 - Native desktop application for macOS
 - Also gets rid of those pesky "smart" quotes and em-dashes that break everything
 - CLI support for file conversion
-- MCP (~~Muricon Conversion~~ Model Context Protocol) server for use with AI agents and tools
+- MCP (~~Murican Conversion Protocol~~ Model Context Protocol) server for use with AI agents and tools
 - Code-aware conversion that preserves code syntax while converting comments (BETA)
 - macOS Services integration (WIP)
 
 ---
 
-- [Freedom Translator - 'Murican to English Converter](#freedom-translator---murican-to-english-converter)
+- [M2E - 'Murican to English Converter](#m2e---murican-to-english-converter)
   - [Features](#features)
     - [CLI Usage](#cli-usage)
     - [API Usage](#api-usage)
@@ -44,12 +44,12 @@ make build-cli
 
 **Convert a file:**
 ```bash
-./build/bin/murican-to-english-cli -input yourfile.txt -output converted.txt
+./build/bin/m2e-cli -input yourfile.txt -output converted.txt
 ```
 
 **Convert piped text:**
 ```bash
-echo "I love color and flavor." | ./build/bin/murican-to-english-cli
+echo "I love color and flavor." | ./build/bin/m2e-cli
 ```
 
 ### API Usage
@@ -63,7 +63,7 @@ make build-server
 
 **Run the server:**
 ```bash
-./build/bin/murican-to-english-server
+./build/bin/m2e-server
 ```
 The server will start on port 8080 by default. You can change this by setting the `API_PORT` environment variable.
 
@@ -102,7 +102,7 @@ make build-mcp
 
 **Run the MCP server in Streamable HTTP mode:**
 ```bash
-./build/bin/murican-to-english-mcp
+./build/bin/m2e-mcp
 ```
 The server will serve up on /mcp and start on port 8081 by default. You can change this by setting the `MCP_PORT` environment variable.
 
@@ -111,7 +111,7 @@ MCP client configuration:
 ```json
 {
   "mcpServers": {
-    "murican-to-english": {
+    "m2e": {
       "timeout": 60,
       "type": "streamableHttp",
       "url": "http://localhost:8081/mcp",
@@ -125,17 +125,22 @@ MCP client configuration:
 
 **Run the MCP server in STDIO mode:**
 ```bash
-MCP_TRANSPORT=stdio ./build/bin/murican-to-english-mcp
+MCP_TRANSPORT=stdio ./build/bin/m2e-mcp
 ```
 
 **Available Tools:**
 - `convert_text`: Converts American English text to British English
   - Parameters: `text` (string, required) - The text to convert
+- `convert_file`: Converts a file from American English to British English and saves it back
+  - Parameters: `file_path` (string, required) - The fully qualified path to the file to convert
+  - Uses intelligent processing: for plain text files (.txt, .md, etc.), converts all text but preserves code within markdown blocks. For code/config files (.go, .js, .py, etc.), only converts comments to preserve functionality.
 
 **Available Resources:**
 - `dictionary://american-to-british`: Access to the American-to-British dictionary mapping
 
 **Example MCP client usage:**
+
+Convert text:
 ```json
 {
   "jsonrpc": "2.0",
@@ -147,6 +152,21 @@ MCP_TRANSPORT=stdio ./build/bin/murican-to-english-mcp
     }
   },
   "id": 1
+}
+```
+
+Convert a file:
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "convert_file",
+    "arguments": {
+      "file_path": "/path/to/your/file.txt"
+    }
+  },
+  "id": 2
 }
 ```
 
@@ -253,7 +273,8 @@ murican-to-english/
 ├── tests/                # Test files
 │   ├── converter_test.go # Basic conversion tests
 │   ├── codeaware_test.go # Code-aware functionality tests
-│   └── chroma_test.go    # Syntax highlighting tests
+│   ├── chroma_test.go    # Syntax highlighting tests
+│   └── mcp_convert_file_test.go # MCP convert_file tool tests
 ├── Makefile              # Development automation
 ├── main.go               # Main application entry
 ├── app.go                # Application setup and binding to frontend
