@@ -110,20 +110,46 @@ jobs:
           go build -ldflags="-s -w" -trimpath -o build/bin/m2e-server-arm64 ./cmd/m2e-server
           go build -ldflags="-s -w" -trimpath -o build/bin/m2e-mcp-arm64 ./cmd/m2e-mcp
 
-      - name: Get version from frontend package.json
+      - name: Generate version
         id: version
-        run: echo "version=$(node -p "require('./frontend/package.json').version")" >> $GITHUB_OUTPUT
+        run: |
+          # Get the base version from package.json
+          BASE_VERSION=$(node -p "require('./frontend/package.json').version")
 
-      - name: Set default version if not found
-        if: steps.version.outputs.version == ''
-        run: echo "version=$(date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
+          # Get the commit count since the last tag (or all commits if no tags)
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+
+          # Get short commit hash
+          SHORT_SHA=$(git rev-parse --short HEAD)
+
+          # Check if we're on a tag
+          if git describe --exact-match --tags HEAD 2>/dev/null; then
+            # We're on a tag, use the tag version
+            VERSION=$(git describe --exact-match --tags HEAD | sed 's/^v//')
+          else
+            # Generate new version: base.commitcount-shortsha
+            VERSION="${BASE_VERSION}.${COMMIT_COUNT}-${SHORT_SHA}"
+          fi
+
+          echo "Generated version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if tag exists
+        id: tag_check
+        run: |
+          if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create Git tag
+        if: steps.tag_check.outputs.exists == 'false'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}" --force
-          git push origin "v${{ steps.version.outputs.version }}" --force
+          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
 
       - name: Download all CLI tool artifacts
         uses: actions/download-artifact@v4
@@ -163,5 +189,6 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: true
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
