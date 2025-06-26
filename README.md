@@ -41,7 +41,7 @@ The application can be run from the command line to convert files or piped text.
 
 **Install the CLI via go install:**
 ```bash
-go install github.com/sammcj/murican-to-english/cmd/m2e-cli@HEAD
+go install github.com/sammcj/m2e/cmd/m2e-cli@HEAD
 ```
 
 **Build the CLI from source:**
@@ -79,7 +79,7 @@ The application can be run as an API server to provide conversion functionality 
 
 **Install the API server via go install:**
 ```bash
-go install github.com/sammcj/murican-to-english/cmd/m2e-server@HEAD
+go install github.com/sammcj/m2e/cmd/m2e-server@HEAD
 ```
 
 **Build the server from source:**
@@ -130,7 +130,7 @@ The application can be run as an MCP (Model Context Protocol) server to provide 
 
 **Install the MCP server via go install:**
 ```bash
-go install github.com/sammcj/murican-to-english/cmd/m2e-mcp@HEAD
+go install github.com/sammcj/m2e/cmd/m2e-mcp@HEAD
 ```
 
 **Build the MCP server from source:**
@@ -228,7 +228,7 @@ Note: There is a known issue with typing directly in the freedom text box, I'll 
 
 ## Installation
 
-- Visit [releases](https://github.com/sammcj/murican-to-english/releases) and download the latest zip
+- Visit [releases](https://github.com/sammcj/m2e/releases) and download the latest zip
 
 ---
 
@@ -258,8 +258,8 @@ go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.1
 2. Clone the repository:
 
 ```bash
-git clone https://github.com/sammcj/murican-to-english.git
-cd murican-to-english
+git clone https://github.com/sammcj/m2e.git
+cd m2e
 ```
 
 3. Install dependencies:
@@ -307,7 +307,7 @@ For more detailed build instructions, including GitHub Actions automated builds 
 ## Project Structure
 
 ```
-murican-to-english/
+m2e/
 ├── build/                # Build artifacts
 ├── frontend/             # Frontend code using React
 │   ├── src/

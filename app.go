@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sammcj/murican-to-english/pkg/converter"
+	"github.com/sammcj/m2e/pkg/converter"
 
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/formatters/html"

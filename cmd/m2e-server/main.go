@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/sammcj/murican-to-english/pkg/converter"
+	"github.com/sammcj/m2e/pkg/converter"
 )
 
 type ConvertRequest struct {

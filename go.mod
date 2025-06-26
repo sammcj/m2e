@@ -1,4 +1,4 @@
-module github.com/sammcj/murican-to-english
+module github.com/sammcj/m2e
 
 go 1.23.0
 

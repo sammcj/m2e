@@ -3,7 +3,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/sammcj/murican-to-english/pkg/converter"
+	"github.com/sammcj/m2e/pkg/converter"
 )
 
 func TestConvertToBritish(t *testing.T) {
