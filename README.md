@@ -28,6 +28,7 @@ MCP Server Use
     - [CLI](#cli)
     - [MCP Server](#mcp-server)
   - [How It Works](#how-it-works)
+    - [Adding New Words](#adding-new-words)
     - [macOS Services Integration](#macos-services-integration)
   - [Technology Stack](#technology-stack)
   - [Development](#development)
@@ -68,6 +69,30 @@ go install github.com/sammcj/m2e/cmd/m2e-mcp@HEAD
 ## How It Works
 
 The application uses JSON dictionaries to map between American and English spellings. The conversion logic is implemented in Go, which provides fast and efficient text processing. The frontend is built with React, providing a modern and responsive user interface.
+
+### Adding New Words
+
+There are two ways to add new words to the dictionary:
+
+1. **User Dictionary (Recommended)**: The application automatically creates a user dictionary at `$HOME/.config/m2e/american_spellings.json` when first run. You can edit this file to add your own custom word mappings. This file will be merged with the built-in dictionary, and user entries will override built-in ones.
+
+   Example user dictionary:
+   ```json
+   {
+     "customize": "customise",
+     "myword": "myword-british",
+     "color": "colour-custom"
+   }
+   ```
+
+2. **Built-in Dictionary**: For permanent additions to the application, edit the [american_spellings.json](pkg/converter/data/american_spellings.json) file. This requires rebuilding the application as the dictionary is embedded at build time.
+
+The user dictionary provides several advantages:
+- No need to rebuild the application
+- Survives application updates
+- Can override built-in dictionary entries
+- Robust error handling - invalid JSON will show a warning but won't break the application
+- Automatically created with an example entry on first run
 
 ### macOS Services Integration
 
