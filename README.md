@@ -13,8 +13,10 @@ A lightweight application for converting text from American to International Eng
 - Code-aware conversion that preserves code syntax while converting comments (BETA)
 - macOS Services integration (WIP)
 
+GUI
 ![smaller cars please](screenshots/app-screenshot.png)
 
+MCP Server Use
 ![MCP Server](screenshots/mcp-screenshot.png)
 
 ---
