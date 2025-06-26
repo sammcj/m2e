@@ -1,4 +1,4 @@
-module murican-to-english
+module github.com/sammcj/murican-to-english
 
 go 1.23.0
 

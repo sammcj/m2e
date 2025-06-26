@@ -44,21 +44,21 @@ jobs:
           CGO_ENABLED: 0
         run: |
           mkdir -p build/bin
-          go build -ldflags="-s -w" -trimpath -o build/bin/murican-to-english-cli-${{ matrix.suffix }} ./cmd/cli
-          go build -ldflags="-s -w" -trimpath -o build/bin/murican-to-english-server-${{ matrix.suffix }} ./cmd/server
-          go build -ldflags="-s -w" -trimpath -o build/bin/murican-to-english-mcp-${{ matrix.suffix }} ./cmd/mcp
+          go build -ldflags="-s -w" -trimpath -o build/bin/m2e-cli-${{ matrix.suffix }} ./cmd/m2e-cli
+          go build -ldflags="-s -w" -trimpath -o build/bin/m2e-server-${{ matrix.suffix }} ./cmd/m2e-server
+          go build -ldflags="-s -w" -trimpath -o build/bin/m2e-mcp-${{ matrix.suffix }} ./cmd/m2e-mcp
 
       - name: Create CLI tools archive
         run: |
           cd build/bin
-          tar -czf "murican-to-english-cli-tools-${{ matrix.suffix }}.tar.gz" murican-to-english-cli-${{ matrix.suffix }} murican-to-english-server-${{ matrix.suffix }} murican-to-english-mcp-${{ matrix.suffix }}
+          tar -czf "m2e-cli-tools-${{ matrix.suffix }}.tar.gz" m2e-cli-${{ matrix.suffix }} m2e-server-${{ matrix.suffix }} m2e-mcp-${{ matrix.suffix }}
           cd ../..
 
       - name: Upload CLI tools as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: murican-to-english-cli-tools-${{ matrix.suffix }}
-          path: build/bin/murican-to-english-cli-tools-${{ matrix.suffix }}.*
+          name: m2e-cli-tools-${{ matrix.suffix }}
+          path: build/bin/m2e-cli-tools-${{ matrix.suffix }}.*
           retention-days: 7
 
   build-macos:
@@ -106,9 +106,9 @@ jobs:
           export GOOS=darwin
           export GOARCH=arm64
           export MACOSX_DEPLOYMENT_TARGET=15.0
-          go build -ldflags="-s -w" -trimpath -o build/bin/murican-to-english-cli-arm64 ./cmd/cli
-          go build -ldflags="-s -w" -trimpath -o build/bin/murican-to-english-server-arm64 ./cmd/server
-          go build -ldflags="-s -w" -trimpath -o build/bin/murican-to-english-mcp-arm64 ./cmd/mcp
+          go build -ldflags="-s -w" -trimpath -o build/bin/m2e-cli-arm64 ./cmd/m2e-cli
+          go build -ldflags="-s -w" -trimpath -o build/bin/m2e-server-arm64 ./cmd/m2e-server
+          go build -ldflags="-s -w" -trimpath -o build/bin/m2e-mcp-arm64 ./cmd/m2e-mcp
 
       - name: Get version from frontend package.json
         id: version
@@ -128,26 +128,26 @@ jobs:
       - name: Download all CLI tool artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: murican-to-english-cli-tools-*
+          pattern: m2e-cli-tools-*
           path: cli-artifacts
           merge-multiple: true
 
       - name: Create ZIP archives
         run: |
           cd build/bin
-          # Create app archive
-          zip -r "murican-to-english-app-arm64.zip" "Murican to English.app"
+          # Create app archive (keeping M2E.app as the actual app name)
+          zip -r "m2e-app-arm64.zip" "M2E.app"
           # Create CLI tools archive
-          zip "murican-to-english-cli-tools-arm64.zip" murican-to-english-cli-arm64 murican-to-english-server-arm64 murican-to-english-mcp-arm64
+          zip "m2e-cli-tools-arm64.zip" m2e-cli-arm64 m2e-server-arm64 m2e-mcp-arm64
           cd ../..
 
       - name: Upload app as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: murican-to-english-macos-arm64
+          name: m2e-macos-arm64
           path: |
-            build/bin/murican-to-english-app-arm64.zip
-            build/bin/murican-to-english-cli-tools-arm64.zip
+            build/bin/m2e-app-arm64.zip
+            build/bin/m2e-cli-tools-arm64.zip
           retention-days: 7
 
       - name: Create GitHub Release
@@ -157,8 +157,8 @@ jobs:
           tag_name: v${{ steps.version.outputs.version }}
           name: Release v${{ steps.version.outputs.version }}
           files: |
-            build/bin/murican-to-english-app-arm64.zip
-            build/bin/murican-to-english-cli-tools-arm64.zip
+            build/bin/m2e-app-arm64.zip
+            build/bin/m2e-cli-tools-arm64.zip
             cli-artifacts/*
           draft: false
           prerelease: false

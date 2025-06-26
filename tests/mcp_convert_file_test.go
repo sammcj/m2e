@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"murican-to-english/pkg/converter"
+	"github.com/sammcj/murican-to-english/pkg/converter"
 )
 
 // Helper function to create a temporary file with content

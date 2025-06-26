@@ -1,8 +1,9 @@
 package tests
 
 import (
-	"murican-to-english/pkg/converter"
 	"testing"
+
+	"github.com/sammcj/murican-to-english/pkg/converter"
 )
 
 func TestConvertToBritish(t *testing.T) {

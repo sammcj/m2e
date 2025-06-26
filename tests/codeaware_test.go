@@ -1,9 +1,10 @@
 package tests
 
 import (
-	"murican-to-english/pkg/converter"
 	"strings"
 	"testing"
+
+	"github.com/sammcj/murican-to-english/pkg/converter"
 )
 
 // TestDetectMarkdownCodeBlocks tests detection of fenced code blocks
