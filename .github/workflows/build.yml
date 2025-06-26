@@ -113,26 +113,40 @@ jobs:
       - name: Generate version
         id: version
         run: |
+          # Fetch all tags to ensure we have the latest
+          git fetch --tags
+
           # Get the latest tag, if any
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          LATEST_TAG=$(git tag -l --sort=-version:refname | head -n1 || echo "")
+
+          echo "Latest tag found: '$LATEST_TAG'"
 
           if [ -z "$LATEST_TAG" ]; then
             # No tags exist, start with base version from package.json
             BASE_VERSION=$(node -p "require('./frontend/package.json').version")
             VERSION="$BASE_VERSION"
+            echo "No existing tags, using base version: $VERSION"
           else
             # Parse the latest tag to get version components
             LATEST_VERSION=$(echo "$LATEST_TAG" | sed 's/^v//')
+            echo "Latest version (without v prefix): $LATEST_VERSION"
+
+            # Handle different version formats (e.g., 0.0.3.1-2f92967 or 0.0.3)
+            # Extract just the semantic version part (major.minor.patch)
+            SEMVER_PART=$(echo "$LATEST_VERSION" | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
+            echo "Semantic version part: $SEMVER_PART"
 
             # Split version into major.minor.patch
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_VERSION"
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$SEMVER_PART"
+            echo "Parsed: MAJOR=$MAJOR, MINOR=$MINOR, PATCH=$PATCH"
 
             # Increment patch version
             PATCH=$((PATCH + 1))
             VERSION="${MAJOR}.${MINOR}.${PATCH}"
+            echo "Incremented to: $VERSION"
           fi
 
-          echo "Generated version: $VERSION"
+          echo "Final generated version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Check if tag exists
