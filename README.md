@@ -13,6 +13,8 @@ A lightweight application for converting text from American to International Eng
 - Code-aware conversion that preserves code syntax while converting comments (BETA)
 - macOS Services integration (WIP)
 
+![smaller cars please](screenshots/app-screenshot.png)
+
 ---
 
 - [M2E - 'Murican to English Converter](#m2e---murican-to-english-converter)
@@ -37,17 +39,36 @@ A lightweight application for converting text from American to International Eng
 
 The application can be run from the command line to convert files or piped text.
 
-**Build the CLI:**
+**Install the CLI via go install:**
+```bash
+go install github.com/sammcj/murican-to-english/cmd/m2e-cli@HEAD
+```
+
+**Build the CLI from source:**
 ```bash
 make build-cli
 ```
 
 **Convert a file:**
+
+If installed via `go install`:
+```bash
+m2e-cli -input yourfile.txt -output converted.txt
+```
+
+If built from source:
 ```bash
 ./build/bin/m2e-cli -input yourfile.txt -output converted.txt
 ```
 
 **Convert piped text:**
+
+If installed via `go install`:
+```bash
+echo "I love color and flavor." | m2e-cli
+```
+
+If built from source:
 ```bash
 echo "I love color and flavor." | ./build/bin/m2e-cli
 ```
@@ -56,12 +77,24 @@ echo "I love color and flavor." | ./build/bin/m2e-cli
 
 The application can be run as an API server to provide conversion functionality programmatically.
 
-**Build the server:**
+**Install the API server via go install:**
+```bash
+go install github.com/sammcj/murican-to-english/cmd/m2e-server@HEAD
+```
+
+**Build the server from source:**
 ```bash
 make build-server
 ```
 
 **Run the server:**
+
+If installed via `go install`:
+```bash
+m2e-server
+```
+
+If built from source:
 ```bash
 ./build/bin/m2e-server
 ```
@@ -95,12 +128,24 @@ The server will start on port 8080 by default. You can change this by setting th
 
 The application can be run as an MCP (Model Context Protocol) server to provide conversion functionality to AI agents and tools.
 
-**Build the MCP server:**
+**Install the MCP server via go install:**
+```bash
+go install github.com/sammcj/murican-to-english/cmd/m2e-mcp@HEAD
+```
+
+**Build the MCP server from source:**
 ```bash
 make build-mcp
 ```
 
 **Run the MCP server in Streamable HTTP mode:**
+
+If installed via `go install`:
+```bash
+m2e-mcp
+```
+
+If built from source:
 ```bash
 ./build/bin/m2e-mcp
 ```
@@ -124,6 +169,13 @@ MCP client configuration:
 ```
 
 **Run the MCP server in STDIO mode:**
+
+If installed via `go install`:
+```bash
+MCP_TRANSPORT=stdio m2e-mcp
+```
+
+If built from source:
 ```bash
 MCP_TRANSPORT=stdio ./build/bin/m2e-mcp
 ```
@@ -169,8 +221,6 @@ Convert a file:
   "id": 2
 }
 ```
-
-![smaller cars please](screenshots/app-screenshot.png)
 
 Simply paste your freedom text in the left and on the right you'll find the international English spelling.
 

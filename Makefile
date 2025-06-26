@@ -40,6 +40,7 @@ test:
 
 # Build all applications
 build: build-wails build-cli build-server build-mcp
+	ls -tarl build/bin/
 	@echo "All applications built successfully!"
 
 # Build the Wails application
@@ -50,17 +51,17 @@ build-wails:
 # Build the CLI application
 build-cli:
 	@echo "Building CLI application..."
-	go build -o build/bin/m2e-cli ./cmd/cli
+	go build -o build/bin/m2e-cli ./cmd/m2e-cli
 
 # Build the server application
 build-server:
 	@echo "Building server application..."
-	go build -o build/bin/m2e-server ./cmd/server
+	go build -o build/bin/m2e-server ./cmd/m2e-server
 
 # Build the MCP server application
 build-mcp:
 	@echo "Building MCP server application..."
-	go build -o build/bin/m2e-mcp ./cmd/mcp
+	go build -o build/bin/m2e-mcp ./cmd/m2e-mcp
 
 # Clean build artifacts
 clean:

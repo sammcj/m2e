@@ -4,11 +4,8 @@
 **/.log
 **/.tmp
 
-**/m2e-cli
-**/m2e-mcp
-**/m2e-server
+# Build artifacts
 **/m2e.app
-
-build/bin/**
+**/bin/**
 coverage.html
 coverage.out
