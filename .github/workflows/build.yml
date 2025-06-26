@@ -113,22 +113,23 @@ jobs:
       - name: Generate version
         id: version
         run: |
-          # Get the base version from package.json
-          BASE_VERSION=$(node -p "require('./frontend/package.json').version")
+          # Get the latest tag, if any
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
-          # Get the commit count since the last tag (or all commits if no tags)
-          COMMIT_COUNT=$(git rev-list --count HEAD)
-
-          # Get short commit hash
-          SHORT_SHA=$(git rev-parse --short HEAD)
-
-          # Check if we're on a tag
-          if git describe --exact-match --tags HEAD 2>/dev/null; then
-            # We're on a tag, use the tag version
-            VERSION=$(git describe --exact-match --tags HEAD | sed 's/^v//')
+          if [ -z "$LATEST_TAG" ]; then
+            # No tags exist, start with base version from package.json
+            BASE_VERSION=$(node -p "require('./frontend/package.json').version")
+            VERSION="$BASE_VERSION"
           else
-            # Generate new version: base.commitcount-shortsha
-            VERSION="${BASE_VERSION}.${COMMIT_COUNT}-${SHORT_SHA}"
+            # Parse the latest tag to get version components
+            LATEST_VERSION=$(echo "$LATEST_TAG" | sed 's/^v//')
+
+            # Split version into major.minor.patch
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_VERSION"
+
+            # Increment patch version
+            PATCH=$((PATCH + 1))
+            VERSION="${MAJOR}.${MINOR}.${PATCH}"
           fi
 
           echo "Generated version: $VERSION"
