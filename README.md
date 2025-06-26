@@ -149,6 +149,8 @@ If built from source:
 echo "I love color and flavor." | ./build/bin/m2e-cli
 ```
 
+---
+
 ### MCP Server Usage
 
 The application can be run as an MCP (Model Context Protocol) server to provide conversion functionality to AI agents and tools.
@@ -242,6 +244,7 @@ Convert a file:
 }
 ```
 
+---
 
 ### API Usage
 
@@ -294,6 +297,8 @@ The server will start on port 8080 by default. You can change this by setting th
 
   Returns a 200 OK status if the server is running.
 
+---
+
 ### Development Mode
 
 To run the application in development mode:
@@ -317,6 +322,8 @@ make build
 This will create a native application optimised for Apple Silicon in the `build/bin` directory.
 
 For more detailed build instructions, including GitHub Actions automated builds and universal binary creation, see [BUILD.md](BUILD.md).
+
+---
 
 ## Project Structure
 
