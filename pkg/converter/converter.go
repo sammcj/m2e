@@ -261,6 +261,21 @@ func (c *Converter) convert(text string, dict map[string]string) string {
 				continue
 			}
 
+			// Check for words ending in 's
+			if strings.HasSuffix(strings.ToLower(word), "'s") {
+				baseWord := word[:len(word)-2]
+				if replacement, ok := dict[strings.ToLower(baseWord)]; ok {
+					// Preserve the original case
+					if isCapitalized(baseWord) {
+						replacement = capitalize(replacement)
+					} else if isAllCaps(baseWord) {
+						replacement = strings.ToUpper(replacement)
+					}
+					tokens[i] = replacement + "'s"
+					continue
+				}
+			}
+
 			// If that didn't work, try to handle words with quotes
 			// First, check for words with double quotes
 			if len(word) >= 2 && word[0] == '"' && word[len(word)-1] == '"' {

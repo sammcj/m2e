@@ -9,9 +9,10 @@ A lightweight application for converting text from American to International Eng
 - Native desktop application for macOS
 - Also gets rid of those pesky "smart" quotes and em-dashes that break everything
 - CLI support for file conversion
+- Clipboard conversion via CLI
 - MCP (~~Murican Conversion Protocol~~ Model Context Protocol) server for use with AI agents and agentic coding tools
 - Code-aware conversion that preserves code syntax while converting comments (BETA)
-- macOS Services integration (WIP)
+- macOS Services integration
 
 GUI
 ![smaller cars please](screenshots/app-screenshot.png)
@@ -35,6 +36,7 @@ MCP Server Use
     - [Prerequisites](#prerequisites)
     - [Development](#development-1)
     - [CLI Usage](#cli-usage)
+    - [Clipboard Usage](#clipboard-usage)
     - [MCP Server Usage](#mcp-server-usage)
     - [API Usage](#api-usage)
     - [Development Mode](#development-mode)
@@ -96,7 +98,7 @@ The user dictionary provides several advantages:
 
 ### macOS Services Integration
 
-The application integrates with macOS Services, allowing you to:
+The application integrates with macOS Services, allowing you to convert text from any application.
 
 1. **Convert selected text**: Select text in any application, right-click, and choose "Convert to British English" from the Services menu.
 2. **Convert files**: Right-click on a file in Finder, and select "Convert File to British English" from the Services menu to convert the file's contents.
@@ -177,6 +179,20 @@ If built from source:
 ```bash
 echo "I love color and flavor." | ./build/bin/m2e-cli
 ```
+
+### Clipboard Usage
+
+The CLI can also be used to convert the contents of the clipboard directly.
+
+**Convert clipboard text:**
+
+Set the `M2E_CLIPBOARD` environment variable to `1` or `true` and call the CLI:
+
+```bash
+M2E_CLIPBOARD=1 m2e-cli
+```
+
+The converted text will be copied back to the clipboard.
 
 ---
 

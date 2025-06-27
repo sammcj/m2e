@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>{{.Info.ProductName}}</string>
+	<key>CFBundleDisplayName</key>
+	<string>{{.Info.ProductName}}</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.sammcj.m2e</string>
+	<key>CFBundleVersion</key>
+	<string>{{.Info.ProductVersion}}</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleExecutable</key>
+	<string>{{.OutputFilename}}</string>
+	<key>CFBundleIconFile</key>
+	<string>iconfile</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.13.0</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSHumanReadableCopyright</key>
+	<string>{{.Info.Copyright}}</string>
+	<key>NSServices</key>
+	<array>
+		<dict>
+			<key>NSMenuItem</key>
+			<dict>
+				<key>default</key>
+				<string>Convert to British English</string>
+			</dict>
+			<key>NSMessage</key>
+			<string>handleService</string>
+			<key>NSPortName</key>
+			<string>{{.Info.ProductName}}</string>
+			<key>NSSendTypes</key>
+			<array>
+				<string>NSStringPboardType</string>
+			</array>
+			<key>NSReturnTypes</key>
+			<array>
+				<string>NSStringPboardType</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSMenuItem</key>
+			<dict>
+				<key>default</key>
+				<string>Convert File to British English</string>
+			</dict>
+			<key>NSMessage</key>
+			<string>handleFileService</string>
+			<key>NSPortName</key>
+			<string>{{.Info.ProductName}}</string>
+			<key>NSSendFileTypes</key>
+			<array>
+				<string>public.plain-text</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

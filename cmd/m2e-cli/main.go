@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
+	"runtime"
+	"strings"
 
 	"github.com/sammcj/m2e/pkg/converter"
 )
@@ -43,22 +47,34 @@ func main() {
 		os.Exit(0)
 	}
 
+	if os.Getenv("M2E_CLIPBOARD") == "1" || os.Getenv("M2E_CLIPBOARD") == "true" {
+		if runtime.GOOS == "darwin" {
+			handleClipboard()
+			return
+		}
+		fmt.Fprintf(os.Stderr, "Clipboard functionality is only supported on macOS.\n")
+		os.Exit(1)
+	}
+
 	var inputReader io.Reader
 	var err error
 	var inputText string
 
 	// Check if there are non-flag arguments (direct text input)
 	if flag.NArg() > 0 {
-		inputText = flag.Arg(0)
-		for i := 1; i < flag.NArg(); i++ {
-			inputText += " " + flag.Arg(i)
-		}
+		inputText = strings.Join(flag.Args(), " ")
 	} else if *inputFile != "" {
-		inputReader, err = os.Open(*inputFile)
+		file, err := os.Open(*inputFile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error opening input file: %v\n", err)
 			os.Exit(1)
 		}
+		defer func() {
+			if err := file.Close(); err != nil {
+				fmt.Fprintf(os.Stderr, "Error closing input file: %v\n", err)
+			}
+		}()
+		inputReader = file
 	} else {
 		// Check if stdin has data available
 		stat, _ := os.Stdin.Stat()
@@ -95,11 +111,17 @@ func main() {
 
 	var outputWriter io.Writer
 	if *outputFile != "" {
-		outputWriter, err = os.Create(*outputFile)
+		file, err := os.Create(*outputFile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating output file: %v\n", err)
 			os.Exit(1)
 		}
+		defer func() {
+			if err := file.Close(); err != nil {
+				fmt.Fprintf(os.Stderr, "Error closing output file: %v\n", err)
+			}
+		}()
+		outputWriter = file
 	} else {
 		outputWriter = os.Stdout
 	}
@@ -109,4 +131,37 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func handleClipboard() {
+	// Get text from clipboard
+	pasteCmd := exec.Command("pbpaste")
+	var pasteOut bytes.Buffer
+	pasteCmd.Stdout = &pasteOut
+	err := pasteCmd.Run()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading from clipboard: %v\n", err)
+		os.Exit(1)
+	}
+
+	clipboardText := pasteOut.String()
+
+	// Convert the text
+	conv, err := converter.NewConverter()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error initializing converter: %v\n", err)
+		os.Exit(1)
+	}
+	convertedText := conv.ConvertToBritish(clipboardText, true)
+
+	// Copy text to clipboard
+	copyCmd := exec.Command("pbcopy")
+	copyCmd.Stdin = strings.NewReader(convertedText)
+	err = copyCmd.Run()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error writing to clipboard: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Clipboard content converted and updated.")
 }

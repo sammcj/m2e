@@ -52,6 +52,11 @@ func TestConvertToBritish(t *testing.T) {
 			input:    "The color is gray.\n\nThe center is beautiful.",
 			expected: "The colour is grey.\n\nThe centre is beautiful.",
 		},
+		{
+			name:     "Possessive word",
+			input:    "The organization's color is gray.",
+			expected: "The organisation's colour is grey.",
+		},
 	}
 
 	for _, tt := range tests {
