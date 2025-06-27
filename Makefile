@@ -47,6 +47,11 @@ build: build-wails build-cli build-server build-mcp
 build-wails:
 	@echo "Building Wails application..."
 	wails build
+	@if [ "$(shell uname -s)" = "Darwin" ] && [ "$CI" != "true" ]; then \
+		echo "Copying M2E.app to /Applications..."; \
+		cp -R build/bin/M2E.app /Applications/; \
+	fi
+
 
 # Build the CLI application
 build-cli:
