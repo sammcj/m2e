@@ -9,7 +9,7 @@ A lightweight application for converting text from American to International Eng
 - Native desktop application for macOS
 - Also gets rid of those pesky "smart" quotes and em-dashes that break everything
 - CLI support for file conversion
-- Clipboard conversion via CLI
+- Clipboard conversion
 - MCP (~~Murican Conversion Protocol~~ Model Context Protocol) server for use with AI agents and agentic coding tools
 - Code-aware conversion that preserves code syntax while converting comments (BETA)
 - macOS Services integration
