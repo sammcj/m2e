@@ -350,8 +350,6 @@ make build
 
 This will create a native application optimised for Apple Silicon in the `build/bin` directory.
 
-For more detailed build instructions, including GitHub Actions automated builds and universal binary creation, see [BUILD.md](BUILD.md).
-
 ---
 
 ## Project Structure

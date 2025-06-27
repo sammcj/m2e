@@ -7,12 +7,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"unicode"
 )
 
 //go:embed data/*.json
 var dictFS embed.FS
+
+// Regex to detect URLs and skip them during conversion
+var urlRegex = regexp.MustCompile(`(?i)(https?://|www\.)\S+`)
 
 // Dictionaries holds the mapping for American to British English spellings
 type Dictionaries struct {
@@ -235,6 +239,11 @@ func (c *Converter) convert(text string, dict map[string]string) string {
 		for i := 0; i < len(tokens); i++ {
 			// Skip whitespace tokens
 			if isWhitespace[i] {
+				continue
+			}
+
+			// Skip URLs
+			if urlRegex.MatchString(tokens[i]) {
 				continue
 			}
 
