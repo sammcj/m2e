@@ -5,7 +5,7 @@ A lightweight application for converting text from American to International Eng
 ## Features
 
 - Converts pasted text from American to International English
-- **Imperial to Metric Unit Conversion**: Automatically converts imperial units (feet, pounds, °F, etc.) to metric equivalents
+- Freedom Unit to standard metric unit conversion**: Automatically converts imperial units (feet, pounds, °F, etc.) to standard metric equivalents
 - Fast and responsive and minimalist interface
 - Native desktop application for macOS
 - Also gets rid of those pesky "smart" quotes and em-dashes that break everything
