@@ -236,6 +236,11 @@ type CommentBlock struct {
 
 // extractCommentsManually provides fallback comment detection using regex
 func (c *Converter) extractCommentsManually(code string) []CommentBlock {
+	return c.extractCommentsManuallyWithConversion(code, false, false)
+}
+
+// extractCommentsManuallyWithConversion provides comment detection with optional unit conversion
+func (c *Converter) extractCommentsManuallyWithConversion(code string, convertUnits bool, normaliseSmartQuotes bool) []CommentBlock {
 	var comments []CommentBlock
 
 	// Line comment patterns that should include newlines
@@ -263,6 +268,15 @@ func (c *Converter) extractCommentsManually(code string) []CommentBlock {
 			// Remove trailing newline from content for processing, but keep the position
 			content = strings.TrimSuffix(content, "\n")
 
+			// Apply unit conversion if requested
+			if convertUnits && c.unitProcessor != nil && c.unitProcessor.IsEnabled() {
+				// Apply spelling conversion first
+				convertedContent := c.ConvertToBritishSimple(content, normaliseSmartQuotes)
+				// Then apply unit conversion
+				convertedContent = c.unitProcessor.ProcessText(convertedContent, false, "")
+				content = convertedContent
+			}
+
 			comments = append(comments, CommentBlock{
 				Start:   start,
 				End:     end,
@@ -279,6 +293,15 @@ func (c *Converter) extractCommentsManually(code string) []CommentBlock {
 			end := match[1]
 			content := code[start:end]
 
+			// Apply unit conversion if requested
+			if convertUnits && c.unitProcessor != nil && c.unitProcessor.IsEnabled() {
+				// Apply spelling conversion first
+				convertedContent := c.ConvertToBritishSimple(content, normaliseSmartQuotes)
+				// Then apply unit conversion
+				convertedContent = c.unitProcessor.ProcessText(convertedContent, false, "")
+				content = convertedContent
+			}
+
 			comments = append(comments, CommentBlock{
 				Start:   start,
 				End:     end,
@@ -293,9 +316,15 @@ func (c *Converter) extractCommentsManually(code string) []CommentBlock {
 // ProcessCodeAware processes text with code-awareness
 func (c *Converter) ProcessCodeAware(text string, normaliseSmartQuotes bool) string {
 	// Simple approach: check if we have any code blocks at all
-	// If not, use regular conversion
+	// If not, use regular conversion with both spelling and unit conversion
 	if !c.containsCodeBlocks(text) {
-		return c.ConvertToBritishSimple(text, normaliseSmartQuotes)
+		// Apply spelling conversion first
+		result := c.ConvertToBritishSimple(text, normaliseSmartQuotes)
+		// Then apply unit conversion
+		if c.unitProcessor != nil && c.unitProcessor.IsEnabled() {
+			result = c.unitProcessor.ProcessText(result, false, "")
+		}
+		return result
 	}
 
 	// Process the text by converting only non-code parts
@@ -335,15 +364,19 @@ func (c *Converter) processFencedCodeBlocks(text string, normaliseSmartQuotes bo
 			// This is a code block - only convert comments
 			convertedContent := c.convertCommentsInCode(part.Content, part.Language, normaliseSmartQuotes)
 
-			// Reconstruct the full block with fences
+			// Reconstruct the full block with original fence type
 			if part.Language != "" {
-				result.WriteString("```" + part.Language + "\n" + convertedContent + "\n```")
+				result.WriteString(part.FenceType + part.Language + "\n" + convertedContent + "\n" + part.FenceType)
 			} else {
-				result.WriteString("```\n" + convertedContent + "\n```")
+				result.WriteString(part.FenceType + "\n" + convertedContent + "\n" + part.FenceType)
 			}
 		} else {
-			// Regular text - convert normally
+			// Regular text - apply both spelling and unit conversion
 			converted := c.ConvertToBritishSimple(part.Content, normaliseSmartQuotes)
+			// Then apply unit conversion
+			if c.unitProcessor != nil && c.unitProcessor.IsEnabled() {
+				converted = c.unitProcessor.ProcessText(converted, false, "")
+			}
 			result.WriteString(converted)
 		}
 	}
@@ -356,20 +389,39 @@ func (c *Converter) processInlineCode(text string, normaliseSmartQuotes bool) st
 	// Use regex to find and preserve inline code while converting surrounding text
 	inlineRegex := regexp.MustCompile("`([^`\n]+)`")
 
-	return inlineRegex.ReplaceAllStringFunc(text, func(match string) string {
-		// Get the content of the inline code block
-		content := match[1 : len(match)-1]
-		// Convert only the comments within the inline code
-		convertedContent := c.convertCommentsInCode(content, "", normaliseSmartQuotes)
-		return "`" + convertedContent + "`"
-	})
+	// Split the text by inline code blocks and process the non-code parts
+	parts := inlineRegex.Split(text, -1)
+	matches := inlineRegex.FindAllString(text, -1)
+
+	var result strings.Builder
+	for i, part := range parts {
+		if part != "" {
+			// This is regular text - apply both spelling and unit conversion
+			converted := c.ConvertToBritishSimple(part, normaliseSmartQuotes)
+			if c.unitProcessor != nil && c.unitProcessor.IsEnabled() {
+				converted = c.unitProcessor.ProcessText(converted, false, "")
+			}
+			result.WriteString(converted)
+		}
+
+		// Add back the inline code block if it exists
+		if i < len(matches) {
+			// Process the inline code block for comments
+			content := matches[i][1 : len(matches[i])-1]
+			convertedContent := c.convertCommentsInCode(content, "", normaliseSmartQuotes)
+			result.WriteString("`" + convertedContent + "`")
+		}
+	}
+
+	return result.String()
 }
 
 // TextPart represents a part of text that can be code or regular text
 type TextPart struct {
-	Content  string
-	IsCode   bool
-	Language string
+	Content   string
+	IsCode    bool
+	Language  string
+	FenceType string // "```" or "~~~" for fenced code blocks
 }
 
 // splitByFencedBlocks splits text by fenced code blocks
@@ -397,21 +449,24 @@ func (c *Converter) splitByFencedBlocks(text string) []TextPart {
 			}
 		}
 
-		// Determine language and content
-		var language, content string
+		// Determine language, content, and fence type
+		var language, content, fenceType string
 		if match[2] >= 0 { // Backtick fence
 			language = text[match[2]:match[3]]
 			content = text[match[4]:match[5]]
+			fenceType = "```"
 		} else if match[6] >= 0 { // Tilde fence
 			language = text[match[6]:match[7]]
 			content = text[match[8]:match[9]]
+			fenceType = "~~~"
 		}
 
 		// Add the code block
 		parts = append(parts, TextPart{
-			Content:  content,
-			IsCode:   true,
-			Language: language,
+			Content:   content,
+			IsCode:    true,
+			Language:  language,
+			FenceType: fenceType,
 		})
 
 		lastEnd = end
@@ -455,8 +510,12 @@ func (c *Converter) convertCommentsInCode(code, language string, normaliseSmartQ
 		// Get the original comment block (including any trailing newline)
 		originalBlock := code[comment.Start:comment.End]
 
-		// Convert just the comment content (without newline)
+		// Convert just the comment content (without newline) - apply both spelling and unit conversion
 		converted := c.ConvertToBritishSimple(comment.Content, normaliseSmartQuotes)
+		// Then apply unit conversion
+		if c.unitProcessor != nil && c.unitProcessor.IsEnabled() {
+			converted = c.unitProcessor.ProcessText(converted, false, "")
+		}
 
 		// If the original block had a trailing newline, preserve it
 		if strings.HasSuffix(originalBlock, "\n") {

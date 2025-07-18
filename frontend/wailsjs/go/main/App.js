@@ -14,6 +14,10 @@ export function ConvertToBritish(arg1, arg2) {
   return window['go']['main']['App']['ConvertToBritish'](arg1, arg2);
 }
 
+export function ConvertToBritishWithUnits(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ConvertToBritishWithUnits'](arg1, arg2, arg3);
+}
+
 export function DetectLanguage(arg1) {
   return window['go']['main']['App']['DetectLanguage'](arg1);
 }
@@ -30,6 +34,10 @@ export function GetSyntaxHighlightedHTML(arg1, arg2) {
   return window['go']['main']['App']['GetSyntaxHighlightedHTML'](arg1, arg2);
 }
 
+export function GetUnitProcessingStatus() {
+  return window['go']['main']['App']['GetUnitProcessingStatus']();
+}
+
 export function HandleDroppedFile(arg1) {
   return window['go']['main']['App']['HandleDroppedFile'](arg1);
 }
@@ -44,4 +52,8 @@ export function HandleService(arg1, arg2) {
 
 export function SaveConvertedFile(arg1) {
   return window['go']['main']['App']['SaveConvertedFile'](arg1);
+}
+
+export function SetUnitProcessingEnabled(arg1) {
+  return window['go']['main']['App']['SetUnitProcessingEnabled'](arg1);
 }

@@ -63,3 +63,60 @@ func TestCLIUsage(t *testing.T) {
 		})
 	}
 }
+
+func TestCLIUnitConversion(t *testing.T) {
+	// Use the existing built CLI
+	cliPath := filepath.Join("..", "build", "bin", "m2e-cli")
+
+	tests := []struct {
+		name     string
+		args     []string
+		expected string
+		wantErr  bool
+	}{
+		{
+			name:     "Unit conversion enabled",
+			args:     []string{"-units", "The room is 12 feet wide and weighs 100 pounds."},
+			expected: "The room is 3.7 metres wide and weighs 45.4 kg.",
+			wantErr:  false,
+		},
+		{
+			name:     "Unit conversion disabled",
+			args:     []string{"The room is 12 feet wide and weighs 100 pounds."},
+			expected: "The room is 12 feet wide and weighs 100 pounds.",
+			wantErr:  false,
+		},
+		{
+			name:     "Spelling and unit conversion",
+			args:     []string{"-units", "The color of the 5-foot fence is gray."},
+			expected: "The colour of the 1.5-metre fence is grey.",
+			wantErr:  false,
+		},
+		{
+			name:     "Help includes unit options",
+			args:     []string{"-help"},
+			expected: "-units",
+			wantErr:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := exec.Command(cliPath, tt.args...)
+
+			output, err := cmd.CombinedOutput()
+
+			if tt.wantErr && err == nil {
+				t.Errorf("Expected error but got none")
+			}
+			if !tt.wantErr && err != nil {
+				t.Errorf("Unexpected error: %v\nOutput: %s", err, string(output))
+			}
+
+			outputStr := string(output)
+			if !strings.Contains(outputStr, tt.expected) {
+				t.Errorf("Expected output to contain %q, got %q", tt.expected, outputStr)
+			}
+		})
+	}
+}

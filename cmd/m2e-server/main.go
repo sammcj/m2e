@@ -11,7 +11,9 @@ import (
 )
 
 type ConvertRequest struct {
-	Text string `json:"text"`
+	Text                 string `json:"text"`
+	ConvertUnits         *bool  `json:"convert_units,omitempty"`
+	NormaliseSmartQuotes *bool  `json:"normalise_smart_quotes,omitempty"`
 }
 
 type ConvertResponse struct {
@@ -58,7 +60,21 @@ func convertHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	convertedText := conv.ConvertToBritish(req.Text, true)
+	// Get optional parameters with defaults
+	convertUnits := false
+	if req.ConvertUnits != nil {
+		convertUnits = *req.ConvertUnits
+	}
+
+	normaliseSmartQuotes := true
+	if req.NormaliseSmartQuotes != nil {
+		normaliseSmartQuotes = *req.NormaliseSmartQuotes
+	}
+
+	// Set unit processing based on parameter
+	conv.SetUnitProcessingEnabled(convertUnits)
+
+	convertedText := conv.ConvertToBritish(req.Text, normaliseSmartQuotes)
 
 	resp := ConvertResponse{Text: convertedText}
 	w.Header().Set("Content-Type", "application/json")

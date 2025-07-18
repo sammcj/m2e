@@ -1,0 +1,136 @@
+{
+  "detection_tests": [
+    {
+      "name": "basic_length_feet",
+      "input": "The room is 12 feet wide",
+      "expected": [
+        {"value": 12.0, "unit": "feet", "type": "Length", "confidence": 0.9}
+      ]
+    },
+    {
+      "name": "basic_length_inches",
+      "input": "Screen width is 15.6 inches",
+      "expected": [
+        {"value": 15.6, "unit": "inches", "type": "Length", "confidence": 0.9}
+      ]
+    },
+    {
+      "name": "basic_mass_pounds",
+      "input": "Package weighs 5 pounds",
+      "expected": [
+        {"value": 5.0, "unit": "pounds", "type": "Mass", "confidence": 0.9}
+      ]
+    },
+    {
+      "name": "basic_volume_gallons",
+      "input": "Tank holds 15 gallons",
+      "expected": [
+        {"value": 15.0, "unit": "gallons", "type": "Volume", "confidence": 0.9}
+      ]
+    },
+    {
+      "name": "basic_temperature_fahrenheit",
+      "input": "Temperature is 72°F",
+      "expected": [
+        {"value": 72.0, "unit": "°F", "type": "Temperature", "confidence": 0.9}
+      ]
+    },
+    {
+      "name": "multiple_units",
+      "input": "The box is 5 feet long, 3 feet wide, and weighs 10 pounds",
+      "expected": [
+        {"value": 5.0, "unit": "feet", "type": "Length", "confidence": 0.9},
+        {"value": 3.0, "unit": "feet", "type": "Length", "confidence": 0.9},
+        {"value": 10.0, "unit": "pounds", "type": "Mass", "confidence": 0.9}
+      ]
+    },
+    {
+      "name": "compound_unit",
+      "input": "Install a 6-foot fence",
+      "expected": [
+        {"value": 6.0, "unit": "foot", "type": "Length", "confidence": 0.9}
+      ]
+    }
+  ],
+  "conversion_tests": [
+    {
+      "name": "feet_to_metres",
+      "input": {"value": 10.0, "unit": "feet", "type": "Length"},
+      "expected": {"metric_value": 3.048, "metric_unit": "metres", "formatted": "3 metres"}
+    },
+    {
+      "name": "small_inches_to_mm",
+      "input": {"value": 0.25, "unit": "inches", "type": "Length"},
+      "expected": {"metric_value": 6.35, "metric_unit": "mm", "formatted": "6.3 mm"}
+    },
+    {
+      "name": "inches_to_cm",
+      "input": {"value": 12.0, "unit": "inches", "type": "Length"},
+      "expected": {"metric_value": 30.48, "metric_unit": "cm", "formatted": "30.5 cm"}
+    },
+    {
+      "name": "pounds_to_kg",
+      "input": {"value": 10.0, "unit": "pounds", "type": "Mass"},
+      "expected": {"metric_value": 4.536, "metric_unit": "kg", "formatted": "4.5 kg"}
+    },
+    {
+      "name": "gallons_to_litres",
+      "input": {"value": 5.0, "unit": "gallons", "type": "Volume"},
+      "expected": {"metric_value": 18.927, "metric_unit": "litres", "formatted": "18.9 litres"}
+    },
+    {
+      "name": "fahrenheit_to_celsius",
+      "input": {"value": 32.0, "unit": "fahrenheit", "type": "Temperature"},
+      "expected": {"metric_value": 0.0, "metric_unit": "°C", "formatted": "0°C"}
+    },
+    {
+      "name": "square_feet_to_m2",
+      "input": {"value": 100.0, "unit": "square feet", "type": "Area"},
+      "expected": {"metric_value": 9.29, "metric_unit": "m²", "formatted": "9.3 m²"}
+    }
+  ],
+  "idiom_exclusion_tests": [
+    {
+      "name": "miles_away_idiom",
+      "input": "I'm miles away from home",
+      "should_match": false
+    },
+    {
+      "name": "cold_feet_idiom",
+      "input": "Getting cold feet about the decision",
+      "should_match": false
+    },
+    {
+      "name": "tons_of_fun_idiom",
+      "input": "We had tons of fun",
+      "should_match": false
+    },
+    {
+      "name": "inch_by_inch_idiom",
+      "input": "Moving inch by inch",
+      "should_match": false
+    }
+  ],
+  "edge_cases": [
+    {
+      "name": "zero_value",
+      "input": {"value": 0.0, "unit": "feet", "type": "Length"},
+      "should_work": true
+    },
+    {
+      "name": "negative_value",
+      "input": {"value": -10.0, "unit": "feet", "type": "Length"},
+      "should_work": true
+    },
+    {
+      "name": "very_large_value",
+      "input": {"value": 1000000.0, "unit": "feet", "type": "Length"},
+      "should_work": true
+    },
+    {
+      "name": "very_small_value",
+      "input": {"value": 0.001, "unit": "inches", "type": "Length"},
+      "should_work": true
+    }
+  ]
+}

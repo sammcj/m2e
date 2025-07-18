@@ -32,21 +32,21 @@ func isPlainTextFile(filePath string) bool {
 	return false
 }
 
-// convertFileContent converts file content based on file type
-func convertFileContent(conv *converter.Converter, content, filePath string) string {
+// convertFileContentWithOptions converts file content based on file type with custom options
+func convertFileContentWithOptions(conv *converter.Converter, content, filePath string, normaliseSmartQuotes bool) string {
 	if isPlainTextFile(filePath) {
 		// For plain text files, use code-aware processing which:
 		// - Converts all regular text
 		// - Only converts comments within code blocks (preserving code)
-		return conv.ProcessCodeAware(content, true)
+		return conv.ProcessCodeAware(content, normaliseSmartQuotes)
 	} else {
 		// For code/config files, only convert comments to preserve functionality
-		return convertOnlyComments(conv, content)
+		return convertOnlyCommentsWithOptions(conv, content, normaliseSmartQuotes)
 	}
 }
 
-// convertOnlyComments converts only comments in code, preserving all other content
-func convertOnlyComments(conv *converter.Converter, code string) string {
+// convertOnlyCommentsWithOptions converts only comments in code with custom options
+func convertOnlyCommentsWithOptions(conv *converter.Converter, code string, normaliseSmartQuotes bool) string {
 	comments := conv.ExtractComments(code, "")
 
 	if len(comments) == 0 {
@@ -62,7 +62,7 @@ func convertOnlyComments(conv *converter.Converter, code string) string {
 		originalComment := code[comment.Start:comment.End]
 
 		// Convert only the comment content
-		convertedComment := conv.ConvertToBritish(comment.Content, true)
+		convertedComment := conv.ConvertToBritish(comment.Content, normaliseSmartQuotes)
 
 		// Preserve the comment structure (e.g., //, /* */, #, etc.)
 		// by replacing just the content part
@@ -102,26 +102,56 @@ func main() {
 	}
 
 	convertTool := mcp.NewTool("convert_text",
-		mcp.WithDescription("Convert American English text to British English"),
+		mcp.WithDescription("Convert American English text to British English with optional unit conversion"),
 		mcp.WithString("text", mcp.Required(), mcp.Description("The text to convert")),
+		mcp.WithString("convert_units", mcp.Description("Freedom Unit Conversion (true/false, default: false)")),
+		mcp.WithString("normalise_smart_quotes", mcp.Description("Normalise smart quotes to regular quotes (true/false, default: true)")),
 	)
 	s.AddTool(convertTool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		text, err := req.RequireString("text")
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		convertedText := conv.ConvertToBritish(text, true)
+
+		// Get optional parameters with defaults
+		convertUnits := false
+		if val, err := req.RequireString("convert_units"); err == nil {
+			convertUnits = strings.ToLower(val) == "true"
+		}
+
+		normaliseSmartQuotes := true
+		if val, err := req.RequireString("normalise_smart_quotes"); err == nil {
+			normaliseSmartQuotes = strings.ToLower(val) != "false"
+		}
+
+		// Set unit processing based on parameter
+		conv.SetUnitProcessingEnabled(convertUnits)
+
+		convertedText := conv.ConvertToBritish(text, normaliseSmartQuotes)
 		return mcp.NewToolResultText(convertedText), nil
 	})
 
 	convertFileTool := mcp.NewTool("convert_file",
-		mcp.WithDescription("Convert a file from American English to International / British English and save it back. Uses intelligent processing: for plain text files (.txt, .md, etc.), converts all text but preserves code within markdown blocks. For code/config files (.go, .js, .py, etc.), only converts comments to preserve functionality."),
+		mcp.WithDescription("Convert a file from American English to International / British English and save it back. Uses intelligent processing: for plain text files (.txt, .md, etc.), converts all text but preserves code within markdown blocks. For code/config files (.go, .js, .py, etc.), only converts comments to preserve functionality. Supports optional unit conversion from imperial to metric."),
 		mcp.WithString("file_path", mcp.Required(), mcp.Description("The fully qualified path to the file to convert")),
+		mcp.WithString("convert_units", mcp.Description("Freedom Unit Conversion (true/false, default: false)")),
+		mcp.WithString("normalise_smart_quotes", mcp.Description("Normalise smart quotes to regular quotes (true/false, default: true)")),
 	)
 	s.AddTool(convertFileTool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		filePath, err := req.RequireString("file_path")
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
+		}
+
+		// Get optional parameters with defaults
+		convertUnits := false
+		if val, err := req.RequireString("convert_units"); err == nil {
+			convertUnits = strings.ToLower(val) == "true"
+		}
+
+		normaliseSmartQuotes := true
+		if val, err := req.RequireString("normalise_smart_quotes"); err == nil {
+			normaliseSmartQuotes = strings.ToLower(val) != "false"
 		}
 
 		// Check if file exists
@@ -135,8 +165,11 @@ func main() {
 			return mcp.NewToolResultError(fmt.Sprintf("Error reading file %s: %v", filePath, err)), nil
 		}
 
+		// Set unit processing based on parameter
+		conv.SetUnitProcessingEnabled(convertUnits)
+
 		// Convert the content based on file type
-		convertedContent := convertFileContent(conv, string(originalContent), filePath)
+		convertedContent := convertFileContentWithOptions(conv, string(originalContent), filePath, normaliseSmartQuotes)
 
 		// Check if there were any changes
 		if string(originalContent) == convertedContent {
