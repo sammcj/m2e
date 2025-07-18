@@ -1,0 +1,31 @@
+# Real World Examples for Integration Testing
+
+## Construction Specification
+The room dimensions are 12 feet by 10 feet with 9-foot ceilings, totaling 120 square feet of floor space and requiring 2 tons of materials.
+
+## Recipe with Measurements  
+Add 2 pounds of flour, 16 ounces of butter, and bake at 350°F for 30 minutes in a 9-inch pan.
+
+## Travel Description
+We drove 150 miles in 3 hours, averaging 50 miles per hour, with the temperature at 85°F.
+
+## Mixed with Idioms
+The project is miles ahead of schedule, but we still need to install the 6-foot fence that weighs 200 pounds.
+
+## Property Description
+The 2500 square feet house sits on 1.5 acres with a 3-car garage that's 24 feet by 36 feet.
+
+## Workshop Measurements
+Cut the board to 8 feet 6 inches, then drill holes every 12 inches using a 3/4 inch bit.
+
+## Weather Report
+Temperature reached 95°F with winds at 25 miles per hour and 2 inches of rainfall.
+
+## Shipping Information
+Package dimensions: 12 inches by 8 inches by 6 inches, weighing 5.5 pounds, shipped 500 miles.
+
+## Garden Planning
+Plant tomatoes 3 feet apart in rows 4 feet wide, water with 2 gallons weekly.
+
+## Vehicle Specifications
+The truck is 20 feet long, 8 feet wide, weighs 3 tons, and has a 50 gallon fuel tank.

@@ -92,6 +92,33 @@ func (a *App) ConvertToBritish(text string, normaliseSmartQuotes bool) string {
 	return a.converter.ConvertToBritish(text, normaliseSmartQuotes)
 }
 
+// ConvertToBritishWithUnits converts American English text to British English with optional unit conversion
+func (a *App) ConvertToBritishWithUnits(text string, normaliseSmartQuotes bool, convertUnits bool) string {
+	if a.converter == nil {
+		return "Error: Converter not initialized"
+	}
+
+	// Set unit processing enabled/disabled
+	a.converter.SetUnitProcessingEnabled(convertUnits)
+
+	return a.converter.ConvertToBritish(text, normaliseSmartQuotes)
+}
+
+// GetUnitProcessingStatus returns whether unit processing is currently enabled
+func (a *App) GetUnitProcessingStatus() bool {
+	if a.converter == nil {
+		return false
+	}
+	return a.converter.GetUnitProcessor().IsEnabled()
+}
+
+// SetUnitProcessingEnabled enables or disables unit processing
+func (a *App) SetUnitProcessingEnabled(enabled bool) {
+	if a.converter != nil {
+		a.converter.SetUnitProcessingEnabled(enabled)
+	}
+}
+
 // ConvertFileToEnglish converts a file's content from American to British English and saves it back
 func (a *App) ConvertFileToEnglish(filePath string) error {
 	// Read the file

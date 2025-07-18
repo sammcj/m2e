@@ -5,6 +5,7 @@ A lightweight application for converting text from American to International Eng
 ## Features
 
 - Converts pasted text from American to International English
+- **Imperial to Metric Unit Conversion**: Automatically converts imperial units (feet, pounds, °F, etc.) to metric equivalents
 - Fast and responsive and minimalist interface
 - Native desktop application for macOS
 - Also gets rid of those pesky "smart" quotes and em-dashes that break everything
@@ -12,6 +13,7 @@ A lightweight application for converting text from American to International Eng
 - Clipboard conversion
 - MCP (~~Murican Conversion Protocol~~ Model Context Protocol) server for use with AI agents and agentic coding tools
 - Code-aware conversion that preserves code syntax while converting comments (BETA)
+- Configurable unit conversion with user preferences
 - macOS Services integration
 
 GUI
@@ -31,6 +33,12 @@ MCP Server Use
   - [How It Works](#how-it-works)
     - [Adding New Words](#adding-new-words)
     - [macOS Services Integration](#macos-services-integration)
+  - [Freedom Unit Conversion](#freedom-unit-conversion)
+    - [Supported Unit Types](#supported-unit-types)
+    - [Examples](#examples)
+    - [Configuration](#configuration)
+    - [Interface Integration](#interface-integration)
+    - [Troubleshooting](#troubleshooting)
   - [Technology Stack](#technology-stack)
   - [Development](#development)
     - [Prerequisites](#prerequisites)
@@ -105,6 +113,146 @@ The application integrates with macOS Services, allowing you to convert text fro
 
 This feature makes it easy to convert text without having to open the application directly. After installation, you may need to log out and log back in for the services to be registered with macOS.
 
+## Freedom Unit Conversion
+
+M2E includes intelligent imperial-to-metric unit conversion that works alongside spelling conversion. The feature is designed to be code-aware, converting units only in appropriate contexts while preserving code functionality.
+
+### Supported Unit Types
+
+- **Length**: feet, inches, yards, miles → metres, centimetres, kilometres
+- **Mass**: pounds, ounces, tons → kilograms, grams, tonnes  
+- **Volume**: gallons, quarts, pints, fluid ounces → litres, millilitres
+- **Temperature**: Fahrenheit → Celsius
+- **Area**: square feet, acres → square metres, hectares
+
+### Examples
+
+**Basic conversions:**
+```
+"The room is 12 feet wide" → "The room is 3.7 metres wide"
+"Temperature was 75°F" → "Temperature was 24°C"
+"The package weighs 5 pounds" → "The package weighs 2.3 kg"
+"I drove 10 miles to work" → "I drove 16 km to work"
+```
+
+**Code-aware processing:**
+```go
+// The buffer should be 1024 bytes in size (no conversion - bytes not imperial)
+// Set the width to 100 inches for display → Set the width to 254 cm for display
+const ROOM_WIDTH_FEET = 12  // ← No conversion in variable names or values
+```
+
+**Smart detection (avoids idioms):**
+```
+"I'm miles away from home" → (no conversion - idiomatic usage)
+"They moved inch by inch" → (no conversion - idiomatic usage)
+"The room is 6 feet tall" → "The room is 1.8 metres tall" (converts measurements)
+```
+
+### Configuration
+
+Unit conversion can be customized through a configuration file at `$HOME/.config/m2e/unit_config.json`.
+
+**Create example configuration:**
+
+The configuration file is automatically created with default values when first needed. You can manually create and edit `$HOME/.config/m2e/unit_config.json` to customize unit conversion behavior.
+
+**Configuration options:**
+
+```json
+{
+  "enabled": true,
+  "enabledUnitTypes": ["length", "mass", "volume", "temperature", "area"],
+  "precision": {
+    "length": 1,
+    "mass": 1,
+    "volume": 1,
+    "temperature": 0,
+    "area": 1
+  },
+  "customMappings": {
+    "customize": "customise"
+  },
+  "excludePatterns": [
+    "miles?\\s+(?:away|apart|from\\s+home|ahead)",
+    "inch\\s+by\\s+inch"
+  ],
+  "preferences": {
+    "preferWholeNumbers": true,
+    "maxDecimalPlaces": 2,
+    "temperatureFormat": "°C",
+    "useSpaceBetweenValueAndUnit": true,
+    "roundingThreshold": 0.1
+  },
+  "detection": {
+    "minConfidence": 0.5,
+    "maxNumberDistance": 3,
+    "detectCompoundUnits": true,
+    "detectWrittenNumbers": true
+  }
+}
+```
+
+**Key configuration options:**
+
+- `enabled`: Enable/disable all unit conversion
+- `enabledUnitTypes`: Array of unit types to convert
+- `precision`: Decimal places for each unit type
+- `customMappings`: Custom unit mappings (American → British)
+- `excludePatterns`: Regex patterns to exclude from conversion
+- `preferences.preferWholeNumbers`: Round to whole numbers when close (e.g., 2.98 → 3)
+- `preferences.temperatureFormat`: Use "°C" or "degrees Celsius"
+- `detection.minConfidence`: Minimum confidence (0.0-1.0) to convert a detected unit
+- `detection.maxNumberDistance`: Maximum words between number and unit
+
+### Interface Integration
+
+Unit conversion is available across all interfaces:
+
+**GUI**: Toggle unit conversion in the application interface
+
+**CLI**: Use the `-units` flag
+```bash
+m2e-cli -units "The room is 12 feet wide"
+echo "Temperature was 75°F" | m2e-cli -units
+```
+
+**MCP Server**: Add `convert_units` parameter
+```json
+{
+  "name": "convert_text",
+  "arguments": {
+    "text": "The room is 12 feet wide",
+    "convert_units": "true"
+  }
+}
+```
+
+**API Server**: Include `convert_units` in request body
+```json
+{
+  "text": "The room is 12 feet wide",
+  "convert_units": true
+}
+```
+
+### Troubleshooting
+
+For detailed troubleshooting help, see the [Unit Conversion Troubleshooting Guide](docs/UNIT_CONVERSION_GUIDE.md).
+
+**Quick fixes:**
+
+1. **Units not converting**: Check if unit conversion is enabled and the unit type is in `enabledUnitTypes`
+2. **Unexpected conversions**: Add exclusion patterns for specific phrases in `excludePatterns`
+3. **Wrong precision**: Adjust precision settings for each unit type
+4. **Configuration errors**: Validate JSON syntax and check error messages
+
+**Reset to defaults:**
+```bash
+# Remove user configuration to use defaults
+rm ~/.config/m2e/unit_config.json
+```
+
 ## Technology Stack
 
 - **Backend**: Go >= 1.24
@@ -161,11 +309,13 @@ make build-cli
 If installed via `go install`:
 ```bash
 m2e-cli -input yourfile.txt -output converted.txt
+m2e-cli -input yourfile.txt -output converted.txt -units  # with unit conversion
 ```
 
 If built from source:
 ```bash
 ./build/bin/m2e-cli -input yourfile.txt -output converted.txt
+./build/bin/m2e-cli -input yourfile.txt -output converted.txt -units  # with unit conversion
 ```
 
 **Convert piped text:**
@@ -173,12 +323,21 @@ If built from source:
 If installed via `go install`:
 ```bash
 echo "I love color and flavor." | m2e-cli
+echo "The room is 12 feet wide." | m2e-cli -units  # with unit conversion
 ```
 
 If built from source:
 ```bash
 echo "I love color and flavor." | ./build/bin/m2e-cli
+echo "The room is 12 feet wide." | ./build/bin/m2e-cli -units  # with unit conversion
 ```
+
+**CLI Options:**
+- `-input`: Input file to convert (reads from stdin if not specified)
+- `-output`: Output file to write to (writes to stdout if not specified)  
+- `-units`: Freedom Unit Conversion (default: false)
+- `-no-smart-quotes`: Disable smart quote normalisation (default: false)
+- `-h`, `-help`: Show help message
 
 ### Clipboard Usage
 
@@ -248,10 +407,16 @@ MCP_TRANSPORT=stdio ./build/bin/m2e-mcp
 ```
 
 **Available Tools:**
-- `convert_text`: Converts American English text to British English
-  - Parameters: `text` (string, required) - The text to convert
+- `convert_text`: Converts American English text to British English with optional unit conversion
+  - Parameters: 
+    - `text` (string, required) - The text to convert
+    - `convert_units` (string, optional) - Freedom Unit Conversion ("true"/"false", default: "false")
+    - `normalise_smart_quotes` (string, optional) - Normalise smart quotes to regular quotes ("true"/"false", default: "true")
 - `convert_file`: Converts a file from American English to British English and saves it back
-  - Parameters: `file_path` (string, required) - The fully qualified path to the file to convert
+  - Parameters: 
+    - `file_path` (string, required) - The fully qualified path to the file to convert
+    - `convert_units` (string, optional) - Freedom Unit Conversion ("true"/"false", default: "false")
+    - `normalise_smart_quotes` (string, optional) - Normalise smart quotes to regular quotes ("true"/"false", default: "true")
   - Uses intelligent processing: for plain text files (.txt, .md, etc.), converts all text but preserves code within markdown blocks. For code/config files (.go, .js, .py, etc.), only converts comments to preserve functionality.
 
 **Available Resources:**
@@ -267,7 +432,8 @@ Convert text:
   "params": {
     "name": "convert_text",
     "arguments": {
-      "text": "I love color and flavor."
+      "text": "I love color and flavor. The room is 12 feet wide.",
+      "convert_units": "true"
     }
   },
   "id": 1
@@ -282,7 +448,9 @@ Convert a file:
   "params": {
     "name": "convert_file",
     "arguments": {
-      "file_path": "/path/to/your/file.txt"
+      "file_path": "/path/to/your/file.txt",
+      "convert_units": "true",
+      "normalise_smart_quotes": "true"
     }
   },
   "id": 2
@@ -322,19 +490,26 @@ The server will start on port 8080 by default. You can change this by setting th
 
 - `POST /api/v1/convert`
 
-  Converts text from American to British English.
+  Converts text from American to British English with optional unit conversion.
 
   **Request Body:**
   ```json
   {
-    "text": "I love color and flavor."
+    "text": "I love color and flavor. The room is 12 feet wide.",
+    "convert_units": true,
+    "normalise_smart_quotes": true
   }
   ```
+
+  **Parameters:**
+  - `text` (string, required): The text to convert
+  - `convert_units` (boolean, optional): Freedom Unit Conversion (default: false)
+  - `normalise_smart_quotes` (boolean, optional): Normalise smart quotes to regular quotes (default: true)
 
   **Response:**
   ```json
   {
-    "text": "I love colour and flavour."
+    "text": "I love colour and flavour. The room is 3.7 metres wide."
   }
   ```
 

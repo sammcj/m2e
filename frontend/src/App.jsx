@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
-import { ConvertToBritish, HandleDroppedFile, SaveConvertedFile, GetCurrentFilePath, ClearCurrentFile } from "../wailsjs/go/main/App";
+import { ConvertToBritish, ConvertToBritishWithUnits, HandleDroppedFile, SaveConvertedFile, GetCurrentFilePath, ClearCurrentFile, GetUnitProcessingStatus, SetUnitProcessingEnabled } from "../wailsjs/go/main/App";
 import HighlightedTextarea from './components/HighlightedTextarea';
 
 function App() {
@@ -8,6 +8,7 @@ function App() {
     const [britishText, setBritishText] = useState('');
     const [normaliseSmartQuotes, setNormaliseSmartQuotes] = useState(true);
     const [syntaxHighlighting, setSyntaxHighlighting] = useState(false);
+    const [convertUnits, setConvertUnits] = useState(false);
     const [currentFilePath, setCurrentFilePath] = useState('');
     const [dragActive, setDragActive] = useState(false);
     const [fileError, setFileError] = useState('');
@@ -28,6 +29,13 @@ function App() {
             if (path) {
                 setCurrentFilePath(path);
             }
+        });
+
+        // Get unit processing status
+        GetUnitProcessingStatus().then(status => {
+            setConvertUnits(status);
+        }).catch(err => {
+            console.error('Error getting unit processing status:', err);
         });
 
         // Get the dictionary directly from the backend
@@ -70,7 +78,7 @@ function App() {
         const timer = setTimeout(() => {
             if (newText.trim()) {
                 setIsTranslating(true);
-                ConvertToBritish(newText, normaliseSmartQuotes).then((result) => {
+                ConvertToBritishWithUnits(newText, normaliseSmartQuotes, convertUnits).then((result) => {
                     setBritishText(result);
                     setIsTranslating(false);
                 });
@@ -124,7 +132,7 @@ function App() {
 
                     // Automatically convert to British English
                     setIsTranslating(true);
-                    ConvertToBritish(content, normaliseSmartQuotes).then(result => {
+                    ConvertToBritishWithUnits(content, normaliseSmartQuotes, convertUnits).then(result => {
                         setBritishText(result);
                         setIsTranslating(false);
                     });
@@ -167,7 +175,7 @@ function App() {
         triggerEagleAnimation();
 
         setIsTranslating(true);
-        ConvertToBritish(freedomText, normaliseSmartQuotes).then((result) => {
+        ConvertToBritishWithUnits(freedomText, normaliseSmartQuotes, convertUnits).then((result) => {
             setBritishText(result);
             setIsTranslating(false);
         });
@@ -240,7 +248,7 @@ function App() {
                         // Automatically convert to British English
                         if (text.trim()) {
                             setIsTranslating(true);
-                            ConvertToBritish(text, normaliseSmartQuotes).then((result) => {
+                            ConvertToBritishWithUnits(text, normaliseSmartQuotes, convertUnits).then((result) => {
                                 setBritishText(result);
                                 setIsTranslating(false);
                             });
@@ -262,7 +270,7 @@ function App() {
                     // Automatically convert to British English
                     if (text.trim()) {
                         setIsTranslating(true);
-                        ConvertToBritish(text, normaliseSmartQuotes).then((result) => {
+                        ConvertToBritishWithUnits(text, normaliseSmartQuotes, convertUnits).then((result) => {
                             setBritishText(result);
                             setIsTranslating(false);
                         });
@@ -383,6 +391,18 @@ function App() {
                             onChange={(e) => setSyntaxHighlighting(e.target.checked)}
                         />
                         Code Syntax Highlighting
+                    </label>
+                    <label className="checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={convertUnits}
+                            onChange={(e) => {
+                                const enabled = e.target.checked;
+                                setConvertUnits(enabled);
+                                SetUnitProcessingEnabled(enabled);
+                            }}
+                        />
+                        Freedom Unit Conversion
                     </label>
                 </div>
             </div>

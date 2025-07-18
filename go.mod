@@ -7,6 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/alecthomas/chroma/v2 v2.18.0
 	github.com/mark3labs/mcp-go v0.32.0
+	github.com/martinlindhe/unit v0.0.0-20230420213220-4adfd7d0a0d6
 	github.com/wailsapp/wails/v2 v2.10.1
 )
 

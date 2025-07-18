@@ -25,19 +25,26 @@ Options:
         Input file to convert. If not specified, reads from stdin.
   -output string
         Output file to write to. If not specified, writes to stdout.
+  -units
+        Freedom Unit Conversion (default: false)
+  -no-smart-quotes
+        Disable smart quote normalisation (default: false)
   -h, -help
         Show this help message
 
 Examples:
   m2e-cli "color and flavor"
-  m2e-cli -input input.txt -output output.txt
-  echo "American text" | m2e-cli
+  m2e-cli -units "The room is 12 feet wide"
+  m2e-cli -input input.txt -output output.txt -units
+  echo "American text with 5 pounds" | m2e-cli -units
 `)
 }
 
 func main() {
 	inputFile := flag.String("input", "", "Input file to convert. If not specified, reads from stdin.")
 	outputFile := flag.String("output", "", "Output file to write to. If not specified, writes to stdout.")
+	convertUnits := flag.Bool("units", false, "Freedom Unit Conversion")
+	noSmartQuotes := flag.Bool("no-smart-quotes", false, "Disable smart quote normalisation")
 	help := flag.Bool("help", false, "Show help message")
 	helpShort := flag.Bool("h", false, "Show help message")
 	flag.Parse()
@@ -49,7 +56,9 @@ func main() {
 
 	if os.Getenv("M2E_CLIPBOARD") == "1" || os.Getenv("M2E_CLIPBOARD") == "true" {
 		if runtime.GOOS == "darwin" {
-			handleClipboard()
+			// Determine smart quotes setting (default is true, disable if flag is set)
+			normaliseSmartQuotes := !*noSmartQuotes
+			handleClipboard(*convertUnits, normaliseSmartQuotes)
 			return
 		}
 		fmt.Fprintf(os.Stderr, "Clipboard functionality is only supported on macOS.\n")
@@ -107,7 +116,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	convertedText := conv.ConvertToBritish(inputTextFinal, true)
+	// Set unit processing based on flag
+	conv.SetUnitProcessingEnabled(*convertUnits)
+
+	// Determine smart quotes setting (default is true, disable if flag is set)
+	normaliseSmartQuotes := !*noSmartQuotes
+
+	convertedText := conv.ConvertToBritish(inputTextFinal, normaliseSmartQuotes)
 
 	var outputWriter io.Writer
 	if *outputFile != "" {
@@ -133,7 +148,7 @@ func main() {
 	}
 }
 
-func handleClipboard() {
+func handleClipboard(convertUnits bool, normaliseSmartQuotes bool) {
 	// Get text from clipboard
 	pasteCmd := exec.Command("pbpaste")
 	var pasteOut bytes.Buffer
@@ -152,7 +167,11 @@ func handleClipboard() {
 		fmt.Fprintf(os.Stderr, "Error initializing converter: %v\n", err)
 		os.Exit(1)
 	}
-	convertedText := conv.ConvertToBritish(clipboardText, true)
+
+	// Set unit processing based on flag
+	conv.SetUnitProcessingEnabled(convertUnits)
+
+	convertedText := conv.ConvertToBritish(clipboardText, normaliseSmartQuotes)
 
 	// Copy text to clipboard
 	copyCmd := exec.Command("pbcopy")

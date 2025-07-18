@@ -8,6 +8,8 @@ export function ConvertFileToEnglish(arg1:string):Promise<void>;
 
 export function ConvertToBritish(arg1:string,arg2:boolean):Promise<string>;
 
+export function ConvertToBritishWithUnits(arg1:string,arg2:boolean,arg3:boolean):Promise<string>;
+
 export function DetectLanguage(arg1:string):Promise<string>;
 
 export function GetAmericanToBritishDictionary():Promise<main.Dictionary>;
@@ -16,6 +18,8 @@ export function GetCurrentFilePath():Promise<string>;
 
 export function GetSyntaxHighlightedHTML(arg1:string,arg2:string):Promise<string>;
 
+export function GetUnitProcessingStatus():Promise<boolean>;
+
 export function HandleDroppedFile(arg1:string):Promise<string>;
 
 export function HandleFileService(arg1:string):Promise<void>;
@@ -23,3 +27,5 @@ export function HandleFileService(arg1:string):Promise<void>;
 export function HandleService(arg1:string,arg2:string):Promise<string>;
 
 export function SaveConvertedFile(arg1:string):Promise<void>;
+
+export function SetUnitProcessingEnabled(arg1:boolean):Promise<void>;
