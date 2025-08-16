@@ -200,31 +200,31 @@ func TestGenerateReport_WithText(t *testing.T) {
 	}
 }
 
-func TestAnalyzer_CountWords(t *testing.T) {
-	analyzer := report.NewAnalyzer(map[string]string{
+func TestAnalyser_CountWords(t *testing.T) {
+	analyser := report.NewAnalyser(map[string]string{
 		"color": "colour",
 		"humor": "humour",
 	})
 
 	text := "This is a test with five words."
-	stats := analyzer.AnalyzeChanges(text, text)
+	stats := analyser.AnalyseChanges(text, text)
 
 	if stats.TotalWords != 7 {
 		t.Errorf("Expected 7 words, got %d", stats.TotalWords)
 	}
 }
 
-func TestAnalyzer_SpellingChanges(t *testing.T) {
+func TestAnalyser_SpellingChanges(t *testing.T) {
 	americanWords := map[string]string{
 		"color": "colour",
 		"humor": "humour",
 	}
 
-	analyzer := report.NewAnalyzer(americanWords)
+	analyser := report.NewAnalyser(americanWords)
 
 	original := "I love color and humor."
 	converted := "I love colour and humour."
-	stats := analyzer.AnalyzeChanges(original, converted)
+	stats := analyser.AnalyseChanges(original, converted)
 
 	if stats.SpellingChanges != 2 {
 		t.Errorf("Expected 2 spelling changes, got %d", stats.SpellingChanges)
@@ -241,12 +241,12 @@ func TestAnalyzer_SpellingChanges(t *testing.T) {
 	}
 }
 
-func TestAnalyzer_QuoteChanges(t *testing.T) {
-	analyzer := report.NewAnalyzer(map[string]string{})
+func TestAnalyser_QuoteChanges(t *testing.T) {
+	analyser := report.NewAnalyser(map[string]string{})
 
 	original := "\u201cSmart quotes\u201d and \u2018apostrophes\u2019 with em\u2014dashes."
 	converted := "\"Smart quotes\" and 'apostrophes' with em-dashes."
-	stats := analyzer.AnalyzeChanges(original, converted)
+	stats := analyser.AnalyseChanges(original, converted)
 
 	if stats.QuoteChanges < 3 { // Should detect smart quotes and em-dash
 		t.Errorf("Expected at least 3 quote changes, got %d", stats.QuoteChanges)
@@ -254,7 +254,7 @@ func TestAnalyzer_QuoteChanges(t *testing.T) {
 }
 
 func TestUnitTypeDetection(t *testing.T) {
-	analyzer := report.NewAnalyzer(map[string]string{})
+	analyser := report.NewAnalyser(map[string]string{})
 
 	testCases := []struct {
 		unit     string
@@ -273,12 +273,12 @@ func TestUnitTypeDetection(t *testing.T) {
 		// through the unit conversion analysis
 		original := "The measurement is " + tc.unit + "."
 		converted := original // No actual conversion for this test
-		stats := analyzer.AnalyzeChanges(original, converted)
+		stats := analyser.AnalyseChanges(original, converted)
 
 		// Since we're not doing actual conversions, we mainly test that
-		// the analyzer doesn't crash on different unit types
+		// the analyser doesn't crash on different unit types
 		if stats.TotalWords == 0 {
-			t.Errorf("Analyzer failed to process text with unit: %s", tc.unit)
+			t.Errorf("Analyser failed to process text with unit: %s", tc.unit)
 		}
 	}
 }

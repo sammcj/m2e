@@ -6,27 +6,27 @@ import (
 	"unicode"
 )
 
-// Analyzer provides functionality to analyze text changes and generate statistics
-type Analyzer struct {
+// Analyser provides functionality to analyse text changes and generate statistics
+type Analyser struct {
 	americanWords map[string]string
 	unitPatterns  []*regexp.Regexp
 }
 
-// NewAnalyzer creates a new text change analyzer
-func NewAnalyzer(americanWords map[string]string) *Analyzer {
-	analyzer := &Analyzer{
+// NewAnalyser creates a new text change analyser
+func NewAnalyser(americanWords map[string]string) *Analyser {
+	analyser := &Analyser{
 		americanWords: americanWords,
 		unitPatterns:  make([]*regexp.Regexp, 0),
 	}
 
 	// Initialize unit conversion patterns
-	analyzer.initUnitPatterns()
+	analyser.initUnitPatterns()
 
-	return analyzer
+	return analyser
 }
 
 // initUnitPatterns sets up regex patterns for detecting unit conversions
-func (a *Analyzer) initUnitPatterns() {
+func (a *Analyser) initUnitPatterns() {
 	unitPatterns := []string{
 		`\b\d+(?:\.\d+)?\s*(?:feet|foot|ft)\b`,
 		`\b\d+(?:\.\d+)?\s*(?:inches?|in)\b`,
@@ -51,8 +51,8 @@ func (a *Analyzer) initUnitPatterns() {
 	}
 }
 
-// AnalyzeChanges compares original and converted text to generate detailed statistics
-func (a *Analyzer) AnalyzeChanges(original, converted string) ChangeStats {
+// AnalyseChanges compares original and converted text to generate detailed statistics
+func (a *Analyser) AnalyseChanges(original, converted string) ChangeStats {
 	stats := ChangeStats{
 		ChangedWords: make([]WordChange, 0),
 		ChangedUnits: make([]UnitChange, 0),
@@ -61,28 +61,28 @@ func (a *Analyzer) AnalyzeChanges(original, converted string) ChangeStats {
 	// Count total words
 	stats.TotalWords = a.countWords(original)
 
-	// Analyze spelling changes
-	a.analyzeSpellingChanges(original, converted, &stats)
+	// Analyse spelling changes
+	a.analyseSpellingChanges(original, converted, &stats)
 
-	// Analyze unit conversions
-	a.analyzeUnitConversions(original, converted, &stats)
+	// Analyse unit conversions
+	a.analyseUnitConversions(original, converted, &stats)
 
-	// Analyze quote changes
-	a.analyzeQuoteChanges(original, converted, &stats)
+	// Analyse quote changes
+	a.analyseQuoteChanges(original, converted, &stats)
 
 	return stats
 }
 
 // countWords counts the number of words in the text
-func (a *Analyzer) countWords(text string) int {
+func (a *Analyser) countWords(text string) int {
 	words := strings.FieldsFunc(text, func(c rune) bool {
 		return !unicode.IsLetter(c) && !unicode.IsNumber(c) && c != '\'' && c != '-'
 	})
 	return len(words)
 }
 
-// analyzeSpellingChanges detects American to British spelling changes
-func (a *Analyzer) analyzeSpellingChanges(original, converted string, stats *ChangeStats) {
+// analyseSpellingChanges detects American to British spelling changes
+func (a *Analyser) analyseSpellingChanges(original, converted string, stats *ChangeStats) {
 	// Simple word-by-word comparison
 	originalWords := a.extractWords(original)
 	convertedWords := a.extractWords(converted)
@@ -108,8 +108,8 @@ func (a *Analyzer) analyzeSpellingChanges(original, converted string, stats *Cha
 	}
 }
 
-// analyzeUnitConversions detects unit conversions
-func (a *Analyzer) analyzeUnitConversions(original, converted string, stats *ChangeStats) {
+// analyseUnitConversions detects unit conversions
+func (a *Analyser) analyseUnitConversions(original, converted string, stats *ChangeStats) {
 	// Find all unit patterns in original text
 	for _, pattern := range a.unitPatterns {
 		matches := pattern.FindAllStringSubmatch(original, -1)
@@ -132,8 +132,8 @@ func (a *Analyzer) analyzeUnitConversions(original, converted string, stats *Cha
 	}
 }
 
-// analyzeQuoteChanges detects smart quote normalizations
-func (a *Analyzer) analyzeQuoteChanges(original, converted string, stats *ChangeStats) {
+// analyseQuoteChanges detects smart quote normalisations
+func (a *Analyser) analyseQuoteChanges(original, converted string, stats *ChangeStats) {
 	smartQuotes := []string{"\u201c", "\u201d", "\u2018", "\u2019", "\u2013", "\u2014"}
 
 	for _, quote := range smartQuotes {
@@ -146,14 +146,14 @@ func (a *Analyzer) analyzeQuoteChanges(original, converted string, stats *Change
 }
 
 // extractWords extracts words from text for comparison
-func (a *Analyzer) extractWords(text string) []string {
+func (a *Analyser) extractWords(text string) []string {
 	return strings.FieldsFunc(text, func(c rune) bool {
 		return !unicode.IsLetter(c) && !unicode.IsNumber(c) && c != '\'' && c != '-'
 	})
 }
 
 // findCorrespondingConversion finds the metric equivalent of an imperial unit
-func (a *Analyzer) findCorrespondingConversion(originalUnit, original, converted string) string {
+func (a *Analyser) findCorrespondingConversion(originalUnit, original, converted string) string {
 	// Find the position of the original unit
 	pos := strings.Index(original, originalUnit)
 	if pos == -1 {
@@ -190,7 +190,7 @@ func (a *Analyzer) findCorrespondingConversion(originalUnit, original, converted
 }
 
 // determineUnitType determines the type of unit being converted
-func (a *Analyzer) determineUnitType(unit string) string {
+func (a *Analyser) determineUnitType(unit string) string {
 	lowerUnit := strings.ToLower(unit)
 
 	if strings.Contains(lowerUnit, "feet") || strings.Contains(lowerUnit, "foot") ||

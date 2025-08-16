@@ -238,7 +238,7 @@ func (a *App) GetSyntaxHighlightedHTML(code, language string) (string, error) {
 		lexer = lexers.Get(language)
 	}
 
-	// If no lexer found or auto-detection requested, analyze the code
+	// If no lexer found or auto-detection requested, analyse the code
 	if lexer == nil {
 		lexer = lexers.Analyse(code)
 	}

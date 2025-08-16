@@ -261,9 +261,9 @@ func handleSingleText(inputText string, conv *converter.Converter, normaliseSmar
 		return nil
 	}
 
-	// Create analyzer for statistics
-	analyzer := report.NewAnalyzer(conv.GetAmericanToBritishDictionary())
-	stats := analyzer.AnalyzeChanges(inputText, convertedText)
+	// Create analyser for statistics
+	analyser := report.NewAnalyser(conv.GetAmericanToBritishDictionary())
+	stats := analyser.AnalyseChanges(inputText, convertedText)
 
 	// Handle specific output modes
 	if showDiff {
@@ -527,9 +527,9 @@ func handleSingleFile(filePath string, conv *converter.Converter, normaliseSmart
 		return nil
 	}
 
-	// Create analyzer for statistics
-	analyzer := report.NewAnalyzer(conv.GetAmericanToBritishDictionary())
-	stats := analyzer.AnalyzeChanges(content, convertedContent)
+	// Create analyser for statistics
+	analyser := report.NewAnalyser(conv.GetAmericanToBritishDictionary())
+	stats := analyser.AnalyseChanges(content, convertedContent)
 
 	// Handle specific output modes
 	if showDiff {
@@ -597,7 +597,7 @@ func handleDirectory(dirPath string, conv *converter.Converter, normaliseSmartQu
 	// For output modes, collect all results
 	var allResults []string
 	var totalStats report.ChangeStats
-	analyzer := report.NewAnalyzer(conv.GetAmericanToBritishDictionary())
+	analyser := report.NewAnalyser(conv.GetAmericanToBritishDictionary())
 
 	for _, file := range files {
 		fmt.Printf("Processing: %s\n", file.RelativePath)
@@ -618,7 +618,7 @@ func handleDirectory(dirPath string, conv *converter.Converter, normaliseSmartQu
 		}
 
 		// Generate statistics for this file
-		stats := analyzer.AnalyzeChanges(content, convertedContent)
+		stats := analyser.AnalyseChanges(content, convertedContent)
 
 		// Accumulate total stats
 		totalStats.TotalWords += stats.TotalWords
