@@ -13,7 +13,37 @@ permissions:
   packages: write
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Build CLI for tests
+        run: |
+          mkdir -p build/bin
+          go build -o build/bin/m2e ./cmd/m2e-cli
+
+      - name: Run tests
+        run: make test
+
   build-cli-tools:
+    needs: test
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -73,7 +103,7 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
-    needs: build-cli-tools
+    needs: [test, build-cli-tools]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
