@@ -9,6 +9,7 @@ require (
 	github.com/charmbracelet/glamour v0.10.0
 	github.com/mark3labs/mcp-go v0.32.0
 	github.com/martinlindhe/unit v0.0.0-20230420213220-4adfd7d0a0d6
+	github.com/sergi/go-diff v1.4.0
 	github.com/wailsapp/wails/v2 v2.10.2
 )
 
@@ -46,7 +47,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/samber/lo v1.51.0 // indirect
-	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
 	github.com/tkrajina/go-reflector v0.5.8 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
