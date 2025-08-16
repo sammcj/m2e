@@ -18,11 +18,13 @@ help:
 	@echo "  all         - Run lint, test, and build (default)"
 
 # Format code with gofmt
+.PHONY: fmt
 fmt:
 	@echo "Formatting code..."
 	gofmt -w .
 
 # Lint and check formatting
+.PHONY: lint
 lint: fmt
 	@echo "Running linter..."
 	@if command -v golangci-lint >/dev/null 2>&1; then \
@@ -34,16 +36,19 @@ lint: fmt
 	fi
 
 # Run tests
+.PHONY: test
 test:
 	@echo "Running tests..."
 	go test -v ./tests/...
 
 # Build all applications
+.PHONY: build
 build: build-wails build-cli build-server build-mcp
 	ls -tarl build/bin/
 	@echo "All applications built successfully!"
 
 # Build the Wails application
+.PHONY: build-wails
 build-wails:
 	@echo "Building Wails application..."
 	wails build
@@ -52,29 +57,33 @@ build-wails:
 		cp -R build/bin/M2E.app /Applications/; \
 	fi
 
-
 # Build the CLI application
+.PHONY: build-cli
 build-cli:
 	@echo "Building CLI application..."
 	go build -o build/bin/m2e ./cmd/m2e-cli
 
 # Build the server application
+.PHONY: build-server
 build-server:
 	@echo "Building server application..."
 	go build -o build/bin/m2e-server ./cmd/m2e-server
 
 # Build the MCP server application
+.PHONY: build-mcp
 build-mcp:
 	@echo "Building MCP server application..."
 	go build -o build/bin/m2e-mcp ./cmd/m2e-mcp
 
 # Clean build artifacts
+.PHONY: clean
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf build/bin/
 	go clean ./...
 
 # Install development dependencies
+.PHONY: install-deps
 install-deps:
 	@echo "Installing development dependencies..."
 	@if ! command -v golangci-lint >/dev/null 2>&1; then \
@@ -83,6 +92,7 @@ install-deps:
 	fi
 
 # Run tests with coverage
+.PHONY: test-coverage
 test-coverage:
 	@echo "Running tests with coverage..."
 	go test -v -coverprofile=coverage.out ./tests/...
@@ -90,6 +100,7 @@ test-coverage:
 	@echo "Coverage report generated: coverage.html"
 
 # Check for security vulnerabilities
+.PHONY: security
 security:
 	@echo "Checking for security vulnerabilities..."
 	@if command -v govulncheck >/dev/null 2>&1; then \
@@ -100,6 +111,28 @@ security:
 		govulncheck ./...; \
 	fi
 
+# Install-app command that copies the built build/bin/M2E.app to /Applications (overrides existing app)
+.PHONY: install-app
+install-app:
+	@echo "Installing M2E.app to /Applications..."
+	@if [ -d "build/bin/M2E.app" ]; then \
+		if [ "$(shell uname -s)" = "Darwin" ]; then \
+			cp -R build/bin/M2E.app /Applications/; \
+			echo "M2E.app installed successfully!"; \
+		else \
+			echo "This command is only supported on macOS."; \
+		fi \
+	else \
+		echo "M2E.app not found in build/bin/ directory."; \
+	fi
+
 # Run all quality checks
+.PHONY: quality
 quality: lint test security
 	@echo "All quality checks passed!"
+
+# Run MCP's inspector tool
+.PHONY: inspect
+inspect:
+	@echo "Running MCP inspector tool..."
+	DANGEROUSLY_OMIT_AUTH=true npx -y @modelcontextprotocol/inspector "
