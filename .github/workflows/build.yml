@@ -15,7 +15,6 @@ permissions:
 jobs:
   build-cli-tools:
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[skip-ci]')"
     strategy:
       matrix:
         include:
@@ -75,7 +74,6 @@ jobs:
   build-macos:
     runs-on: macos-latest
     needs: build-cli-tools
-    if: "!contains(github.event.head_commit.message, '[skip-ci]')"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
