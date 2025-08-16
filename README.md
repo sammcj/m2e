@@ -9,8 +9,10 @@ A lightweight application for converting text from American to International Eng
 - Fast and responsive and minimalist interface
 - Native desktop application for macOS
 - Also gets rid of those pesky "smart" quotes and em-dashes that break everything
-- CLI support for file conversion
+- CLI support for file and directory conversion
+- Recursive directory processing with intelligent file type detection
 - Clipboard conversion
+- Report mode with comprehensive analysis, diff output, and CI/CD integration
 - MCP (~~Murican Conversion Protocol~~ Model Context Protocol) server for use with AI agents and agentic coding tools
 - Code-aware conversion that preserves code syntax while converting comments (BETA)
 - Configurable unit conversion with user preferences
@@ -45,6 +47,7 @@ MCP Server Use
     - [Development](#development-1)
     - [CLI Usage](#cli-usage)
     - [Clipboard Usage](#clipboard-usage)
+    - [Report Mode Usage](#report-mode-usage)
     - [MCP Server Usage](#mcp-server-usage)
     - [API Usage](#api-usage)
     - [Development Mode](#development-mode)
@@ -67,6 +70,9 @@ Note: There is a known issue with typing directly in the freedom text box, I'll 
 ```bash
 go install github.com/sammcj/m2e/cmd/m2e-cli@HEAD
 ```
+
+Note: The binary will be installed as `m2e` (not `m2e-cli`).
+
 
 ### MCP Server
 
@@ -120,7 +126,7 @@ M2E includes intelligent imperial-to-metric unit conversion that works alongside
 ### Supported Unit Types
 
 - **Length**: feet, inches, yards, miles → metres, centimetres, kilometres
-- **Mass**: pounds, ounces, tons → kilograms, grams, tonnes  
+- **Mass**: pounds, ounces, tons → kilograms, grams, tonnes
 - **Volume**: gallons, quarts, pints, fluid ounces → litres, millilitres
 - **Temperature**: Fahrenheit → Celsius
 - **Area**: square feet, acres → square metres, hectares
@@ -213,8 +219,8 @@ Unit conversion is available across all interfaces:
 
 **CLI**: Use the `-units` flag
 ```bash
-m2e-cli -units "The room is 12 feet wide"
-echo "Temperature was 75°F" | m2e-cli -units
+m2e -units "The room is 12 feet wide"
+echo "Temperature was 75°F" | m2e -units
 ```
 
 **MCP Server**: Add `convert_units` parameter
@@ -304,40 +310,55 @@ The application can be run from the command line to convert files or piped text.
 make build-cli
 ```
 
+**Convert text:**
+```bash
+m2e "I love color and flavor"                # Convert text to stdout
+echo "I love color" | m2e                    # Convert piped text
+```
+
 **Convert a file:**
-
-If installed via `go install`:
 ```bash
-m2e-cli -input yourfile.txt -output converted.txt
-m2e-cli -input yourfile.txt -output converted.txt -units  # with unit conversion
+m2e document.txt                              # Convert file to stdout
+m2e -o converted.txt document.txt             # Convert file to output file
+m2e -units document.txt                       # Convert with unit conversion
 ```
 
-If built from source:
+**Convert a directory (all plain text files recursively):**
 ```bash
-./build/bin/m2e-cli -input yourfile.txt -output converted.txt
-./build/bin/m2e-cli -input yourfile.txt -output converted.txt -units  # with unit conversion
+m2e /path/to/directory                        # Process all text files in-place
+m2e -units /path/to/directory                 # Process with unit conversion
 ```
 
-**Convert piped text:**
-
-If installed via `go install`:
+**Legacy usage (for backwards compatibility):**
 ```bash
-echo "I love color and flavor." | m2e-cli
-echo "The room is 12 feet wide." | m2e-cli -units  # with unit conversion
-```
-
-If built from source:
-```bash
-echo "I love color and flavor." | ./build/bin/m2e-cli
-echo "The room is 12 feet wide." | ./build/bin/m2e-cli -units  # with unit conversion
+m2e -input yourfile.txt -output converted.txt # Legacy flags still work
 ```
 
 **CLI Options:**
-- `-input`: Input file to convert (reads from stdin if not specified)
-- `-output`: Output file to write to (writes to stdout if not specified)  
+- `-o, -output`: Output file to write to (writes to stdout if not specified)
 - `-units`: Freedom Unit Conversion (default: false)
 - `-no-smart-quotes`: Disable smart quote normalisation (default: false)
-- `-h`, `-help`: Show help message
+- `-report`: Enable analysis mode instead of conversion
+- `-h, -help`: Show help message
+
+**Legacy Options (backwards compatibility):**
+- `-input`: Input file to convert (use positional argument instead)
+
+**Directory Processing:**
+When a directory path is provided instead of a file:
+- Recursively processes all plain text files (detects file types intelligently)
+- Skips binary files, hidden files, and common non-text formats
+- Supports both report mode and in-place editing
+- Shows clear progress indicators for which files are being processed
+
+**Report Mode Options:**
+- `-report`: Enable report mode with analysis and formatted output
+- `-diff`: Show git-style diff of changes (report mode only)
+- `-text`: Show converted text output (report mode only)
+- `-markdown`: Show markdown-rendered output (report mode, default: true)
+- `-stats`: Show conversion statistics (report mode, default: true)
+- `-width`: Set output width for formatting (report mode, default: 80)
+- `-exit-on-change`: Exit with code 1 if changes are detected (report mode only)
 
 ### Clipboard Usage
 
@@ -348,10 +369,59 @@ The CLI can also be used to convert the contents of the clipboard directly.
 Set the `M2E_CLIPBOARD` environment variable to `1` or `true` and call the CLI:
 
 ```bash
-M2E_CLIPBOARD=1 m2e-cli
+M2E_CLIPBOARD=1 m2e
 ```
 
 The converted text will be copied back to the clipboard.
+
+### Report Mode Usage
+
+The CLI includes a comprehensive report mode for detailed analysis and formatted output of text conversion operations, perfect for CI/CD pipelines and detailed reporting.
+
+**Basic report mode usage:**
+
+```bash
+m2e -report document.md                    # Analyse single file with default output
+m2e -report /path/to/directory              # Analyse all text files in directory
+echo "I love color" | m2e -report         # Analyse piped text
+```
+
+If built from source:
+```bash
+./build/bin/m2e -report document.md
+./build/bin/m2e -report /path/to/directory
+echo "I love color" | ./build/bin/m2e -report
+```
+
+**Output options:**
+```bash
+m2e -report -diff document.md              # Show git-style diff for single file
+m2e -report -diff /path/to/directory        # Show diffs for all files with changes
+m2e -report -text document.md              # Show converted text
+m2e -report -markdown document.md          # Show markdown-rendered output (default)
+m2e -report -stats document.md             # Show conversion statistics (default)
+```
+
+**Unit conversion in report mode:**
+```bash
+m2e -report -units "The room is 12 feet wide"
+```
+
+**CI/CD integration:**
+```bash
+m2e -report -exit-on-change README.md      # Exit with code 1 if changes needed (single file)
+m2e -report -exit-on-change /docs/         # Exit with code 1 if any files need changes (directory)
+```
+
+**Comprehensive analysis:**
+```bash
+m2e -report -diff -stats -units document.md
+```
+
+**Report mode exit codes:**
+- `0`: Success (no errors)
+- `1`: Changes detected (only when `-exit-on-change` is used)
+- `2`: Error occurred
 
 ---
 
@@ -408,12 +478,12 @@ MCP_TRANSPORT=stdio ./build/bin/m2e-mcp
 
 **Available Tools:**
 - `convert_text`: Converts American English text to British English with optional unit conversion
-  - Parameters: 
+  - Parameters:
     - `text` (string, required) - The text to convert
     - `convert_units` (string, optional) - Freedom Unit Conversion ("true"/"false", default: "false")
     - `normalise_smart_quotes` (string, optional) - Normalise smart quotes to regular quotes ("true"/"false", default: "true")
 - `convert_file`: Converts a file from American English to British English and saves it back
-  - Parameters: 
+  - Parameters:
     - `file_path` (string, required) - The fully qualified path to the file to convert
     - `convert_units` (string, optional) - Freedom Unit Conversion ("true"/"false", default: "false")
     - `normalise_smart_quotes` (string, optional) - Normalise smart quotes to regular quotes ("true"/"false", default: "true")
