@@ -449,33 +449,6 @@ func createLineBasedUnifiedDiff(original, converted, filename string) string {
 	return result.String()
 }
 
-// shouldUseColour determines if we should output ANSI colour codes
-func shouldUseColour() bool {
-	// Check if NO_COLOR environment variable is set (standard)
-	if os.Getenv("NO_COLOR") != "" {
-		return false
-	}
-
-	// Check if FORCE_COLOR is set
-	if os.Getenv("FORCE_COLOR") != "" {
-		return true
-	}
-
-	// Check if stdout is a terminal
-	// This is a simple check - in production code you might want to use a library like isatty
-	term := os.Getenv("TERM")
-	if term == "" || term == "dumb" {
-		return false
-	}
-
-	// Check if we're in a CI environment (usually no colour support)
-	if os.Getenv("CI") != "" {
-		return false
-	}
-
-	return true
-}
-
 // handleFileOrDirectory processes file or directory input
 func handleFileOrDirectory(inputPath string, conv *converter.Converter, normaliseSmartQuotes bool,
 	outputFile string, showDiff, showDiffInline, showRaw, showStats, exitOnChange bool, width int) error {
