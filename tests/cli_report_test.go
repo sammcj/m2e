@@ -46,7 +46,8 @@ func TestCLIOutputModes(t *testing.T) {
 				"--- stdin.orig",
 				"+++ stdin",
 				"@@", // Unified diff hunk header
-				"+u", // Character-level change showing 'u' added
+				"-I love color.",
+				"+I love colour.",
 			},
 			notContains: []string{
 				"📊 **Words processed:**",
