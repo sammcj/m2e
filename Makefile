@@ -56,7 +56,7 @@ build-wails:
 # Build the CLI application
 build-cli:
 	@echo "Building CLI application..."
-	go build -o build/bin/m2e-cli ./cmd/m2e-cli
+	go build -o build/bin/m2e ./cmd/m2e-cli
 
 # Build the server application
 build-server:

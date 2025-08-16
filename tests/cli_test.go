@@ -9,7 +9,7 @@ import (
 
 func TestCLIUsage(t *testing.T) {
 	// Use the existing built CLI
-	cliPath := filepath.Join("..", "build", "bin", "m2e-cli")
+	cliPath := filepath.Join("..", "build", "bin", "m2e")
 
 	tests := []struct {
 		name     string
@@ -20,13 +20,13 @@ func TestCLIUsage(t *testing.T) {
 		{
 			name:     "No arguments shows usage",
 			args:     []string{},
-			expected: "m2e-cli - Convert American English to British English",
+			expected: "m2e - Convert American English to British English",
 			wantErr:  true, // Usage is printed to stderr and exits with code 1
 		},
 		{
 			name:     "Help flag shows usage",
 			args:     []string{"-h"},
-			expected: "m2e-cli - Convert American English to British English",
+			expected: "m2e - Convert American English to British English",
 			wantErr:  false, // Help exits with code 0
 		},
 		{
@@ -66,7 +66,7 @@ func TestCLIUsage(t *testing.T) {
 
 func TestCLIUnitConversion(t *testing.T) {
 	// Use the existing built CLI
-	cliPath := filepath.Join("..", "build", "bin", "m2e-cli")
+	cliPath := filepath.Join("..", "build", "bin", "m2e")
 
 	tests := []struct {
 		name     string

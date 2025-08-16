@@ -44,14 +44,14 @@ jobs:
           CGO_ENABLED: 0
         run: |
           mkdir -p build/bin
-          go build -ldflags="-s -w" -trimpath -o build/bin/m2e-cli-${{ matrix.suffix }} ./cmd/m2e-cli
+          go build -ldflags="-s -w" -trimpath -o build/bin/m2e-${{ matrix.suffix }} ./cmd/m2e-cli
           go build -ldflags="-s -w" -trimpath -o build/bin/m2e-server-${{ matrix.suffix }} ./cmd/m2e-server
           go build -ldflags="-s -w" -trimpath -o build/bin/m2e-mcp-${{ matrix.suffix }} ./cmd/m2e-mcp
 
       - name: Create CLI tools archive
         run: |
           cd build/bin
-          tar -czf "m2e-cli-tools-${{ matrix.suffix }}.tar.gz" m2e-cli-${{ matrix.suffix }} m2e-server-${{ matrix.suffix }} m2e-mcp-${{ matrix.suffix }}
+          tar -czf "m2e-cli-tools-${{ matrix.suffix }}.tar.gz" m2e-${{ matrix.suffix }} m2e-server-${{ matrix.suffix }} m2e-mcp-${{ matrix.suffix }}
           cd ../..
 
       - name: Upload CLI tools as artifact
@@ -106,7 +106,7 @@ jobs:
           export GOOS=darwin
           export GOARCH=arm64
           export MACOSX_DEPLOYMENT_TARGET=15.0
-          go build -ldflags="-s -w" -trimpath -o build/bin/m2e-cli-arm64 ./cmd/m2e-cli
+          go build -ldflags="-s -w" -trimpath -o build/bin/m2e-arm64 ./cmd/m2e-cli
           go build -ldflags="-s -w" -trimpath -o build/bin/m2e-server-arm64 ./cmd/m2e-server
           go build -ldflags="-s -w" -trimpath -o build/bin/m2e-mcp-arm64 ./cmd/m2e-mcp
 
@@ -179,7 +179,7 @@ jobs:
           # Create app archive (keeping M2E.app as the actual app name)
           zip -r "m2e-app-arm64.zip" "M2E.app"
           # Create CLI tools archive
-          zip "m2e-cli-tools-arm64.zip" m2e-cli-arm64 m2e-server-arm64 m2e-mcp-arm64
+          zip "m2e-cli-tools-arm64.zip" m2e-arm64 m2e-server-arm64 m2e-mcp-arm64
           cd ../..
 
       - name: Upload app as artifact

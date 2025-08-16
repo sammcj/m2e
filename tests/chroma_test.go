@@ -181,20 +181,14 @@ function test() {
 		t.Fatalf("Failed to tokenize markdown: %v", err)
 	}
 
-	// Look for code block tokens
+	// Look for code block tokens (markdown backticks)
 	tokens := iterator.Tokens()
 	foundCodeBlock := false
 	for _, token := range tokens {
-		if token.Type == chroma.LiteralStringBacktick ||
-			token.Type.InCategory(chroma.LiteralString) {
-			if len(token.Value) > 10 { // Code blocks are typically longer
-				foundCodeBlock = true
-				preview := token.Value
-				if len(preview) > 50 {
-					preview = preview[:50] + "..."
-				}
-				t.Logf("Found code block token: %s (type: %s)", preview, token.Type)
-			}
+		// Look for backtick markers that indicate code blocks
+		if token.Type == chroma.LiteralString && token.Value == "```" {
+			foundCodeBlock = true
+			break
 		}
 	}
 
