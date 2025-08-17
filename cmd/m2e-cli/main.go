@@ -54,6 +54,8 @@ Output Mode (mutually exclusive):
         Show only the processed plain text
   -stats
         Show only conversion statistics
+  -save
+        Overwrite the input file with converted content
   (default: show diff + processed output + stats)
 
 Additional Options:
@@ -75,6 +77,7 @@ Examples:
   m2e -diff-inline document.txt             # Show only character-level diff with colours
   m2e -raw document.txt                     # Show only processed text
   m2e -stats document.txt                   # Show only conversion statistics
+  m2e -save document.txt                    # Overwrite file with converted content
   m2e -o converted.txt document.txt         # Convert file to output file
   m2e -units document.txt                   # Convert with unit conversion
   m2e /path/to/project                      # Process all text files in directory
@@ -102,6 +105,7 @@ func main() {
 	showDiffInline := flag.Bool("diff-inline", false, "Show only character-level inline diff with colours")
 	showRaw := flag.Bool("raw", false, "Show only the processed plain text")
 	showStats := flag.Bool("stats", false, "Show only conversion statistics")
+	saveInPlace := flag.Bool("save", false, "Overwrite the input file with converted content (cannot be used with other output modes)")
 
 	// Additional flags
 	width := flag.Int("width", 80, "Set output width for formatting")
@@ -202,6 +206,9 @@ func main() {
 	if *showStats {
 		outputModeCount++
 	}
+	if *saveInPlace {
+		outputModeCount++
+	}
 
 	if outputModeCount > 1 {
 		fmt.Fprintf(os.Stderr, "Error: Only one output mode flag can be specified at a time\n")
@@ -214,11 +221,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Check if save flag is used with text input (not allowed)
+	if *saveInPlace && isDirectText {
+		fmt.Fprintf(os.Stderr, "Error: -save flag can only be used with file input, not text input or stdin\n")
+		os.Exit(1)
+	}
+
 	// Handle different input types
 	if isDirectText {
 		// Handle direct text input (single string or stdin)
 		err = handleSingleText(inputText, conv, normaliseSmartQuotes, finalOutputFile,
-			*showDiff, *showDiffInline, *showRaw, *showStats, *exitOnChange, *width)
+			*showDiff, *showDiffInline, *showRaw, *showStats, *saveInPlace, *exitOnChange, *width)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing text: %v\n", err)
 			os.Exit(1)
@@ -226,7 +239,7 @@ func main() {
 	} else {
 		// Handle file or directory input
 		err = handleFileOrDirectory(inputPath, conv, normaliseSmartQuotes, finalOutputFile,
-			*showDiff, *showDiffInline, *showRaw, *showStats, *exitOnChange, *width)
+			*showDiff, *showDiffInline, *showRaw, *showStats, *saveInPlace, *exitOnChange, *width)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing files: %v\n", err)
 			if *exitOnChange {
@@ -240,7 +253,7 @@ func main() {
 
 // handleSingleText processes a single text input (direct text or stdin)
 func handleSingleText(inputText string, conv *converter.Converter, normaliseSmartQuotes bool,
-	outputFile string, showDiff, showDiffInline, showRaw, showStats, exitOnChange bool, width int) error {
+	outputFile string, showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange bool, width int) error {
 
 	convertedText := conv.ConvertToBritish(inputText, normaliseSmartQuotes)
 
@@ -346,104 +359,48 @@ func createUnifiedDiff(original, converted, filename string, inline bool) string
 	}
 }
 
-// createLineBasedUnifiedDiff creates a traditional line-based unified diff
+// createLineBasedUnifiedDiff creates a simple line-based diff showing only lines with actual changes
 func createLineBasedUnifiedDiff(original, converted, filename string) string {
 	originalLines := strings.Split(original, "\n")
-	convertedLines := strings.Split(converted, "\n")
-
-	// Remove trailing empty line if it exists (to handle files with/without trailing newlines consistently)
-	if len(originalLines) > 0 && originalLines[len(originalLines)-1] == "" {
-		originalLines = originalLines[:len(originalLines)-1]
-	}
-	if len(convertedLines) > 0 && convertedLines[len(convertedLines)-1] == "" {
-		convertedLines = convertedLines[:len(convertedLines)-1]
-	}
 
 	var result strings.Builder
 	result.WriteString(fmt.Sprintf("--- %s\n", filename+".orig"))
 	result.WriteString(fmt.Sprintf("+++ %s\n", filename))
 
-	// Simple line-by-line comparison to find changed lines
-	maxLines := len(originalLines)
-	if len(convertedLines) > maxLines {
-		maxLines = len(convertedLines)
+	hasAnyChanges := false
+
+	// Process each line through the converter individually to see what changed
+	// This gives us the cleanest diff showing exactly what words changed on each line
+	for i := 0; i < len(originalLines); i++ {
+		origLine := originalLines[i]
+
+		// Skip empty lines
+		if strings.TrimSpace(origLine) == "" {
+			continue
+		}
+
+		// Process this single line through a fresh converter to see what it becomes
+		tempConv, err := converter.NewConverter()
+		if err != nil {
+			continue // Skip this line if converter fails
+		}
+
+		convertedLine := tempConv.ConvertToBritish(origLine, true) // normalise smart quotes = true
+
+		if origLine != convertedLine {
+			if !hasAnyChanges {
+				hasAnyChanges = true
+			}
+			lineNum := i + 1
+			result.WriteString(fmt.Sprintf("@@ -%d,1 +%d,1 @@\n", lineNum, lineNum))
+			result.WriteString(fmt.Sprintf("-%s\n", origLine))
+			result.WriteString(fmt.Sprintf("+%s\n", convertedLine))
+		}
 	}
 
-	// Find contiguous blocks of changes
-	i := 0
-	for i < maxLines {
-		// Skip matching lines
-		for i < maxLines {
-			var origLine, convLine string
-			if i < len(originalLines) {
-				origLine = originalLines[i]
-			}
-			if i < len(convertedLines) {
-				convLine = convertedLines[i]
-			}
-
-			if origLine != convLine {
-				break // Found a difference
-			}
-			i++
-		}
-
-		if i >= maxLines {
-			break // No more changes
-		}
-
-		// Find the end of this block of changes
-		start := i
-		for i < maxLines {
-			var origLine, convLine string
-			if i < len(originalLines) {
-				origLine = originalLines[i]
-			}
-			if i < len(convertedLines) {
-				convLine = convertedLines[i]
-			}
-
-			if origLine == convLine {
-				break // Found matching line, end of this change block
-			}
-			i++
-		}
-
-		// Generate hunk for this block of changes
-		oldStart := start + 1
-		newStart := start + 1
-		oldCount := 0
-		newCount := 0
-
-		// Count lines in this hunk
-		for j := start; j < i; j++ {
-			if j < len(originalLines) {
-				oldCount++
-			}
-			if j < len(convertedLines) {
-				newCount++
-			}
-		}
-
-		// Add hunk header
-		result.WriteString(fmt.Sprintf("@@ -%d,%d +%d,%d @@\n", oldStart, oldCount, newStart, newCount))
-
-		// Add the actual line changes
-		for j := start; j < i; j++ {
-			if j < len(originalLines) && j < len(convertedLines) {
-				// Both lines exist, show as replacement
-				if originalLines[j] != convertedLines[j] {
-					result.WriteString(fmt.Sprintf("-%s\n", originalLines[j]))
-					result.WriteString(fmt.Sprintf("+%s\n", convertedLines[j]))
-				}
-			} else if j < len(originalLines) {
-				// Line removed
-				result.WriteString(fmt.Sprintf("-%s\n", originalLines[j]))
-			} else if j < len(convertedLines) {
-				// Line added
-				result.WriteString(fmt.Sprintf("+%s\n", convertedLines[j]))
-			}
-		}
+	// If no changes found, return empty string
+	if !hasAnyChanges {
+		return ""
 	}
 
 	return result.String()
@@ -451,7 +408,7 @@ func createLineBasedUnifiedDiff(original, converted, filename string) string {
 
 // handleFileOrDirectory processes file or directory input
 func handleFileOrDirectory(inputPath string, conv *converter.Converter, normaliseSmartQuotes bool,
-	outputFile string, showDiff, showDiffInline, showRaw, showStats, exitOnChange bool, width int) error {
+	outputFile string, showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange bool, width int) error {
 
 	// Check if input is a directory or file
 	info, err := os.Stat(inputPath)
@@ -462,17 +419,17 @@ func handleFileOrDirectory(inputPath string, conv *converter.Converter, normalis
 	if info.IsDir() {
 		// Directory processing
 		return handleDirectory(inputPath, conv, normaliseSmartQuotes, outputFile,
-			showDiff, showDiffInline, showRaw, showStats, exitOnChange, width)
+			showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange, width)
 	} else {
 		// Single file processing
 		return handleSingleFile(inputPath, conv, normaliseSmartQuotes, outputFile,
-			showDiff, showDiffInline, showRaw, showStats, exitOnChange, width)
+			showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange, width)
 	}
 }
 
 // handleSingleFile processes a single file
 func handleSingleFile(filePath string, conv *converter.Converter, normaliseSmartQuotes bool,
-	outputFile string, showDiff, showDiffInline, showRaw, showStats, exitOnChange bool, width int) error {
+	outputFile string, showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange bool, width int) error {
 
 	// Read file content
 	content, err := fileutil.ReadFileContent(filePath)
@@ -496,6 +453,20 @@ func handleSingleFile(filePath string, conv *converter.Converter, normaliseSmart
 		err := os.WriteFile(outputFile, []byte(convertedContent), 0644)
 		if err != nil {
 			return fmt.Errorf("failed to write to output file %s: %w", outputFile, err)
+		}
+		return nil
+	}
+
+	// If save flag is specified, overwrite the original file
+	if saveInPlace {
+		if hasChanges {
+			err := os.WriteFile(filePath, []byte(convertedContent), 0644)
+			if err != nil {
+				return fmt.Errorf("failed to save changes to file %s: %w", filePath, err)
+			}
+			fmt.Printf("Saved changes to: %s\n", filePath)
+		} else {
+			fmt.Printf("No changes needed: %s\n", filePath)
 		}
 		return nil
 	}
@@ -545,7 +516,7 @@ func handleSingleFile(filePath string, conv *converter.Converter, normaliseSmart
 
 // handleDirectory processes all text files in a directory recursively
 func handleDirectory(dirPath string, conv *converter.Converter, normaliseSmartQuotes bool,
-	outputFile string, showDiff, showDiffInline, showRaw, showStats, exitOnChange bool, width int) error {
+	outputFile string, showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange bool, width int) error {
 
 	if outputFile != "" {
 		return fmt.Errorf("output file not supported when processing directories")
@@ -608,6 +579,18 @@ func handleDirectory(dirPath string, conv *converter.Converter, normaliseSmartQu
 			allResults = append(allResults, fmt.Sprintf("=== %s ===\n%s", file.RelativePath, diff))
 		} else if showRaw && hasChanges {
 			allResults = append(allResults, fmt.Sprintf("=== %s ===\n%s", file.RelativePath, convertedContent))
+		} else if saveInPlace {
+			// Save mode: overwrite files with changes
+			if hasChanges {
+				err = os.WriteFile(file.Path, []byte(convertedContent), 0644)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Warning: Failed to save changes to file %s: %v\n", file.Path, err)
+				} else {
+					fmt.Printf("Saved changes to: %s\n", file.RelativePath)
+				}
+			} else {
+				fmt.Printf("No changes needed: %s\n", file.RelativePath)
+			}
 		} else if !showStats {
 			// Default mode or no specific output mode: process files in-place and show results
 			if hasChanges {

@@ -73,7 +73,6 @@ go install github.com/sammcj/m2e/cmd/m2e-cli@HEAD
 
 Note: The binary will be installed as `m2e` (not `m2e-cli`).
 
-
 ### MCP Server
 
 ```bash
@@ -157,11 +156,11 @@ const ROOM_WIDTH_FEET = 12  // ← No conversion in variable names or values
 
 ### Configuration
 
-Unit conversion can be customized through a configuration file at `$HOME/.config/m2e/unit_config.json`.
+Unit conversion can be customised through a configuration file at `$HOME/.config/m2e/unit_config.json`.
 
 **Create example configuration:**
 
-The configuration file is automatically created with default values when first needed. You can manually create and edit `$HOME/.config/m2e/unit_config.json` to customize unit conversion behavior.
+The configuration file is automatically created with default values when first needed. You can manually create and edit `$HOME/.config/m2e/unit_config.json` to customise unit conversion behaviour.
 
 **Configuration options:**
 
@@ -277,19 +276,18 @@ rm ~/.config/m2e/unit_config.json
 ### Development
 
 1. Clone the repository
-
-```bash
-git clone https://github.com/sammcj/m2e.git
-cd m2e
-```
-
+   ```bash
+   git clone https://github.com/sammcj/m2e.git
+   cd m2e
+   ```
 2. Install dependencies
-
-```bash
-go mod tidy
-```
-
+   ```bash
+   go mod tidy
+   ```
 3. Build
+   ```bash
+   make build
+   ```
 
 The project includes a Makefile for common development tasks:
 

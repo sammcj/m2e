@@ -386,8 +386,24 @@ func (c *Converter) processFencedCodeBlocks(text string, normaliseSmartQuotes bo
 
 // processInlineCode handles inline code blocks
 func (c *Converter) processInlineCode(text string, normaliseSmartQuotes bool) string {
+	// If the text contains fenced code blocks, don't process inline code
+	// because the fenced blocks have already been processed correctly
+	if strings.Contains(text, "```") || strings.Contains(text, "~~~") {
+		return text
+	}
+
 	// Use regex to find and preserve inline code while converting surrounding text
 	inlineRegex := regexp.MustCompile("`([^`\n]+)`")
+
+	// Check if there are any inline code matches
+	if !inlineRegex.MatchString(text) {
+		// No inline code, process as regular text
+		converted := c.ConvertToBritishSimple(text, normaliseSmartQuotes)
+		if c.unitProcessor != nil && c.unitProcessor.IsEnabled() {
+			converted = c.unitProcessor.ProcessText(converted, false, "")
+		}
+		return converted
+	}
 
 	// Split the text by inline code blocks and process the non-code parts
 	parts := inlineRegex.Split(text, -1)
@@ -406,10 +422,9 @@ func (c *Converter) processInlineCode(text string, normaliseSmartQuotes bool) st
 
 		// Add back the inline code block if it exists
 		if i < len(matches) {
-			// Process the inline code block for comments
-			content := matches[i][1 : len(matches[i])-1]
-			convertedContent := c.convertCommentsInCode(content, "", normaliseSmartQuotes)
-			result.WriteString("`" + convertedContent + "`")
+			// For inline code, preserve it as-is (don't convert anything)
+			// Inline code should not be processed for spelling changes
+			result.WriteString(matches[i])
 		}
 	}
 
