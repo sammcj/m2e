@@ -52,189 +52,145 @@ type ContextualWordMatch struct {
 	BaseWord     string   // The base word this match relates to
 }
 
-// ContextualWordPatterns holds all the regex patterns for contextual word detection
+// WordConfig represents the configuration for a contextual word pair
+type WordConfig struct {
+	Noun    string `json:"noun"`    // British spelling when used as noun
+	Verb    string `json:"verb"`    // British spelling when used as verb
+	Enabled bool   `json:"enabled"` // Whether this word pair is enabled
+}
+
+// GeneralPattern represents a reusable pattern template
+type GeneralPattern struct {
+	Name       string   // Pattern identifier
+	Template   string   // Pattern template with {WORD} placeholder
+	TargetType WordType // The grammatical role this pattern detects
+	Confidence float64  // Base confidence for this pattern (0.0-1.0)
+}
+
+// ContextualWordPatterns holds all the patterns and configuration for contextual word detection
 type ContextualWordPatterns struct {
-	// Pattern groups by base word
-	LicensePatterns []ContextualWordPattern
+	// Word configurations by base word
+	WordConfigs map[string]WordConfig
+
+	// Generated patterns by base word
+	GeneratedPatterns map[string][]ContextualWordPattern
 
 	// Exclusion patterns for ambiguous or problematic contexts
 	ExclusionPatterns []*regexp.Regexp
 
-	// Base words that support contextual conversion
-	SupportedWords []string
+	// General pattern templates
+	GeneralPatterns []GeneralPattern
 }
 
-// NewContextualWordPatterns creates and initialises all contextual word detection patterns
+// NewContextualWordPatterns creates and initialises the contextual word detection system
 func NewContextualWordPatterns() *ContextualWordPatterns {
 	patterns := &ContextualWordPatterns{
-		SupportedWords: []string{"license", "licensed", "licenses", "licensing"},
+		WordConfigs:       make(map[string]WordConfig),
+		GeneratedPatterns: make(map[string][]ContextualWordPattern),
 	}
-	patterns.initialiseLicensePatterns()
+
+	patterns.initialiseDefaultWordConfigs()
+	patterns.initialiseGeneralPatterns()
 	patterns.initialiseExclusionPatterns()
+	patterns.generateAllPatterns()
+
 	return patterns
 }
 
-// initialiseLicensePatterns creates regex patterns for license/licence detection
-func (p *ContextualWordPatterns) initialiseLicensePatterns() {
-	// NOUN PATTERNS - should use "licence" in British English
-	// Note: Inflected forms (licensed, licenses, licensing) are handled by the dictionary
+// initialiseDefaultWordConfigs sets up the default word configurations
+func (p *ContextualWordPatterns) initialiseDefaultWordConfigs() {
+	p.WordConfigs = map[string]WordConfig{
+		"license": {
+			Noun:    "licence",
+			Verb:    "license",
+			Enabled: true,
+		},
+		"practice": {
+			Noun:    "practice",
+			Verb:    "practise",
+			Enabled: true,
+		},
+		"advice": {
+			Noun:    "advice",
+			Verb:    "advise",
+			Enabled: true,
+		},
+	}
+}
 
-	// Pattern 1a: Determiners + adjectives + license (noun indicators) - handles quotes
-	p.LicensePatterns = append(p.LicensePatterns, ContextualWordPattern{
-		Pattern:     regexp.MustCompile(`(?i)\b(?:a|an|the|this|that|my|your|his|her|our|their|each|every|any|some)\s+(?:(?:valid|expired|driving|temporary|permanent|professional|medical|business|commercial|new|old|current|previous|annual|renewed|suspended|revoked|original|duplicate|replacement|authentic|official|special|required|necessary|mandatory|proper|regular|standard|basic|advanced|full|partial|test|custom|demo|sample|trial)\s+)+['"]?(license)['"]?\b`),
-		WordType:    Noun,
-		BaseWord:    "license",
-		Replacement: "licence",
-		Confidence:  0.9,
-		Description: "Determiner + specific adjective + license (noun usage)",
-	})
+// initialiseGeneralPatterns sets up the reusable pattern templates
+func (p *ContextualWordPatterns) initialiseGeneralPatterns() {
+	p.GeneralPatterns = []GeneralPattern{
+		// NOUN PATTERNS
+		{
+			Name:       "determiner_noun",
+			Template:   `(?i)\b(?:a|an|the|this|that|my|your|his|her|our|their|each|every|any|some)\s+(?:\w+\s+)*?['"]?({WORD})['"]?\b`,
+			TargetType: Noun,
+			Confidence: 0.8,
+		},
+		{
+			Name:       "preposition_object",
+			Template:   `(?i)\b(?:with|without|by|under|for|against|on|in|of|from|about|regarding|concerning)\s+(?:\w+\s+)*?['"]?({WORD})['"]?(?:\s|$)`,
+			TargetType: Noun,
+			Confidence: 0.85,
+		},
+		{
+			Name:       "possessive",
+			Template:   `(?i)\b['"]?({WORD})['"]?'?s\b`,
+			TargetType: Noun,
+			Confidence: 0.95,
+		},
+		{
+			Name:       "compound_noun",
+			Template:   `(?i)\b['"]?({WORD})['"]?\s+(?:holder|number|plate|renewal|application|fee|requirement|agreement|terms|expiration|document|copy|file)\b`,
+			TargetType: Noun,
+			Confidence: 0.9,
+		},
+		{
+			Name:       "sentence_end_noun",
+			Template:   `(?i)\b['"]?({WORD})['"]?(?:\s*)(?:[.!?;,]|$)`,
+			TargetType: Noun,
+			Confidence: 0.7,
+		},
 
-	// Pattern 1b: Simple determiners + license (noun) - covers most noun contexts but excludes modal verbs
-	p.LicensePatterns = append(p.LicensePatterns, ContextualWordPattern{
-		Pattern:     regexp.MustCompile(`(?i)\b(?:a|an|the|this|that|my|your|his|her|our|their|each|every|any|some)\s+['"]?(license)['"]?\b`),
-		WordType:    Noun,
-		BaseWord:    "license",
-		Replacement: "licence",
-		Confidence:  0.8,
-		Description: "Determiner + license (noun usage)",
-	})
-
-	// Pattern 2: License + noun (license as modifier/part of compound noun) - no quotes for true compounds
-	p.LicensePatterns = append(p.LicensePatterns, ContextualWordPattern{
-		Pattern:     regexp.MustCompile(`(?i)\b(license)\s+(?:holder|number|plate|renewal|application|fee|requirement|agreement|terms|expiration|suspension|revocation|validation|check|verification|registration|authority|bureau|office|department|system|database|record|document|copy|photo|picture|scan|file)\b`),
-		WordType:    Noun,
-		BaseWord:    "license",
-		Replacement: "licence",
-		Confidence:  0.95,
-		Description: "License + noun compound (licence as modifier)",
-	})
-
-	// Pattern 3: Preposition + license (object of preposition = noun) - handles quotes
-	p.LicensePatterns = append(p.LicensePatterns, ContextualWordPattern{
-		Pattern:     regexp.MustCompile(`(?i)\b(?:with|without|by|under|for|against|on|in|of|from|about|regarding|concerning)\s+(?:\w+\s+)*?['"]?(license)['"]?(?:\s|$)`),
-		WordType:    Noun,
-		BaseWord:    "license",
-		Replacement: "licence",
-		Confidence:  0.85,
-		Description: "Preposition + license (object of preposition)",
-	})
-
-	// Pattern 4: Possessive forms (inherently noun)
-	p.LicensePatterns = append(p.LicensePatterns, ContextualWordPattern{
-		Pattern:     regexp.MustCompile(`(?i)\b(license)'?s\b`),
-		WordType:    Noun,
-		BaseWord:    "license",
-		Replacement: "licence",
-		Confidence:  0.95,
-		Description: "Possessive license's (noun usage)",
-	})
-
-	// Pattern 5: License at end of sentence or before punctuation (often noun) - handles quotes
-	p.LicensePatterns = append(p.LicensePatterns, ContextualWordPattern{
-		Pattern:     regexp.MustCompile(`(?i)\b['"]?(license)['"]?(?:\s*)(?:[.!?;,]|$)`),
-		WordType:    Noun,
-		BaseWord:    "license",
-		Replacement: "licence",
-		Confidence:  0.7,
-		Description: "License at sentence end (likely noun)",
-	})
-
-	// VERB PATTERNS - should use "license" in British English
-
-	// Pattern 6: Infinitive "to license" (clear verb indicator)
-	p.LicensePatterns = append(p.LicensePatterns, ContextualWordPattern{
-		Pattern:     regexp.MustCompile(`(?i)\bto\s+(license)\b`),
-		WordType:    Verb,
-		BaseWord:    "license",
-		Replacement: "license",
-		Confidence:  0.98, // Very high confidence for infinitive
-		Description: "Infinitive 'to license' (verb usage)",
-	})
-
-	// Pattern 7: Modal verbs + license (verb indicator)
-	p.LicensePatterns = append(p.LicensePatterns, ContextualWordPattern{
-		Pattern:     regexp.MustCompile(`(?i)\b(?:will|shall|must|can|could|should|would|may|might)\s+(?:\w+\s+)*?(license)\b`),
-		WordType:    Verb,
-		BaseWord:    "license",
-		Replacement: "license",
-		Confidence:  0.95, // Increased confidence
-		Description: "Modal verb + license (verb usage)",
-	})
-
-	// Pattern 8: Subject pronouns + license (verb pattern) - more restrictive
-	p.LicensePatterns = append(p.LicensePatterns, ContextualWordPattern{
-		Pattern:     regexp.MustCompile(`(?i)\b(?:I|you|we|they|he|she|it|who)\s+(?:also\s+|often\s+|always\s+|never\s+|sometimes\s+|usually\s+|currently\s+|actively\s+)?(license)\b`),
-		WordType:    Verb,
-		BaseWord:    "license",
-		Replacement: "license",
-		Confidence:  0.85,
-		Description: "Subject pronoun + license (verb usage)",
-	})
-
-	// Pattern 9: License + direct object (verb taking object)
-	p.LicensePatterns = append(p.LicensePatterns, ContextualWordPattern{
-		Pattern:     regexp.MustCompile(`(?i)\b(license)\s+(?:software|technology|content|users|products|materials|intellectual|property|code|applications|services|platforms|tools|systems|data|information|assets|rights|patents|trademarks|copyrights)\b`),
-		WordType:    Verb,
-		BaseWord:    "license",
-		Replacement: "license",
-		Confidence:  0.9,
-		Description: "License + direct object (verb taking object)",
-	})
-
-	// INFLECTED FORM PATTERNS - handle past tense, plural, and participle forms
-
-	// Pattern 10: Licensed (past tense/adjective) - primarily verb form, should stay "licensed"
-	p.LicensePatterns = append(p.LicensePatterns, ContextualWordPattern{
-		Pattern:     regexp.MustCompile(`(?i)\b(licensed)\b`),
-		WordType:    Verb,
-		BaseWord:    "license",
-		Replacement: "licensed", // Keep American spelling for verb forms
-		Confidence:  0.8,
-		Description: "Licensed (past tense/adjective - verb form)",
-	})
-
-	// Pattern 11: Licenses (present tense verb or plural noun) - context dependent
-	p.LicensePatterns = append(p.LicensePatterns, ContextualWordPattern{
-		Pattern:     regexp.MustCompile(`(?i)\b(?:he|she|it|the\s+company|the\s+organization|the\s+authority)\s+(?:\w+\s+)*?(licenses)\b`),
-		WordType:    Verb,
-		BaseWord:    "license",
-		Replacement: "licenses", // Keep American spelling for verb forms
-		Confidence:  0.8,
-		Description: "Licenses (third person singular verb)",
-	})
-
-	// Pattern 12: Licenses (plural noun)
-	p.LicensePatterns = append(p.LicensePatterns, ContextualWordPattern{
-		Pattern:     regexp.MustCompile(`(?i)\b(?:the|their|our|his|her|my|your|some|many|few|several|multiple|valid|expired|temporary|permanent)\s+(?:\w+\s+)*?(licenses)\b`),
-		WordType:    Noun,
-		BaseWord:    "license",
-		Replacement: "licences", // British spelling for noun forms
-		Confidence:  0.8,
-		Description: "Licenses (plural noun)",
-	})
-
-	// Pattern 13: Licensing (present participle) - primarily verb form
-	p.LicensePatterns = append(p.LicensePatterns, ContextualWordPattern{
-		Pattern:     regexp.MustCompile(`(?i)\b(licensing)\b`),
-		WordType:    Verb,
-		BaseWord:    "license",
-		Replacement: "licensing", // Keep American spelling for verb forms
-		Confidence:  0.8,
-		Description: "Licensing (present participle - verb form)",
-	})
-
+		// VERB PATTERNS
+		{
+			Name:       "infinitive",
+			Template:   `(?i)\bto\s+['"]?({WORD})['"]?\b`,
+			TargetType: Verb,
+			Confidence: 0.98,
+		},
+		{
+			Name:       "modal_verb",
+			Template:   `(?i)\b(?:will|shall|must|can|could|should|would|may|might)\s+(?:\w+\s+)*?['"]?({WORD})['"]?\b`,
+			TargetType: Verb,
+			Confidence: 0.95,
+		},
+		{
+			Name:       "subject_verb",
+			Template:   `(?i)\b(?:I|you|we|they|he|she|it|who)\s+(?:also\s+|often\s+|always\s+|never\s+|sometimes\s+|usually\s+)?['"]?({WORD})['"]?\b`,
+			TargetType: Verb,
+			Confidence: 0.8,
+		},
+		{
+			Name:       "direct_object",
+			Template:   `(?i)\b['"]?({WORD})['"]?\s+(?:software|technology|content|users|products|materials|code|applications|services|data|information)\b`,
+			TargetType: Verb,
+			Confidence: 0.9,
+		},
+	}
 }
 
 // initialiseExclusionPatterns creates patterns for excluding ambiguous or problematic contexts
 func (p *ContextualWordPatterns) initialiseExclusionPatterns() {
 	// Contexts where conversion should be avoided
 	exclusions := []string{
-		// Software license names and technical terms where American spelling is standard
+		// Software license names and technical terms
 		`(?i)(?:MIT|BSD|GPL|Apache|Creative\s+Commons|GNU|Mozilla)\s+license`,
 		`(?i)license\s+(?:file|txt|md|doc)`,
 		`(?i)software\s+license\s+(?:agreement|terms)`,
 
-		// License filenames (like LICENSE.txt, LICENSE.md, etc.)
+		// License filenames
 		`(?i)LICENSE\s*\.(?:txt|md|doc|pdf|html)`,
 		`(?i)the\s+LICENSE\s*\.(?:txt|md|doc|pdf|html)\s+file`,
 
@@ -243,17 +199,12 @@ func (p *ContextualWordPatterns) initialiseExclusionPatterns() {
 		`(?i)(?:/|\\)\S*license\S*(?:/|\\|\.)`,
 
 		// Code variable names and identifiers
-		`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*license\w*`,
-		`(?i)\w*license\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,
+		`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*\b(?:license|practice|advice)\w*`,
+		`(?i)\w*\b(?:license|practice|advice)\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,
 
-		// Quoted strings in code contexts (variables, identifiers) - more specific
-		`(?i)(?:=|:)\s*["']\s*\w*license\w*\s*["']`,                          // assignment contexts like var = "license"
-		`(?i)["']\s*\w*license\w*\s*["']\s*(?:=|:|\))`,                       // value contexts like "license" = or "license")
-		`(?i)(?:var|const|let|function|class)\s+["']\s*\w*license\w*\s*["']`, // declaration contexts
-
-		// License plate contexts (should remain "license" as it's a compound noun from American usage)
-		`(?i)license\s+plate`,
-		`(?i)number\s+plate`, // British equivalent, but if "license plate" appears, keep it
+		// Quoted strings in code contexts
+		`(?i)(?:=|:)\s*["']\s*\w*\b(?:license|practice|advice)\w*\s*["']`,
+		`(?i)["']\s*\w*\b(?:license|practice|advice)\w*\s*["']\s*(?:=|:|\))`,
 	}
 
 	for _, pattern := range exclusions {
@@ -262,22 +213,56 @@ func (p *ContextualWordPatterns) initialiseExclusionPatterns() {
 	}
 }
 
+// generateAllPatterns generates contextual patterns for all enabled words
+func (p *ContextualWordPatterns) generateAllPatterns() {
+	for baseWord, config := range p.WordConfigs {
+		if config.Enabled {
+			patterns := p.generatePatternsForWord(baseWord, config)
+			p.GeneratedPatterns[baseWord] = patterns
+		}
+	}
+}
+
+// generatePatternsForWord generates contextual patterns for a specific word
+func (p *ContextualWordPatterns) generatePatternsForWord(word string, config WordConfig) []ContextualWordPattern {
+	var patterns []ContextualWordPattern
+
+	for _, generalPattern := range p.GeneralPatterns {
+		// Replace {WORD} placeholder with actual word
+		patternText := strings.ReplaceAll(generalPattern.Template, "{WORD}", word)
+		compiled, err := regexp.Compile(patternText)
+		if err != nil {
+			continue // Skip invalid patterns
+		}
+
+		var replacement string
+		if generalPattern.TargetType == Noun {
+			replacement = config.Noun
+		} else {
+			replacement = config.Verb
+		}
+
+		patterns = append(patterns, ContextualWordPattern{
+			Pattern:     compiled,
+			WordType:    generalPattern.TargetType,
+			BaseWord:    word,
+			Replacement: replacement,
+			Confidence:  generalPattern.Confidence,
+			Description: generalPattern.Name + " pattern for " + word,
+		})
+	}
+
+	return patterns
+}
+
 // GetPatternsForWord returns all patterns for a specific base word
 func (p *ContextualWordPatterns) GetPatternsForWord(baseWord string) []ContextualWordPattern {
-	baseWord = strings.ToLower(baseWord)
-	switch baseWord {
-	case "license":
-		return p.LicensePatterns
-	default:
-		return nil
-	}
+	return p.GeneratedPatterns[strings.ToLower(baseWord)]
 }
 
 // GetAllPatterns returns all contextual word patterns grouped by base word
 func (p *ContextualWordPatterns) GetAllPatterns() map[string][]ContextualWordPattern {
-	return map[string][]ContextualWordPattern{
-		"license": p.LicensePatterns,
-	}
+	return p.GeneratedPatterns
 }
 
 // IsExcluded checks if the given text matches any exclusion pattern
@@ -292,7 +277,13 @@ func (p *ContextualWordPatterns) IsExcluded(text string) bool {
 
 // GetSupportedWords returns the list of words that support contextual conversion
 func (p *ContextualWordPatterns) GetSupportedWords() []string {
-	return p.SupportedWords
+	var supportedWords []string
+	for word, config := range p.WordConfigs {
+		if config.Enabled {
+			supportedWords = append(supportedWords, word)
+		}
+	}
+	return supportedWords
 }
 
 // ExtractMatchedWord extracts the actual word from a regex match, handling different capture group scenarios
@@ -301,7 +292,7 @@ func ExtractMatchedWord(match []string, baseWord string) string {
 		return ""
 	}
 
-	// If we have capture groups, use the first capture group (which should be the license word)
+	// If we have capture groups, use the first capture group (which should be the word)
 	if len(match) > 1 && match[1] != "" {
 		return match[1]
 	}
@@ -331,4 +322,21 @@ func ExtractMatchedWord(match []string, baseWord string) string {
 	}
 
 	return fullMatch[wordStart:wordEnd]
+}
+
+// AddWordConfig adds or updates a word configuration
+func (p *ContextualWordPatterns) AddWordConfig(word string, config WordConfig) {
+	p.WordConfigs[strings.ToLower(word)] = config
+	if config.Enabled {
+		patterns := p.generatePatternsForWord(word, config)
+		p.GeneratedPatterns[word] = patterns
+	} else {
+		delete(p.GeneratedPatterns, word)
+	}
+}
+
+// GetWordConfig returns the configuration for a specific word
+func (p *ContextualWordPatterns) GetWordConfig(word string) (WordConfig, bool) {
+	config, exists := p.WordConfigs[strings.ToLower(word)]
+	return config, exists
 }

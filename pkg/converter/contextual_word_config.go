@@ -13,8 +13,8 @@ type ContextualWordConfig struct {
 	// Global enable/disable flag
 	Enabled bool `json:"enabled"`
 
-	// Words that support contextual conversion
-	SupportedWords []string `json:"supportedWords"`
+	// Word configurations by base word
+	WordConfigs map[string]WordConfig `json:"wordConfigs"`
 
 	// Minimum confidence threshold for contextual detection (0.0 - 1.0)
 	MinConfidence float64 `json:"minConfidence"`
@@ -22,11 +22,12 @@ type ContextualWordConfig struct {
 	// Custom exclusion patterns (regex patterns to avoid conversion)
 	ExcludePatterns []string `json:"excludePatterns"`
 
-	// Custom word mappings for specific contexts
-	CustomMappings map[string]ContextualMapping `json:"customMappings"`
-
 	// Conversion preferences
 	Preferences ContextualWordPreferences `json:"preferences"`
+
+	// Backward compatibility fields
+	SupportedWords []string                     `json:"-"` // Populated dynamically
+	CustomMappings map[string]ContextualMapping `json:"-"` // Populated dynamically
 }
 
 // ContextualMapping represents a word that has different spellings based on context
@@ -57,10 +58,26 @@ type ContextualWordPreferences struct {
 
 // GetDefaultContextualWordConfig returns the default configuration with sensible defaults
 func GetDefaultContextualWordConfig() *ContextualWordConfig {
-	return &ContextualWordConfig{
-		Enabled:        true,
-		SupportedWords: []string{"license"},
-		MinConfidence:  0.7,
+	config := &ContextualWordConfig{
+		Enabled: true,
+		WordConfigs: map[string]WordConfig{
+			"license": {
+				Noun:    "licence",
+				Verb:    "license",
+				Enabled: true,
+			},
+			"practice": {
+				Noun:    "practice",
+				Verb:    "practise",
+				Enabled: true,
+			},
+			"advice": {
+				Noun:    "advice",
+				Verb:    "advise",
+				Enabled: true,
+			},
+		},
+		MinConfidence: 0.7,
 		ExcludePatterns: []string{
 			// Software license names
 			`(?i)(?:MIT|BSD|GPL|Apache|Creative\s+Commons|GNU|Mozilla)\s+license`,
@@ -75,26 +92,12 @@ func GetDefaultContextualWordConfig() *ContextualWordConfig {
 			`(?i)(?:/|\\)\S*license\S*(?:/|\\|\.)`,
 
 			// Code contexts
-			`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*license\w*`,
-			`(?i)\w*license\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,
+			`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*\b(?:license|practice|advice)\w*`,
+			`(?i)\w*\b(?:license|practice|advice)\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,
 
-			// Quoted strings in code contexts (more specific)
-			`(?i)(?:=|:)\s*["']\s*\w*license\w*\s*["']`,
-			`(?i)["']\s*\w*license\w*\s*["']\s*(?:=|:|\)|;|,)`,
-
-			// License plate (American compound noun)
-			`(?i)license\s+plate`,
-		},
-		CustomMappings: map[string]ContextualMapping{
-			"license": {
-				BaseWord:        "license",
-				NounReplacement: "licence",
-				VerbReplacement: "license",
-				Confidence: map[string]float64{
-					"noun": 0.9,
-					"verb": 0.9,
-				},
-			},
+			// Quoted strings in code contexts
+			`(?i)(?:=|:)\s*["']\s*\w*\b(?:license|practice|advice)\w*\s*["']`,
+			`(?i)["']\s*\w*\b(?:license|practice|advice)\w*\s*["']\s*(?:=|:|\)|;|,)`,
 		},
 		Preferences: ContextualWordPreferences{
 			PreferNounOnAmbiguity: true,  // Default to noun when uncertain
@@ -104,6 +107,11 @@ func GetDefaultContextualWordConfig() *ContextualWordConfig {
 			ConvertQuotedText:     false, // Skip quoted text by default
 		},
 	}
+
+	// Populate backward compatibility fields
+	config.populateBackwardCompatibilityFields()
+
+	return config
 }
 
 // getContextualWordConfigPath returns the path to the contextual word configuration file
@@ -180,13 +188,12 @@ func LoadContextualWordConfig() (*ContextualWordConfig, error) {
 		config.MinConfidence = 0.7
 	}
 
-	if len(config.SupportedWords) == 0 {
-		config.SupportedWords = []string{"license"}
+	if config.WordConfigs == nil {
+		config.WordConfigs = GetDefaultContextualWordConfig().WordConfigs
 	}
 
-	if config.CustomMappings == nil {
-		config.CustomMappings = GetDefaultContextualWordConfig().CustomMappings
-	}
+	// Populate backward compatibility fields
+	config.populateBackwardCompatibilityFields()
 
 	return config, nil
 }
@@ -229,20 +236,16 @@ func SaveContextualWordConfig(config *ContextualWordConfig) error {
 	return nil
 }
 
-// IsWordSupported checks if a word is in the supported words list
+// IsWordSupported checks if a word is enabled for contextual conversion
 func (c *ContextualWordConfig) IsWordSupported(word string) bool {
-	for _, supportedWord := range c.SupportedWords {
-		if supportedWord == word {
-			return true
-		}
-	}
-	return false
+	config, exists := c.WordConfigs[word]
+	return exists && config.Enabled
 }
 
-// GetMappingForWord returns the contextual mapping for a specific word
-func (c *ContextualWordConfig) GetMappingForWord(word string) (ContextualMapping, bool) {
-	mapping, exists := c.CustomMappings[word]
-	return mapping, exists
+// GetWordConfig returns the configuration for a specific word
+func (c *ContextualWordConfig) GetWordConfig(word string) (WordConfig, bool) {
+	config, exists := c.WordConfigs[word]
+	return config, exists && config.Enabled
 }
 
 // AddExclusionPattern adds a new exclusion pattern to the configuration
@@ -258,44 +261,95 @@ func (c *ContextualWordConfig) RemoveExclusionPattern(pattern string) {
 			break
 		}
 	}
+	// Update compatibility fields after modification
+	c.populateBackwardCompatibilityFields()
 }
 
 // AddCustomWord adds a new word with contextual mappings to the configuration
 func (c *ContextualWordConfig) AddCustomWord(baseWord, nounForm, verbForm string) {
-	// Add to supported words if not already present
-	if !c.IsWordSupported(baseWord) {
-		c.SupportedWords = append(c.SupportedWords, baseWord)
+	if c.WordConfigs == nil {
+		c.WordConfigs = make(map[string]WordConfig)
 	}
 
-	// Add custom mapping
-	if c.CustomMappings == nil {
-		c.CustomMappings = make(map[string]ContextualMapping)
-	}
-
-	c.CustomMappings[baseWord] = ContextualMapping{
-		BaseWord:        baseWord,
-		NounReplacement: nounForm,
-		VerbReplacement: verbForm,
-		Confidence: map[string]float64{
-			"noun": 0.9,
-			"verb": 0.9,
-		},
+	c.WordConfigs[baseWord] = WordConfig{
+		Noun:    nounForm,
+		Verb:    verbForm,
+		Enabled: true,
 	}
 }
 
 // RemoveCustomWord removes a word from contextual conversion
 func (c *ContextualWordConfig) RemoveCustomWord(baseWord string) {
-	// Remove from supported words
-	for i, word := range c.SupportedWords {
-		if word == baseWord {
-			c.SupportedWords = append(c.SupportedWords[:i], c.SupportedWords[i+1:]...)
-			break
+	if c.WordConfigs != nil {
+		delete(c.WordConfigs, baseWord)
+	}
+}
+
+// EnableWord enables contextual conversion for a specific word
+func (c *ContextualWordConfig) EnableWord(baseWord string) {
+	if config, exists := c.WordConfigs[baseWord]; exists {
+		config.Enabled = true
+		c.WordConfigs[baseWord] = config
+	}
+}
+
+// DisableWord disables contextual conversion for a specific word
+func (c *ContextualWordConfig) DisableWord(baseWord string) {
+	if config, exists := c.WordConfigs[baseWord]; exists {
+		config.Enabled = false
+		c.WordConfigs[baseWord] = config
+	}
+}
+
+// GetSupportedWords returns a list of all enabled words for contextual conversion
+func (c *ContextualWordConfig) GetSupportedWords() []string {
+	var supportedWords []string
+	for word, config := range c.WordConfigs {
+		if config.Enabled {
+			supportedWords = append(supportedWords, word)
 		}
 	}
+	return supportedWords
+}
 
-	// Remove custom mapping
-	if c.CustomMappings != nil {
-		delete(c.CustomMappings, baseWord)
+// GetMappingForWord returns the contextual mapping for a specific word in old format
+func (c *ContextualWordConfig) GetMappingForWord(word string) (ContextualMapping, bool) {
+	config, exists := c.WordConfigs[word]
+	if !exists || !config.Enabled {
+		return ContextualMapping{}, false
+	}
+
+	mapping := ContextualMapping{
+		BaseWord:        word,
+		NounReplacement: config.Noun,
+		VerbReplacement: config.Verb,
+		Confidence: map[string]float64{
+			"noun": 0.9,
+			"verb": 0.9,
+		},
+	}
+	return mapping, true
+}
+
+// populateBackwardCompatibilityFields populates the compatibility fields from WordConfigs
+func (c *ContextualWordConfig) populateBackwardCompatibilityFields() {
+	// Populate SupportedWords
+	c.SupportedWords = c.GetSupportedWords()
+
+	// Populate CustomMappings
+	c.CustomMappings = make(map[string]ContextualMapping)
+	for word, config := range c.WordConfigs {
+		if config.Enabled {
+			c.CustomMappings[word] = ContextualMapping{
+				BaseWord:        word,
+				NounReplacement: config.Noun,
+				VerbReplacement: config.Verb,
+				Confidence: map[string]float64{
+					"noun": 0.9,
+					"verb": 0.9,
+				},
+			}
+		}
 	}
 }
 
@@ -303,12 +357,11 @@ func (c *ContextualWordConfig) RemoveCustomWord(baseWord string) {
 func GetUserConfigurationExample() *ContextualWordConfig {
 	config := GetDefaultContextualWordConfig()
 
-	// Add example custom word
-	config.AddCustomWord("practice", "practice", "practise")
-	config.AddCustomWord("advice", "advice", "advise")
-
 	// Add example custom exclusion
 	config.AddExclusionPattern(`(?i)my\s+custom\s+pattern`)
+
+	// Repopulate compatibility fields
+	config.populateBackwardCompatibilityFields()
 
 	return config
 }
