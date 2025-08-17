@@ -201,9 +201,9 @@ func (d *ContextAwareWordDetector) calculateConfidence(pattern ContextualWordPat
 		}
 	}
 
-	// Reduce confidence for ambiguous contexts
-	if strings.Contains(contextLower, "software") && strings.Contains(contextLower, "license") {
-		confidence = maxFloat(confidence-0.2, 0.0) // Software contexts are often technical terms
+	// Reduce confidence for specific technical contexts
+	if strings.Contains(contextLower, "software license") {
+		confidence = maxFloat(confidence-0.2, 0.0) // Software license agreements are often technical terms
 	}
 
 	return confidence
@@ -337,16 +337,27 @@ func (d *ContextAwareWordDetector) UpdateConfiguration(config *ContextualWordCon
 		// Skip default patterns that are already added
 		isDefault := false
 		defaultPatterns := []string{
+			// Software license names and technical terms - avoid converting in legal/technical contexts
 			`(?i)(?:MIT|BSD|GPL|Apache|Creative\s+Commons|GNU|Mozilla)\s+license`,
+			// License files - avoid converting when referring to license documents
 			`(?i)license\s+(?:file|txt|md|doc)`,
+			// Software license agreements - avoid converting in legal contexts
 			`(?i)software\s+license\s+(?:agreement|terms)`,
+			// License filenames - avoid converting literal filename references
 			`(?i)LICENSE\s*\.(?:txt|md|doc|pdf|html)`,
+			// License file references with "the" article
 			`(?i)the\s+LICENSE\s*\.(?:txt|md|doc|pdf|html)\s+file`,
+			// URLs and file paths - avoid converting in web addresses and paths
 			`(?i)(?:https?://|www\.)\S*license\S*`,
+			// File system paths containing license
 			`(?i)(?:/|\\)\S*license\S*(?:/|\\|\.)`,
+			// Code variable names and identifiers - avoid converting programming constructs
 			`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*\b(?:license|practice|advice)\w*`,
+			// Variable assignments and operators - avoid converting in code assignments
 			`(?i)\w*\b(?:license|practice|advice)\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,
+			// Quoted strings in code contexts - avoid converting in string literals
 			`(?i)(?:=|:)\s*["']\s*\w*\b(?:license|practice|advice)\w*\s*["']`,
+			// String literals with trailing operators
 			`(?i)["']\s*\w*\b(?:license|practice|advice)\w*\s*["']\s*(?:=|:|\))`,
 		}
 

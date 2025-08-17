@@ -123,31 +123,41 @@ func (p *ContextualWordPatterns) initialiseGeneralPatterns() {
 	p.GeneralPatterns = []GeneralPattern{
 		// NOUN PATTERNS
 		{
-			Name:       "determiner_noun",
+			Name: "determiner_noun",
+			// Matches: "a|an|the|this|that|my|your|his|her|our|their|each|every|any|some" + optional words + target word
+			// Examples: "a device", "the licence", "my advice", "some practice sessions"
 			Template:   `(?i)\b(?:a|an|the|this|that|my|your|his|her|our|their|each|every|any|some)\s+(?:\w+\s+)*?['"]?({WORD})['"]?\b`,
 			TargetType: Noun,
 			Confidence: 0.8,
 		},
 		{
-			Name:       "preposition_object",
+			Name: "preposition_object",
+			// Matches: preposition + optional words + target word as object
+			// Examples: "with a licence", "for advice", "about the device", "regarding practice"
 			Template:   `(?i)\b(?:with|without|by|under|for|against|on|in|of|from|about|regarding|concerning)\s+(?:\w+\s+)*?['"]?({WORD})['"]?(?:\s|$)`,
 			TargetType: Noun,
 			Confidence: 0.85,
 		},
 		{
-			Name:       "possessive",
+			Name: "possessive",
+			// Matches: target word + possessive 's
+			// Examples: "device's features", "licence's terms", "advice's value"
 			Template:   `(?i)\b['"]?({WORD})['"]?'?s\b`,
 			TargetType: Noun,
 			Confidence: 0.95,
 		},
 		{
-			Name:       "compound_noun",
+			Name: "compound_noun",
+			// Matches: target word + common noun compounds
+			// Examples: "licence holder", "device number", "practice sessions"
 			Template:   `(?i)\b['"]?({WORD})['"]?\s+(?:holder|number|plate|renewal|application|fee|requirement|agreement|terms|expiration|document|copy|file)\b`,
 			TargetType: Noun,
 			Confidence: 0.9,
 		},
 		{
-			Name:       "sentence_end_noun",
+			Name: "sentence_end_noun",
+			// Matches: target word at the end of sentence or before punctuation
+			// Examples: "I need a licence.", "Get some advice!", "Buy the device,"
 			Template:   `(?i)\b['"]?({WORD})['"]?(?:\s*)(?:[.!?;,]|$)`,
 			TargetType: Noun,
 			Confidence: 0.7,
@@ -155,25 +165,33 @@ func (p *ContextualWordPatterns) initialiseGeneralPatterns() {
 
 		// VERB PATTERNS
 		{
-			Name:       "infinitive",
+			Name: "infinitive",
+			// Matches: "to" + target word (infinitive form)
+			// Examples: "to license", "to devise", "to practise", "to advise"
 			Template:   `(?i)\bto\s+['"]?({WORD})['"]?\b`,
 			TargetType: Verb,
 			Confidence: 0.98,
 		},
 		{
-			Name:       "modal_verb",
+			Name: "modal_verb",
+			// Matches: modal verb + optional words + target word
+			// Examples: "will license", "can devise", "should practise", "might advise"
 			Template:   `(?i)\b(?:will|shall|must|can|could|should|would|may|might)\s+(?:\w+\s+)*?['"]?({WORD})['"]?\b`,
 			TargetType: Verb,
 			Confidence: 0.95,
 		},
 		{
-			Name:       "subject_verb",
+			Name: "subject_verb",
+			// Matches: subject pronoun + optional adverbs + target word
+			// Examples: "I license", "they devise", "we practise", "you advise"
 			Template:   `(?i)\b(?:I|you|we|they|he|she|it|who)\s+(?:also\s+|often\s+|always\s+|never\s+|sometimes\s+|usually\s+)?['"]?({WORD})['"]?\b`,
 			TargetType: Verb,
 			Confidence: 0.8,
 		},
 		{
-			Name:       "direct_object",
+			Name: "direct_object",
+			// Matches: target word + direct object (technology/software terms)
+			// Examples: "license software", "devise technology", "practise skills"
 			Template:   `(?i)\b['"]?({WORD})['"]?\s+(?:software|technology|content|users|products|materials|code|applications|services|data|information)\b`,
 			TargetType: Verb,
 			Confidence: 0.9,
@@ -185,25 +203,31 @@ func (p *ContextualWordPatterns) initialiseGeneralPatterns() {
 func (p *ContextualWordPatterns) initialiseExclusionPatterns() {
 	// Contexts where conversion should be avoided
 	exclusions := []string{
-		// Software license names and technical terms
+		// Software license names and technical terms - avoid converting in legal/technical contexts
 		`(?i)(?:MIT|BSD|GPL|Apache|Creative\s+Commons|GNU|Mozilla)\s+license`,
+		// License files - avoid converting when referring to license documents
 		`(?i)license\s+(?:file|txt|md|doc)`,
+		// Software license agreements - avoid converting in legal contexts
 		`(?i)software\s+license\s+(?:agreement|terms)`,
 
-		// License filenames
+		// License filenames - avoid converting literal filename references
 		`(?i)LICENSE\s*\.(?:txt|md|doc|pdf|html)`,
+		// License file references with "the" article
 		`(?i)the\s+LICENSE\s*\.(?:txt|md|doc|pdf|html)\s+file`,
 
-		// URLs and file paths
+		// URLs and file paths - avoid converting in web addresses and paths
 		`(?i)(?:https?://|www\.)\S*license\S*`,
+		// File system paths containing license
 		`(?i)(?:/|\\)\S*license\S*(?:/|\\|\.)`,
 
-		// Code variable names and identifiers
+		// Code variable names and identifiers - avoid converting programming constructs
 		`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*\b(?:license|practice|advice)\w*`,
+		// Variable assignments and operators - avoid converting in code assignments
 		`(?i)\w*\b(?:license|practice|advice)\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,
 
-		// Quoted strings in code contexts
+		// Quoted strings in code contexts - avoid converting in string literals
 		`(?i)(?:=|:)\s*["']\s*\w*\b(?:license|practice|advice)\w*\s*["']`,
+		// String literals with trailing operators
 		`(?i)["']\s*\w*\b(?:license|practice|advice)\w*\s*["']\s*(?:=|:|\))`,
 	}
 
