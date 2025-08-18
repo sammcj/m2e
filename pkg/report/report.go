@@ -429,15 +429,15 @@ func (r *Reporter) generateStatsOutput(stats ChangeStats) string {
 	output.WriteString(fmt.Sprintf("📊 **Total words processed:** %d\n", stats.TotalWords))
 
 	if stats.SpellingChanges > 0 {
-		output.WriteString(fmt.Sprintf("🔤 **Spelling changes:** %d\n", stats.SpellingChanges))
+		output.WriteString(fmt.Sprintf("🔤 **Spelling changes needed:** %d\n", stats.SpellingChanges))
 	}
 
 	if stats.UnitConversions > 0 {
-		output.WriteString(fmt.Sprintf("📏 **Unit conversions:** %d\n", stats.UnitConversions))
+		output.WriteString(fmt.Sprintf("📏 **Unit conversions needed:** %d\n", stats.UnitConversions))
 	}
 
 	if stats.QuoteChanges > 0 {
-		output.WriteString(fmt.Sprintf("❝ **Quote normalizations:** %d\n", stats.QuoteChanges))
+		output.WriteString(fmt.Sprintf("❝ **Quote normalizations needed:** %d\n", stats.QuoteChanges))
 	}
 
 	// Show detailed changes if there are any

@@ -149,12 +149,28 @@ func FindTextFiles(rootPath string) ([]FileInfo, error) {
 			return nil
 		}
 
-		// Skip directories
+		// Skip common directories that should be ignored
 		if d.IsDir() {
+			dirName := strings.ToLower(d.Name())
+			ignoredDirs := []string{
+				".git", ".svn", ".hg", ".bzr",
+				"node_modules", ".npm", ".yarn", "bower_components",
+				".venv", "venv", "__pycache__", ".pytest_cache",
+				"target", "build", "dist", "out", "bin",
+				".idea", ".vscode", ".vs", ".settings",
+				"vendor", ".gradle", ".m2",
+				".cache", ".tmp", "tmp", "temp",
+			}
+
+			for _, ignored := range ignoredDirs {
+				if dirName == ignored {
+					return filepath.SkipDir
+				}
+			}
 			return nil
 		}
 
-		// Skip hidden files and directories
+		// Skip hidden files
 		if strings.HasPrefix(d.Name(), ".") {
 			return nil
 		}

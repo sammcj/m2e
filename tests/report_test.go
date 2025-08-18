@@ -118,7 +118,7 @@ func TestGenerateReport_WithChanges(t *testing.T) {
 		t.Fatalf("Failed to generate report: %v", err)
 	}
 
-	if !strings.Contains(output, "Spelling changes:** 2") {
+	if !strings.Contains(output, "Spelling changes needed:** 2") {
 		t.Error("Expected spelling changes count in output")
 	}
 

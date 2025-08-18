@@ -49,9 +49,10 @@ func createUserDictionary(dictPath string) error {
 		return nil // File already exists
 	}
 
-	// Create the file with an example entry
+	// Create the file with example entries and a note
 	exampleDict := map[string]string{
-		"customize": "customise",
+		"customize":    "customise",
+		"example_note": "For context-aware conversions like license/licence based on noun vs verb usage, see ~/.config/m2e/contextual_word_config.json",
 	}
 
 	data, err := json.MarshalIndent(exampleDict, "", "  ")
@@ -132,8 +133,9 @@ func LoadDictionaries() (*Dictionaries, error) {
 
 // Converter provides methods to convert between American and British English
 type Converter struct {
-	dict          *Dictionaries
-	unitProcessor *UnitProcessor
+	dict                   *Dictionaries
+	unitProcessor          *UnitProcessor
+	contextualWordDetector ContextualWordDetector
 }
 
 // SmartQuotesMap holds mappings for smart quotes and em-dashes to their normal equivalents
@@ -154,8 +156,9 @@ func NewConverter() (*Converter, error) {
 	}
 
 	return &Converter{
-		dict:          dict,
-		unitProcessor: NewUnitProcessor(),
+		dict:                   dict,
+		unitProcessor:          NewUnitProcessor(),
+		contextualWordDetector: NewContextAwareWordDetector(),
 	}, nil
 }
 
@@ -173,8 +176,27 @@ func (c *Converter) ConvertToBritishSimple(text string, normaliseSmartQuotes boo
 		processedText = c.normaliseSmartQuotes(text)
 	}
 
-	// Then convert the text
-	result := c.convert(processedText, c.dict.AmericanToBritish)
+	// Create a dictionary copy excluding all contextual words to prevent conflicts
+	dict := make(map[string]string)
+	for k, v := range c.dict.AmericanToBritish {
+		dict[k] = v
+	}
+
+	// Remove all contextual words from dictionary processing
+	if c.contextualWordDetector != nil {
+		supportedWords := c.contextualWordDetector.SupportedWords()
+		for _, word := range supportedWords {
+			delete(dict, strings.ToLower(word))
+		}
+
+		// Apply contextual word conversion if enabled
+		if c.contextualWordDetector.IsEnabled() {
+			processedText = c.applyContextualWordConversion(processedText)
+		}
+	}
+
+	// Apply standard dictionary conversion
+	result := c.convert(processedText, dict)
 	return result
 }
 
@@ -196,6 +218,23 @@ func (c *Converter) SetUnitProcessingEnabled(enabled bool) {
 	if c.unitProcessor != nil {
 		c.unitProcessor.SetEnabled(enabled)
 	}
+}
+
+// GetContextualWordDetector returns the contextual word detector instance
+func (c *Converter) GetContextualWordDetector() ContextualWordDetector {
+	return c.contextualWordDetector
+}
+
+// SetContextualWordDetectionEnabled enables or disables contextual word detection
+func (c *Converter) SetContextualWordDetectionEnabled(enabled bool) {
+	if c.contextualWordDetector != nil {
+		c.contextualWordDetector.SetEnabled(enabled)
+	}
+}
+
+// IsContextualWordDetectionEnabled returns whether contextual word detection is enabled
+func (c *Converter) IsContextualWordDetectionEnabled() bool {
+	return c.contextualWordDetector != nil && c.contextualWordDetector.IsEnabled()
 }
 
 // NormaliseSmartQuotes converts smart quotes and em-dashes to their normal equivalents
@@ -611,6 +650,40 @@ func isLetter(c byte) bool {
 
 func isDigit(c byte) bool {
 	return '0' <= c && c <= '9'
+}
+
+// applyContextualWordConversion applies contextual word detection and conversion to text
+func (c *Converter) applyContextualWordConversion(text string) string {
+	if c.contextualWordDetector == nil || !c.contextualWordDetector.IsEnabled() {
+		return text
+	}
+
+	// Detect contextual word matches
+	matches := c.contextualWordDetector.DetectWords(text)
+	if len(matches) == 0 {
+		return text
+	}
+
+	// Process matches in reverse order to maintain positions
+	result := text
+	for i := len(matches) - 1; i >= 0; i-- {
+		match := matches[i]
+
+		// Skip if the replacement would be the same as the original
+		if match.OriginalWord == match.Replacement {
+			continue
+		}
+
+		// Skip words that would result in no change
+		// This prevents unnecessary processing
+
+		// Apply the contextual replacement
+		before := result[:match.Start]
+		after := result[match.End:]
+		result = before + match.Replacement + after
+	}
+
+	return result
 }
 
 // UnitProcessor handles unit detection and conversion
