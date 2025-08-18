@@ -343,6 +343,8 @@ func (d *ContextAwareWordDetector) UpdateConfiguration(config *ContextualWordCon
 			`(?i)license\s+(?:file|txt|md|doc)`,
 			// Software license agreements - avoid converting in legal contexts
 			`(?i)software\s+license\s+(?:agreement|terms)`,
+			// License plate - avoid converting vehicle license plates
+			`(?i)license\s+plate`,
 			// License filenames - avoid converting literal filename references
 			`(?i)LICENSE\s*\.(?:txt|md|doc|pdf|html)`,
 			// License file references with "the" article
