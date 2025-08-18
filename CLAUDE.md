@@ -103,3 +103,8 @@ Requires Go 1.24+ (specified in go.mod with toolchain go1.24.1)
 - `tests/` for all test files
 - `frontend/` for React application
 - Embedded data in `pkg/converter/data/`
+
+## Note
+
+- Always run `make lint && make test` before stating you have completed the task.
+

@@ -11,7 +11,7 @@ import (
 
 func TestCLIDirectoryProcessing(t *testing.T) {
 	// Build the CLI first
-	cmd := exec.Command("go", "build", "-o", "../build/bin/m2e-test", "../cmd/m2e-cli")
+	cmd := exec.Command("go", "build", "-o", "../build/bin/m2e-test", "../cmd/m2e")
 	err := cmd.Run()
 	if err != nil {
 		t.Fatalf("Failed to build CLI: %v", err)
@@ -73,7 +73,7 @@ Room dimensions: 6 inches by 8 inches.`,
 			args: func(dir string) []string { return []string{"-stats", dir} },
 			contains: []string{
 				"📊 **Words processed:**",
-				"🔤 **Spelling changes:**",
+				"🔤 **Spelling changes needed:**",
 			},
 			exitCode: 0,
 		},
@@ -82,8 +82,8 @@ Room dimensions: 6 inches by 8 inches.`,
 			args: func(dir string) []string { return []string{"-stats", "-units", dir} },
 			contains: []string{
 				"📊 **Words processed:**",
-				"🔤 **Spelling changes:**",
-				"📏 **Unit conversions:**",
+				"🔤 **Spelling changes needed:**",
+				"📏 **Unit conversions needed:**",
 			},
 			exitCode: 0,
 		},
@@ -98,15 +98,17 @@ Room dimensions: 6 inches by 8 inches.`,
 			exitCode: 1, // Should exit with 1 because changes are detected
 		},
 		{
-			name: "Directory default mode (in-place editing)",
+			name: "Directory default mode (summary report)",
 			args: func(dir string) []string { return []string{dir} },
 			contains: []string{
 				"Found",
 				"text file(s)",
 				"Processing:",
-				"Updated:",
+				"Files requiring changes",
+				"README.md:",
+				"spelling change(s) needed",
 			},
-			exitCode: 0,
+			exitCode: 1,
 		},
 		{
 			name: "Directory diff mode",
@@ -165,7 +167,7 @@ Room dimensions: 6 inches by 8 inches.`,
 
 func TestCLIDirectoryWithNoTextFiles(t *testing.T) {
 	// Build the CLI first
-	cmd := exec.Command("go", "build", "-o", "../build/bin/m2e-test", "../cmd/m2e-cli")
+	cmd := exec.Command("go", "build", "-o", "../build/bin/m2e-test", "../cmd/m2e")
 	err := cmd.Run()
 	if err != nil {
 		t.Fatalf("Failed to build CLI: %v", err)
@@ -214,7 +216,7 @@ func TestCLIDirectoryWithNoTextFiles(t *testing.T) {
 
 func TestCLISingleFileVsDirectory(t *testing.T) {
 	// Build the CLI first
-	cmd := exec.Command("go", "build", "-o", "../build/bin/m2e-test", "../cmd/m2e-cli")
+	cmd := exec.Command("go", "build", "-o", "../build/bin/m2e-test", "../cmd/m2e")
 	err := cmd.Run()
 	if err != nil {
 		t.Fatalf("Failed to build CLI: %v", err)
@@ -252,7 +254,7 @@ func TestCLISingleFileVsDirectory(t *testing.T) {
 	// Should contain stats elements
 	expectedElements := []string{
 		"📊 **Words processed:**",
-		"🔤 **Spelling changes:**",
+		"🔤 **Spelling changes needed:**",
 	}
 
 	for _, expected := range expectedElements {
@@ -264,7 +266,7 @@ func TestCLISingleFileVsDirectory(t *testing.T) {
 
 func TestCLIDirectoryInPlaceEditing(t *testing.T) {
 	// Build the CLI first
-	cmd := exec.Command("go", "build", "-o", "../build/bin/m2e-test", "../cmd/m2e-cli")
+	cmd := exec.Command("go", "build", "-o", "../build/bin/m2e-test", "../cmd/m2e")
 	err := cmd.Run()
 	if err != nil {
 		t.Fatalf("Failed to build CLI: %v", err)
@@ -286,8 +288,8 @@ func TestCLIDirectoryInPlaceEditing(t *testing.T) {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
-	// Process directory in normal mode (should edit files in-place)
-	cmd = exec.Command("../build/bin/m2e-test", tempDir)
+	// Process directory with -save flag (should edit files in-place)
+	cmd = exec.Command("../build/bin/m2e-test", "-save", tempDir)
 
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
@@ -325,7 +327,7 @@ func TestCLIDirectoryInPlaceEditing(t *testing.T) {
 
 	// Check output indicates file was updated
 	output := stdout.String()
-	if !strings.Contains(output, "Updated: test.txt") {
+	if !strings.Contains(output, "Saved changes to: test.txt") {
 		t.Errorf("Output should indicate file was updated, got: %s", output)
 	}
 }

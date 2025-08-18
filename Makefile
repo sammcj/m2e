@@ -61,7 +61,7 @@ build-wails:
 .PHONY: build-cli
 build-cli:
 	@echo "Building CLI application..."
-	go build -o build/bin/m2e ./cmd/m2e-cli
+	go build -o build/bin/m2e ./cmd/m2e
 
 # Build the server application
 .PHONY: build-server

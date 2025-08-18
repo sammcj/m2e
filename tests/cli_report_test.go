@@ -10,7 +10,7 @@ import (
 
 func TestCLIOutputModes(t *testing.T) {
 	// Build the CLI first
-	cmd := exec.Command("go", "build", "-o", "../build/bin/m2e-test", "../cmd/m2e-cli")
+	cmd := exec.Command("go", "build", "-o", "../build/bin/m2e-test", "../cmd/m2e")
 	err := cmd.Run()
 	if err != nil {
 		t.Fatalf("Failed to build CLI: %v", err)
@@ -35,7 +35,7 @@ func TestCLIOutputModes(t *testing.T) {
 				"+++ stdin",
 				"I love colour and humour",
 				"📊 **Words processed:** 5",
-				"🔤 **Spelling changes:** 2",
+				"🔤 **Spelling changes needed:** 2",
 			},
 		},
 		{
@@ -71,7 +71,7 @@ func TestCLIOutputModes(t *testing.T) {
 			args:  []string{"-stats"},
 			contains: []string{
 				"📊 **Words processed:** 3",
-				"🔤 **Spelling changes:** 1",
+				"🔤 **Spelling changes needed:** 1",
 			},
 			notContains: []string{
 				"--- stdin.orig",
@@ -85,7 +85,7 @@ func TestCLIOutputModes(t *testing.T) {
 			expectExit1: true,
 			contains: []string{
 				"📊 **Words processed:** 3",
-				"🔤 **Spelling changes:** 1",
+				"🔤 **Spelling changes needed:** 1",
 			},
 		},
 		{
@@ -95,7 +95,7 @@ func TestCLIOutputModes(t *testing.T) {
 			contains: []string{
 				"I love colour and humour",
 				"📊 **Words processed:** 5",
-				"🔤 **Spelling changes:** 0",
+				"🔤 **Spelling changes needed:** 0",
 			},
 			notContains: []string{
 				"--- stdin.orig", // No diff shown when no changes
@@ -107,7 +107,7 @@ func TestCLIOutputModes(t *testing.T) {
 			args:  []string{"-units"},
 			contains: []string{
 				"3.7 metres",
-				"📏 **Unit conversions:** 1",
+				"📏 **Unit conversions needed:** 1",
 			},
 		},
 		{
@@ -179,7 +179,7 @@ func TestCLIOutputModes(t *testing.T) {
 
 func TestCLIOutputModeErrors(t *testing.T) {
 	// Build the CLI first
-	cmd := exec.Command("go", "build", "-o", "../build/bin/m2e-test", "../cmd/m2e-cli")
+	cmd := exec.Command("go", "build", "-o", "../build/bin/m2e-test", "../cmd/m2e")
 	err := cmd.Run()
 	if err != nil {
 		t.Fatalf("Failed to build CLI: %v", err)
@@ -240,7 +240,7 @@ func TestCLIOutputModeErrors(t *testing.T) {
 
 func TestCLILegacyCompatibility(t *testing.T) {
 	// Build the CLI first
-	cmd := exec.Command("go", "build", "-o", "../build/bin/m2e-test", "../cmd/m2e-cli")
+	cmd := exec.Command("go", "build", "-o", "../build/bin/m2e-test", "../cmd/m2e")
 	err := cmd.Run()
 	if err != nil {
 		t.Fatalf("Failed to build CLI: %v", err)
