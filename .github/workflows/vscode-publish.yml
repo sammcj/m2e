@@ -227,7 +227,7 @@ jobs:
 
           # Create and push tag
           git tag "$NEW_TAG"
-          git push origin HEAD:"${{ github.ref_name }}"
+          git push origin HEAD:"${{ github.ref_name }}" || true  # Ignore if branch already exists
           git push origin "$NEW_TAG"
 
           echo "newTag=$NEW_TAG" >> $GITHUB_OUTPUT

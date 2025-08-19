@@ -140,6 +140,36 @@ func (p *ContextualWordPatterns) initialiseDefaultWordConfigs() {
 			Verb:    "disc", // Rarely used as verb
 			Enabled: true,
 		},
+		"tire": {
+			Noun:    "tyre", // Automotive wheel component
+			Verb:    "tire", // To become weary/fatigued
+			Enabled: true,
+		},
+		"metre": {
+			Noun:    "metre", // Unit of measurement (100 metres, square metre)
+			Verb:    "metre", // Rarely used as verb
+			Enabled: true,
+		},
+		"meter": {
+			Noun:    "meter", // Measuring device (gas meter, parking meter)
+			Verb:    "meter", // Rarely used as verb
+			Enabled: true,
+		},
+		"curb": {
+			Noun:    "kerb", // Pavement edge
+			Verb:    "curb", // To restrain/control
+			Enabled: true,
+		},
+		"draught": {
+			Noun:    "draught", // Air current/beer context
+			Verb:    "draught", // Rarely used as verb
+			Enabled: true,
+		},
+		"draft": {
+			Noun:    "draft", // Document/conscription context
+			Verb:    "draft", // To conscript/create preliminary version
+			Enabled: true,
+		},
 	}
 }
 
@@ -194,6 +224,54 @@ func (p *ContextualWordPatterns) initialiseGeneralPatterns() {
 			Template:   `(?i)\b(?:best|common|standard|good|bad|usual|normal|general|medical|legal|professional|driving|software|fishing|hunting)\s+['"]?({WORD})['"]?\b`,
 			TargetType: Noun,
 			Confidence: 0.95,
+		},
+		{
+			Name: "automotive_context",
+			// Matches: automotive contexts for tire → tyre
+			// Examples: "car tire", "bike tire", "tire pressure", "spare tire"
+			Template:   `(?i)\b(?:car|bike|bicycle|motorcycle|truck|vehicle|auto|wheel|spare|flat|front|rear|left|right)\s+['"]?({WORD})['"]?\b`,
+			TargetType: Noun,
+			Confidence: 0.95,
+		},
+		{
+			Name: "measurement_unit_context",
+			// Matches: measurement contexts for meter → metre
+			// Examples: "100 meters", "square meters", "cubic meters"
+			Template:   `(?i)\b(?:\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|hundred|thousand|million|square|cubic|linear)\s+['"]?({WORD})(?:s|es)?['"]?\b`,
+			TargetType: Noun,
+			Confidence: 0.95,
+		},
+		{
+			Name: "device_context",
+			// Matches: device contexts for metre → meter
+			// Examples: "gas meter", "parking meter", "electricity meter"
+			Template:   `(?i)\b(?:gas|electric|electricity|water|parking|speed|flow|pressure|taxi|postage|postal)\s+['"]?({WORD})['"]?\b`,
+			TargetType: Noun,
+			Confidence: 0.95,
+		},
+		{
+			Name: "pavement_context",
+			// Matches: pavement/street contexts for curb → kerb
+			// Examples: "hit the curb", "stepped off curb", "curb appeal"
+			Template:   `(?i)\b(?:hit|step|stepped|off|onto|along|beside|near|against|the)\s+(?:the\s+)?['"]?({WORD})['"]?\b`,
+			TargetType: Noun,
+			Confidence: 0.9,
+		},
+		{
+			Name: "air_beer_context",
+			// Matches: air current/beer contexts for draft → draught
+			// Examples: "cold draft", "draft beer", "feel a draft"
+			Template:   `(?i)\b(?:cold|warm|cool|icy|feel|felt|beer|ale|bitter|pint|glass|bottle|tap)\s+(?:a\s+|the\s+)?['"]?({WORD})['"]?\b`,
+			TargetType: Noun,
+			Confidence: 0.9,
+		},
+		{
+			Name: "document_context",
+			// Matches: document/conscription contexts for draught → draft
+			// Examples: "rough draft", "first draft", "draft document", "military draft"
+			Template:   `(?i)\b(?:rough|first|final|initial|preliminary|military|army|navy|write|review|edit|revise)\s+(?:a\s+|the\s+)?['"]?({WORD})['"]?\b`,
+			TargetType: Noun,
+			Confidence: 0.9,
 		},
 		{
 			Name: "sentence_end_noun",
@@ -325,20 +403,36 @@ func (p *ContextualWordPatterns) initialiseExclusionPatterns() {
 		`(?i)(?:hard|floppy|solid\s+state|SSD|HDD|magnetic)\s+disk`,
 		`(?i)disk\s+(?:drive|drives|space|usage|storage|partition|format|image)`,
 
+		// Tire contexts that should NOT convert to tyre (fatigue usage)
+		`(?i)(?:I|you|we|they|he|she|it|don't|doesn't|didn't|won't|wouldn't|will|would|can|could|should|might|may)\s+(?:easily\s+|quickly\s+|never\s+|often\s+|sometimes\s+)?tire`,
+		`(?i)tire\s+(?:easily|quickly|of|from|out)`,
+
+		// Meter contexts that should be metre (measurement units)
+		`(?i)(?:\d+(?:\.\d+)?|square|cubic|linear)\s+meter`,
+
+		// Curb contexts that should NOT convert to kerb (restraint usage)
+		`(?i)curb\s+(?:your|his|her|their|our|my|the|this|that)\s+(?:enthusiasm|appetite|spending|desire|impulse|habit)`,
+		`(?i)(?:must|should|need\s+to|have\s+to|ought\s+to)\s+curb`,
+
+		// Draft contexts that are ambiguous or should stay as draft
+		`(?i)(?:rough|first|final|initial|preliminary)\s+draft`,
+		`(?i)draft\s+(?:document|paper|letter|email|version|copy)`,
+		`(?i)(?:military|army|navy|war)\s+draft`,
+
 		// URLs and file paths - avoid converting in web addresses and paths
-		`(?i)(?:https?://|www\.)\S*(?:license|program|check|story|disk|inquiry)\S*`,
+		`(?i)(?:https?://|www\.)\S*(?:license|program|check|story|disk|inquiry|tire|meter|metre|curb|kerb|draft|draught)\S*`,
 		// File system paths containing these words
-		`(?i)(?:/|\\)\S*(?:license|program|check|story|disk|inquiry)\S*(?:/|\\|\.)`,
+		`(?i)(?:/|\\)\S*(?:license|program|check|story|disk|inquiry|tire|meter|metre|curb|kerb|draft|draught)\S*(?:/|\\|\.)`,
 
 		// Code variable names and identifiers - avoid converting programming constructs
-		`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*\b(?:license|practice|advice|program|check|story|disk|inquiry)\w*`,
+		`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*\b(?:license|practice|advice|program|check|story|disk|inquiry|tire|meter|metre|curb|kerb|draft|draught)\w*`,
 		// Variable assignments and operators - avoid converting in code assignments
-		`(?i)\w*\b(?:license|practice|advice|program|check|story|disk|inquiry)\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,
+		`(?i)\w*\b(?:license|practice|advice|program|check|story|disk|inquiry|tire|meter|metre|curb|kerb|draft|draught)\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,
 
 		// Quoted strings in code contexts - avoid converting in string literals
-		`(?i)(?:=|:)\s*["']\s*\w*\b(?:license|practice|advice|program|check|story|disk|inquiry)\w*\s*["']`,
+		`(?i)(?:=|:)\s*["']\s*\w*\b(?:license|practice|advice|program|check|story|disk|inquiry|tire|meter|metre|curb|kerb|draft|draught)\w*\s*["']`,
 		// String literals with trailing operators
-		`(?i)["']\s*\w*\b(?:license|practice|advice|program|check|story|disk|inquiry)\w*\s*["']\s*(?:=|:|\))`,
+		`(?i)["']\s*\w*\b(?:license|practice|advice|program|check|story|disk|inquiry|tire|meter|metre|curb|kerb|draft|draught)\w*\s*["']\s*(?:=|:|\))`,
 	}
 
 	for _, pattern := range exclusions {
