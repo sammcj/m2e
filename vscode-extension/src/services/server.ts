@@ -15,18 +15,15 @@ export class M2EServerManager {
     private process: ChildProcess | null = null;
     private port: number = 18181;
     private outputChannel: vscode.OutputChannel;
-    private statusBarItem: vscode.StatusBarItem;
     private context: vscode.ExtensionContext;
     private healthCheckTimer?: ReturnType<typeof setInterval> | undefined;
 
     constructor(
         context: vscode.ExtensionContext,
-        outputChannel: vscode.OutputChannel,
-        statusBarItem: vscode.StatusBarItem
+        outputChannel: vscode.OutputChannel
     ) {
         this.context = context;
         this.outputChannel = outputChannel;
-        this.statusBarItem = statusBarItem;
         
         // Register cleanup handlers
         context.subscriptions.push(
@@ -46,7 +43,6 @@ export class M2EServerManager {
             // Get binary path based on platform
             const binaryPath = this.getBinaryPath();
             if (!binaryPath) {
-                this.updateStatusBar('error', 'Platform not supported');
                 return false;
             }
 
@@ -76,13 +72,11 @@ export class M2EServerManager {
             // Handle process events
             this.process.on('error', (_error) => {
                 this.outputChannel.appendLine(`[Server Process Error] ${_error.message}`);
-                this.updateStatusBar('error', `Process error: ${_error.message}`);
             });
 
             this.process.on('exit', (code, signal) => {
                 this.outputChannel.appendLine(`[Server] Process exited with code ${code}, signal ${signal}`);
                 this.process = null;
-                this.updateStatusBar('stopped');
                 
                 // Clear health check timer
                 if (this.healthCheckTimer) {
@@ -95,7 +89,6 @@ export class M2EServerManager {
             const ready = await this.waitForServer(5000); // 5 second timeout
 
             if (ready) {
-                this.updateStatusBar('running');
                 this.outputChannel.appendLine(`M2E server started successfully on port ${this.port}`);
                 
                 // Start periodic health checks
@@ -103,14 +96,12 @@ export class M2EServerManager {
                 return true;
             } else {
                 this.outputChannel.appendLine('M2E server failed to start within timeout');
-                this.updateStatusBar('error', 'Failed to start');
                 await this.stop();
                 return false;
             }
         } catch {
             const message = "An unknown error occurred";
             this.outputChannel.appendLine(`Failed to start M2E server: ${message}`);
-            this.updateStatusBar('error', `Start failed: ${message}`);
             return false;
         }
     }
@@ -146,7 +137,6 @@ export class M2EServerManager {
             });
 
             this.process = null;
-            this.updateStatusBar('stopped');
             this.outputChannel.appendLine('M2E server stopped');
         }
     }
@@ -319,38 +309,11 @@ export class M2EServerManager {
                 const isHealthy = await this.checkHealth();
                 if (!isHealthy) {
                     this.outputChannel.appendLine('Health check failed - server may be unresponsive');
-                    this.updateStatusBar('error', 'Health check failed');
                 }
             }
         }, 30000);
     }
 
-    private updateStatusBar(status: 'running' | 'stopped' | 'error', tooltip?: string): void {
-        const showStatusBar = vscode.workspace.getConfiguration('m2e').get<boolean>('showStatusBar', true);
-        
-        if (!showStatusBar) {
-            this.statusBarItem.hide();
-            return;
-        }
-
-        const icons = {
-            running: '$(circle-filled)',
-            stopped: '$(circle-outline)', 
-            error: '$(error)'
-        };
-
-        const colors = {
-            running: undefined, // Default color
-            stopped: new vscode.ThemeColor('statusBarItem.warningBackground'),
-            error: new vscode.ThemeColor('statusBarItem.errorBackground')
-        };
-
-        this.statusBarItem.text = `M2E ${icons[status]}`;
-        this.statusBarItem.tooltip = tooltip || `M2E Server is ${status}${status === 'running' ? ` on port ${this.port}` : ''}`;
-        this.statusBarItem.backgroundColor = colors[status];
-        this.statusBarItem.command = status === 'error' ? 'm2e.restartServer' : undefined;
-        this.statusBarItem.show();
-    }
 
     private getLogLevel(): string {
         const debugLogging = vscode.workspace.getConfiguration('m2e').get<boolean>('debugLogging', false);
@@ -364,15 +327,6 @@ export class M2EServerManager {
             
             this.outputChannel.appendLine('M2E configuration changed, restarting server...');
             await this.restart();
-        }
-
-        if (event.affectsConfiguration('m2e.showStatusBar')) {
-            const showStatusBar = vscode.workspace.getConfiguration('m2e').get<boolean>('showStatusBar', true);
-            if (showStatusBar) {
-                this.updateStatusBar(this.getStatus().isRunning ? 'running' : 'stopped');
-            } else {
-                this.statusBarItem.hide();
-            }
         }
     }
 }

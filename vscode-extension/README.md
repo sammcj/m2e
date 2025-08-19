@@ -1,6 +1,6 @@
-# M2E - American to British English Converter for VSCode
+# M2E - 'Murican to English Converter
 
-Convert American English text to British English with imperial-to-metric unit conversion directly within Visual Studio Code.
+Convert 'Murican to standard international English and freedom units to standard metric units directly within Visual Studio Code.
 
 ![M2E Extension](https://img.shields.io/badge/M2E-VSCode%20Extension-blue)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
@@ -10,9 +10,11 @@ Convert American English text to British English with imperial-to-metric unit co
 
 M2E is a VSCode extension that provides seamless conversion of American English spellings to British English, with optional imperial-to-metric unit conversion. The extension integrates with the existing M2E converter infrastructure through a local HTTP API server, providing accurate text conversion without leaving your IDE.
 
+M2E provides a CLI, MCP and GUI as well as the VSCode extension: https://github.com/sammcj/m2e
+
 ### Key Features
 
-- **Smart Text Conversion**: Convert American spellings to British English (color → colour, organize → organise)
+- **Smart Text Conversion**: Convert American spellings to standard English (color → colour, organize → organise)
 - **Unit Conversion**: Transform imperial measurements to metric (5 feet → 1.52m, 70°F → 21°C)
 - **Code-Aware Processing**: Preserve syntax while converting comments and strings in code files
 - **Real-Time Diagnostics**: Highlight American spellings as you type
@@ -190,14 +192,12 @@ Access settings via `File > Preferences > Settings` and search for "M2E":
 {
   "m2e.serverPort": 18181,
   "m2e.customServerPath": "",
-  "m2e.showStatusBar": true,
   "m2e.debugLogging": false
 }
 ```
 
 - **Server Port**: Preferred port for local server (auto-increments if busy)
 - **Custom Server Path**: Path to custom m2e-server binary (optional)
-- **Show Status Bar**: Display server status in status bar
 - **Debug Logging**: Enable detailed logging for development
 
 #### File Processing Configuration
@@ -310,7 +310,7 @@ The extension processes these file types:
 Right-click on selected text:
 - "Convert to British English" - Convert selection
 
-#### Explorer Context Menu  
+#### Explorer Context Menu
 Right-click on files in Explorer:
 - "Convert File to British English" - Convert entire file
 
@@ -332,7 +332,7 @@ The colour of the aluminium organisation centre was recognised for its specialis
 
 **Input:**
 ```text
-The server room is 70°F and measures 10 feet by 12 feet. 
+The server room is 70°F and measures 10 feet by 12 feet.
 The cooling system handles 5 gallons per minute at 30 PSI.
 ```
 
@@ -441,7 +441,7 @@ rm -rf ~/.config/m2e/
 
 1. **Check Output Channel**: View `M2E` output channel for detailed logs
 2. **Restart Server**: Use `M2E: Restart Server` command
-3. **Reload Window**: Use `Developer: Reload Window` command  
+3. **Reload Window**: Use `Developer: Reload Window` command
 4. **Report Issues**: Create issue at [GitHub Issues](https://github.com/sammcj/m2e/issues)
 
 When reporting issues, include:
@@ -527,11 +527,9 @@ vscode-extension/
 └── README.md               # This file
 ```
 
-## Contributing
+### Contributing
 
-Contributions are welcome! Please read the [contributing guidelines](../CONTRIBUTING.md) before submitting pull requests.
-
-### Areas for Contribution
+Areas for contribution:
 
 - **Language Support**: Add support for additional programming languages
 - **Unit Conversions**: Expand unit conversion types and accuracy
@@ -545,7 +543,7 @@ MIT License - see [LICENSE](../LICENSE) file for details.
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
+See the github release notes: https://github.com/sammcj/m2e/releases
 
 ## Related Projects
 

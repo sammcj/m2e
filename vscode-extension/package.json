@@ -238,11 +238,6 @@
           ],
           "description": "Additional glob patterns to exclude from processing"
         },
-        "m2e.showStatusBar": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show server status in the status bar"
-        },
         "m2e.codeAwareConversion": {
           "type": "boolean",
           "default": true,

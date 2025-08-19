@@ -32,6 +32,7 @@ MCP Server Use
     - [GUI](#gui)
     - [CLI](#cli)
     - [MCP Server](#mcp-server)
+    - [VSCode Extension](#vscode-extension)
   - [How It Works](#how-it-works)
     - [Adding New Words](#adding-new-words)
     - [macOS Services Integration](#macos-services-integration)
@@ -78,6 +79,14 @@ Note: The binary will may installed as `m2e` (not `m2e-cli`) depending on your s
 ```bash
 go install github.com/sammcj/m2e/cmd/m2e-mcp@HEAD
 ```
+
+### VSCode Extension
+
+You can also install m2e as a VSCode extension which provides linting and conversion capabilities directly within VSCode.
+
+Browse the VSCode marketplace for 'm2e', or browse to the marketplace online: https://marketplace.visualstudio.com/items?itemName=sammcj.m2e-vscode
+
+![VSCode Extension Suggestion](screenshots/vscode-extension.png)
 
 ---
 

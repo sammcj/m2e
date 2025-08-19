@@ -13,7 +13,6 @@ import {
 let serverManager: M2EServerManager;
 let apiClient: M2EApiClient;
 let outputChannel: vscode.OutputChannel;
-let statusBarItem: vscode.StatusBarItem;
 let commandRegistry: CommandRegistry;
 let diagnosticProvider: M2EDiagnosticProvider;
 let codeActionProvider: M2ECodeActionProvider;
@@ -27,12 +26,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         outputChannel = vscode.window.createOutputChannel('M2E');
         context.subscriptions.push(outputChannel);
 
-        // Create status bar item
-        statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-        context.subscriptions.push(statusBarItem);
-
         // Initialise server manager and API client
-        serverManager = new M2EServerManager(context, outputChannel, statusBarItem);
+        serverManager = new M2EServerManager(context, outputChannel);
         apiClient = new M2EApiClient(outputChannel);
 
         // Initialise command registry with server running helper
@@ -66,15 +61,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         registerManageIgnoreListCommand(context, diagnosticProvider);
         registerRefreshDiagnosticsCommand(context, diagnosticProvider, codeActionProvider);
 
-        // Set up configuration change monitoring
-        context.subscriptions.push(
-            vscode.workspace.onDidChangeConfiguration(onConfigurationChanged)
-        );
 
         outputChannel.appendLine('M2E extension activated successfully');
         
-        // Show initial status (server not started yet)
-        updateStatusBar('stopped');
 
     } catch {
         const message = "An unknown error occurred";
@@ -118,63 +107,17 @@ async function ensureServerRunning(): Promise<void> {
     
     if (!status.isRunning) {
         outputChannel.appendLine('Starting M2E server...');
-        updateStatusBar('stopped', 'Starting server...');
         
         const success = await serverManager.start();
         
         if (!success) {
-            updateStatusBar('error', 'Failed to start');
             throw new Error('Failed to start M2E server');
         }
         
         apiClient.setServerUrl(serverManager.getServerUrl());
-        updateStatusBar('running');
     }
 }
 
 
 
-/**
- * Update status bar display
- */
-function updateStatusBar(status: 'running' | 'stopped' | 'error', tooltip?: string): void {
-    const showStatusBar = vscode.workspace.getConfiguration('m2e').get<boolean>('showStatusBar', true);
-    
-    if (!showStatusBar) {
-        statusBarItem.hide();
-        return;
-    }
 
-    const icons = {
-        running: '$(circle-filled)',
-        stopped: '$(circle-outline)', 
-        error: '$(error)'
-    };
-
-    const colors = {
-        running: undefined, // Default colour
-        stopped: new vscode.ThemeColor('statusBarItem.warningBackground'),
-        error: new vscode.ThemeColor('statusBarItem.errorBackground')
-    };
-
-    statusBarItem.text = `M2E ${icons[status]}`;
-    statusBarItem.tooltip = tooltip || `M2E Server is ${status}${status === 'running' ? ` on port ${serverManager?.getStatus().port || ''}` : ''}`;
-    statusBarItem.backgroundColor = colors[status];
-    statusBarItem.command = status === 'error' ? 'm2e.restartServer' : undefined;
-    statusBarItem.show();
-}
-
-/**
- * Handle configuration changes
- */
-function onConfigurationChanged(event: vscode.ConfigurationChangeEvent): void {
-    if (event.affectsConfiguration('m2e.showStatusBar')) {
-        const showStatusBar = vscode.workspace.getConfiguration('m2e').get<boolean>('showStatusBar', true);
-        if (showStatusBar) {
-            const status = serverManager?.getStatus();
-            updateStatusBar(status?.isRunning ? 'running' : 'stopped');
-        } else {
-            statusBarItem.hide();
-        }
-    }
-}
