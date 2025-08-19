@@ -80,13 +80,6 @@ func TestIgnoreCommentDetection(t *testing.T) {
 			expectedType:  converter.IgnoreLine,
 			description:   "Should detect ignore in SQL comment",
 		},
-		{
-			name:          "LaTeX comment ignore",
-			text:          "% m2e-ignore\n\\documentclass{article} % color and flavor",
-			expectedCount: 1,
-			expectedType:  converter.IgnoreLine,
-			description:   "Should detect ignore in LaTeX comment",
-		},
 	}
 
 	for _, tc := range testCases {

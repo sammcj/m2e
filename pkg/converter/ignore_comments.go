@@ -64,33 +64,34 @@ func NewCommentIgnoreProcessor() *CommentIgnoreProcessor {
 	return processor
 }
 
-// initialiseCommentPatterns sets up regex patterns for various comment syntaxes
+// initialiseCommentPatterns sets up regex patterns for comment detection in major programming languages
 func (cip *CommentIgnoreProcessor) initialiseCommentPatterns() {
 	commentSyntaxes := []string{
-		// C-style comments
-		`//.*?$`,    // Single line: // comment
-		`/\*.*?\*/`, // Multi-line: /* comment */
+		// C-style single-line comments (Go, JS/TS, Swift, Java, C, C++, Rust)
+		// Match // that isn't part of a URL (not preceded by :)
+		`(?:^|[^:])//.*`,
 
-		// Hash-style comments
-		`#.*?$`, // Shell, Python, Ruby: # comment
+		// C-style multi-line comments (Go, CSS, JS/TS, Swift, Java, C, C++, Rust, SQL)
+		// Use [\s\S] to match across newlines, *? for non-greedy
+		`/\*[\s\S]*?\*/`,
+
+		// Hash comments (Python, Bash)
+		// Only match # at start of line or after whitespace, followed by space/tab/EOL or shebang
+		// This avoids hex colours (#fff), CSS IDs (#header), and preprocessor directives
+		`(?:^|\s)#(?:\s.*|!.*|$)`,
+
+		// SQL double-dash comments
+		// Only match -- at start of line or after whitespace, followed by space/EOL
+		// Avoids matching decrements (--i) or CSS custom properties (--var)
+		`(?:^|\s)--(?:\s.*|$)`,
 
 		// HTML/XML comments
-		`<!--.*?-->`, // HTML/XML: <!-- comment -->
+		// Well-defined syntax, use [\s\S] for multi-line matching
+		`<!--[\s\S]*?-->`,
 
-		// SQL comments
-		`--.*?$`, // SQL: -- comment
-
-		// LaTeX/MATLAB comments
-		`%.*?$`, // LaTeX/MATLAB: % comment
-
-		// Assembly comments
-		`;.*?$`, // Assembly: ; comment
-
-		// VB.NET comments
-		`'.*?$`, // VB.NET: ' comment
-
-		// Batch file comments
-		`REM\s+.*?$`, // Batch: REM comment
+		// Python docstrings (triple quotes)
+		// These are technically strings but commonly used as multi-line comments
+		`"""[\s\S]*?"""|'''[\s\S]*?'''`,
 	}
 
 	for _, syntax := range commentSyntaxes {
@@ -184,62 +185,24 @@ type commentMatch struct {
 	text  string
 }
 
-// findCommentsInLine finds all comments in a line using a simplified approach
+// findCommentsInLine finds all comments in a line using regex patterns
 func (cip *CommentIgnoreProcessor) findCommentsInLine(line string) []commentMatch {
 	var comments []commentMatch
 
-	// Simplified approach: check for common comment patterns manually
-	line = strings.TrimSpace(line)
+	// Use the regex patterns to find comments
+	for _, pattern := range cip.commentPatterns {
+		matches := pattern.FindAllStringIndex(line, -1)
+		for _, match := range matches {
+			start := match[0]
+			end := match[1]
+			text := line[start:end]
 
-	// Check each comment type
-	if strings.HasPrefix(line, "//") {
-		comments = append(comments, commentMatch{
-			start: 0,
-			end:   len(line),
-			text:  line,
-		})
-	} else if strings.HasPrefix(line, "#") {
-		comments = append(comments, commentMatch{
-			start: 0,
-			end:   len(line),
-			text:  line,
-		})
-	} else if strings.HasPrefix(line, "--") {
-		comments = append(comments, commentMatch{
-			start: 0,
-			end:   len(line),
-			text:  line,
-		})
-	} else if strings.HasPrefix(line, "%") {
-		comments = append(comments, commentMatch{
-			start: 0,
-			end:   len(line),
-			text:  line,
-		})
-	} else if strings.HasPrefix(line, "<!--") && strings.HasSuffix(line, "-->") {
-		comments = append(comments, commentMatch{
-			start: 0,
-			end:   len(line),
-			text:  line,
-		})
-	} else if strings.HasPrefix(line, ";") {
-		comments = append(comments, commentMatch{
-			start: 0,
-			end:   len(line),
-			text:  line,
-		})
-	} else if strings.HasPrefix(line, "'") {
-		comments = append(comments, commentMatch{
-			start: 0,
-			end:   len(line),
-			text:  line,
-		})
-	} else if strings.HasPrefix(strings.ToUpper(line), "REM ") {
-		comments = append(comments, commentMatch{
-			start: 0,
-			end:   len(line),
-			text:  line,
-		})
+			comments = append(comments, commentMatch{
+				start: start,
+				end:   end,
+				text:  text,
+			})
+		}
 	}
 
 	return comments
@@ -290,10 +253,8 @@ func (cip *CommentIgnoreProcessor) RemoveIgnoredLines(text string, ignoreMatches
 	for i, line := range lines {
 		if !cip.ShouldIgnoreLine(i, ignoreMatches) {
 			filteredLines = append(filteredLines, line)
-		} else {
-			// Keep the line but mark it for later restoration
-			filteredLines = append(filteredLines, line)
 		}
+		// Note: Ignored lines are intentionally excluded from output
 	}
 
 	return strings.Join(filteredLines, "\n")

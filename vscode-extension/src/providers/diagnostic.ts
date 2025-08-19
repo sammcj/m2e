@@ -226,6 +226,7 @@ export class M2EDiagnosticProvider {
     private createDiagnostics(document: vscode.TextDocument, response: ConvertResponse): vscode.Diagnostic[] {
         const config = vscode.workspace.getConfiguration('m2e');
         const severity = this.getSeverityFromConfig(config.get<string>('diagnosticSeverity', 'Information'));
+        const contextualSeverity = this.getSeverityFromConfig(config.get<string>('contextualWordSeverity', 'Hint'));
         
         const diagnostics: vscode.Diagnostic[] = [];
         
@@ -243,20 +244,28 @@ export class M2EDiagnosticProvider {
                 const endPos = document.positionAt(change.position + change.original.length);
                 const range = new vscode.Range(startPos, endPos);
                 
+                // Determine if this is a contextual word change
+                const isContextualWord = change.is_contextual || false;
+                const useSeverity = isContextualWord ? contextualSeverity : severity;
+                
                 const diagnostic = new vscode.Diagnostic(
                     range,
-                    `American spelling: "${change.original}" → suggest "${change.converted}"`,
-                    severity
+                    isContextualWord 
+                        ? `Contextual spelling: "${change.original}" → suggest "${change.converted}" (context-dependent)`
+                        : `American spelling: "${change.original}" → suggest "${change.converted}"`,
+                    useSeverity
                 );
                 
                 diagnostic.source = 'M2E';
-                diagnostic.code = 'american-spelling';
+                diagnostic.code = isContextualWord ? 'contextual-spelling' : 'american-spelling';
                 
                 // Add related information
                 diagnostic.relatedInformation = [
                     new vscode.DiagnosticRelatedInformation(
                         new vscode.Location(document.uri, range),
-                        `British spelling: ${change.converted}`
+                        isContextualWord 
+                            ? `British spelling: ${change.converted} (depends on usage as noun/verb)`
+                            : `British spelling: ${change.converted}`
                     )
                 ];
 
@@ -281,9 +290,57 @@ export class M2EDiagnosticProvider {
             case 'warning':
                 return vscode.DiagnosticSeverity.Warning;
             case 'information':
+                return vscode.DiagnosticSeverity.Information;
+            case 'hint':
+                return vscode.DiagnosticSeverity.Hint;
             default:
                 return vscode.DiagnosticSeverity.Information;
         }
+    }
+
+    /**
+     * Check if a spelling change involves contextual words that depend on usage context
+     */
+    private isContextualWordChange_UNUSED(original: string, converted: string): boolean {
+        // Define the contextual word pairs that require context-aware detection
+        const contextualWordPairs = [
+            // license/licence pairs
+            { american: 'license', british: 'licence' },
+            { american: 'licensed', british: 'licenced' },
+            { american: 'licensing', british: 'licencing' },
+            { american: 'licenses', british: 'licences' },
+            
+            // practice/practise pairs
+            { american: 'practice', british: 'practise' },
+            { american: 'practiced', british: 'practised' },
+            { american: 'practicing', british: 'practising' },
+            { american: 'practices', british: 'practises' },
+            
+            // advice/advise pairs
+            { american: 'advice', british: 'advise' },
+            { american: 'adviced', british: 'advised' }, // Less common but possible
+            { american: 'advicing', british: 'advising' },
+            
+            // check/cheque pairs (financial context)
+            { american: 'check', british: 'cheque' },
+            { american: 'checks', british: 'cheques' },
+            
+            // program/programme pairs
+            { american: 'program', british: 'programme' },
+            { american: 'programs', british: 'programmes' },
+            
+            // story/storey pairs (building context)
+            { american: 'story', british: 'storey' },
+            { american: 'stories', british: 'storeys' }
+        ];
+        
+        const originalLower = original.toLowerCase();
+        const convertedLower = converted.toLowerCase();
+        
+        return contextualWordPairs.some(pair => 
+            (originalLower === pair.american.toLowerCase() && convertedLower === pair.british.toLowerCase()) ||
+            (originalLower === pair.british.toLowerCase() && convertedLower === pair.american.toLowerCase())
+        );
     }
 
     /**

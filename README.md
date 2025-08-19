@@ -86,6 +86,8 @@ go install github.com/sammcj/m2e/cmd/m2e-mcp@HEAD
 
 You can also install m2e as a VSCode extension which provides linting and conversion capabilities directly within VSCode.
 
+The extension includes differential diagnostic severity for contextual words (like license/licence, practice/practise) where confidence may be lower due to context-dependent spelling. Regular American spellings show as Information-level diagnostics, while contextual words show as Hint-level diagnostics by default.
+
 Browse the VSCode marketplace for 'm2e', or browse to the marketplace online: https://marketplace.visualstudio.com/items?itemName=sammcj.m2e-vscode
 
 ![VSCode Extension Suggestion](screenshots/vscode-extension.png)
@@ -641,9 +643,41 @@ The server will start on port 8080 by default. You can change this by setting th
   **Response:**
   ```json
   {
-    "text": "I love colour and flavour. The room is 3.7 metres wide."
+    "text": "I love colour and flavour. The room is 3.7 metres wide.",
+    "changes": [
+      {
+        "position": 7,
+        "original": "color",
+        "converted": "colour",
+        "type": "spelling",
+        "is_contextual": false
+      },
+      {
+        "position": 17,
+        "original": "flavor",
+        "converted": "flavour",
+        "type": "spelling",
+        "is_contextual": false
+      },
+      {
+        "position": 35,
+        "original": "12 feet",
+        "converted": "3.7 metres",
+        "type": "unit",
+        "is_contextual": false
+      }
+    ]
   }
   ```
+
+  **Response Fields:**
+  - `text` (string): The converted text
+  - `changes` (array, optional): Detailed information about each change made
+    - `position` (number): Character position in original text where change occurred
+    - `original` (string): Original text that was changed
+    - `converted` (string): New text after conversion
+    - `type` (string): Type of change ("spelling" or "unit")
+    - `is_contextual` (boolean, optional): Whether this is a contextual word change (e.g., license/licence) where context determines correct form
 
 - `GET /api/v1/health`
 
@@ -680,24 +714,52 @@ This will create a native application optimised for Apple Silicon in the `build/
 ```
 m2e/
 ├── build/                # Build artifacts
+├── cmd/                  # Command-line applications
+│   ├── m2e/             # CLI application
+│   ├── m2e-server/      # HTTP API server
+│   └── m2e-mcp/         # MCP server
 ├── frontend/             # Frontend code using React
 │   ├── src/
 │   │   ├── App.jsx       # Main application component
 │   │   └── App.css       # Application styles
 │   ├── index.html
 │   └── package.json
-├── pkg/
-│   └── converter/        # Go package for conversion logic
-│       ├── converter.go  # Main conversion functionality
-│       ├── codeaware.go  # Code-aware conversion with syntax highlighting
-│       └── data/         # JSON dictionaries
-├── tests/                # Test files
+├── pkg/                  # Go packages
+│   ├── converter/        # Core conversion logic
+│   │   ├── converter.go  # Main conversion functionality
+│   │   ├── dictionary.go # Dictionary loading and management
+│   │   ├── unit_processor.go # Unit conversion processing
+│   │   ├── utils.go      # Helper utility functions
+│   │   ├── codeaware.go  # Code-aware conversion with syntax highlighting
+│   │   ├── ignore_comments.go # Ignore comment processing
+│   │   ├── contextual_word_detector.go # Context-aware word detection
+│   │   ├── contextual_word_patterns.go # Contextual word patterns
+│   │   ├── contextual_word_config.go   # Contextual word configuration
+│   │   ├── sentence_aware_converter.go # Sentence-aware processing
+│   │   ├── unit_converter.go # Unit conversion logic
+│   │   ├── unit_detector.go  # Unit detection patterns
+│   │   ├── unit_patterns.go  # Unit conversion patterns
+│   │   ├── unit_config.go    # Unit conversion configuration
+│   │   └── data/         # JSON dictionaries
+│   ├── fileutil/         # File processing utilities
+│   └── report/           # Report generation and analysis
+├── tests/                # Comprehensive test suite
 │   ├── converter_test.go # Basic conversion tests
-│   ├── codeaware_test.go # Code-aware functionality tests
-│   ├── chroma_test.go    # Syntax highlighting tests
-│   └── mcp_convert_file_test.go # MCP convert_file tool tests
+│   ├── contextual_word_test.go # Contextual word detection tests
+│   ├── ignore_comments_test.go # Ignore comment functionality tests
+│   ├── unit_*_test.go    # Unit conversion tests
+│   ├── cli_test.go       # CLI functionality tests
+│   ├── api_server_test.go # API server tests
+│   ├── mcp_*_test.go     # MCP server tests
+│   └── chroma_test.go    # Syntax highlighting tests
+├── vscode-extension/     # VSCode extension
+│   ├── src/              # TypeScript source code
+│   │   ├── providers/    # Diagnostic and code action providers
+│   │   ├── services/     # API client and server management
+│   │   └── commands/     # Extension commands
+│   └── package.json      # Extension manifest
 ├── Makefile              # Development automation
-├── main.go               # Main application entry
+├── main.go               # Main GUI application entry
 ├── app.go                # Application setup and binding to frontend
 └── wails.json            # Wails configuration
 ```
