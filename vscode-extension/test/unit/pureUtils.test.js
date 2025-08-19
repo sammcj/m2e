@@ -2,7 +2,7 @@ const assert = require('assert');
 
 /**
  * Pure utility functions that don't depend on VSCode APIs
- * These can be ited in any Node.js environment
+ * These can be tested in any Node.js environment
  */
 
 // Test basic utility functions that would exist in a real implementation
