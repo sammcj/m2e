@@ -40,7 +40,7 @@ MCP Server Use
     - [macOS Services Integration](#macos-services-integration)
   - [Freedom Unit Conversion](#freedom-unit-conversion)
     - [Supported Unit Types](#supported-unit-types)
-    - [Examples](#examples)
+    - [Examples](#examples-1)
     - [Configuration](#configuration)
     - [Interface Integration](#interface-integration)
     - [Troubleshooting](#troubleshooting)
@@ -158,27 +158,11 @@ def process_colors():  # This comment will be converted to colours
     pass
 ```
 
-**Mixed usage:**
-```javascript
-// m2e-ignore
-console.log("color"); // This line is ignored because of the comment above
-// This comment about flavor will be converted to flavour
-// m2e-ignore-next
-// This comment about color will be ignored
-const result = "Both comments and code processed normally";
-```
-
 **File-level ignore:**
 ```sql
 -- m2e-ignore-file
 -- This entire SQL file will be ignored
 SELECT color, flavor FROM american_table;
-```
-
-**Case insensitive:**
-```javascript
-// M2E-IGNORE
-// Works with any capitalisation
 ```
 
 #### Integration
