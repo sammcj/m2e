@@ -1,0 +1,15 @@
+{
+    "ui": "tdd",
+    "color": true,
+    "timeout": 10000,
+    "reporter": "spec",
+    "require": ["ts-node/register"],
+    "recursive": true,
+    "spec": [
+        "test/unit/**/*.test.ts",
+        "test/integration/**/*.test.ts"
+    ],
+    "extension": ["ts"],
+    "watch-files": ["src/**/*.ts", "test/**/*.ts"],
+    "ignore": ["node_modules/**/*", "out/**/*"]
+}
