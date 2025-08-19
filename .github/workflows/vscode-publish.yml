@@ -38,15 +38,15 @@ jobs:
     if: ${{ !contains(github.event.head_commit.message, '[skip-ci]') && !contains(github.event.pull_request.title, '[skip-ci]') }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Cache Go modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -72,7 +72,7 @@ jobs:
         run: make build-mcp
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: go-binaries
           path: build/bin/
@@ -87,7 +87,7 @@ jobs:
     if: ${{ !contains(github.event.head_commit.message, '[skip-ci]') && !contains(github.event.pull_request.title, '[skip-ci]') }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -97,7 +97,7 @@ jobs:
           cache-dependency-path: vscode-extension/package-lock.json
 
       - name: Set up Go (for building server binaries)
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -131,7 +131,7 @@ jobs:
           vsce package
 
       - name: Upload VSIX artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: vscode-extension
           path: vscode-extension/*.vsix
@@ -146,7 +146,7 @@ jobs:
     if: ${{ github.event_name != 'pull_request' && !contains(github.event.head_commit.message, '[skip-ci]') && (startsWith(github.ref, 'refs/tags/vscode-v') || github.event_name == 'workflow_dispatch') }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -154,7 +154,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Download extension artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v5
         with:
           name: vscode-extension
           path: ./
@@ -208,12 +208,15 @@ jobs:
 
       - name: Upload Release Asset
         if: startsWith(github.ref, 'refs/tags/vscode-v')
-        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./vscode-extension/m2e-vscode-*.vsix
-          asset_name: m2e-vscode-extension.vsix
-          asset_content_type: application/zip
+        run: |
+          # Find the VSIX file
+          VSIX_FILE=$(find ./vscode-extension -name "m2e-vscode-*.vsix" | head -1)
+          if [ -z "$VSIX_FILE" ]; then
+            echo "Error: No VSIX file found"
+            exit 1
+          fi
+          # Upload to the release
+          gh release upload ${{ github.ref_name }} "$VSIX_FILE" --clobber
 
