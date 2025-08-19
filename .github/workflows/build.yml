@@ -48,6 +48,7 @@ jobs:
   build-cli-tools:
     needs: test
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.head_commit.message, '[skip-ci]') && !contains(github.event.pull_request.title, '[skip-ci]') }}
     strategy:
       matrix:
         include:
@@ -109,7 +110,7 @@ jobs:
   build-macos:
     runs-on: macos-latest
     needs: [test, build-cli-tools]
-    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    if: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && !contains(github.event.head_commit.message, '[skip-ci]') && !contains(github.event.pull_request.title, '[skip-ci]') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
