@@ -1,0 +1,10 @@
+out/
+dist/
+node_modules/
+.vscode-test/
+*.vsix
+.nyc_output/
+coverage/
+.env
+.DS_Store
+*.log

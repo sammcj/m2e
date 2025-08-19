@@ -1,0 +1,299 @@
+{
+  "name": "m2e-vscode",
+  "displayName": "M2E - 'Murican to English Converter",
+  "description": "Convert American text to standard international / British English with freedom unit to metric conversion",
+  "version": "0.1.0",
+  "publisher": "sammcj",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sammcj/m2e.git",
+    "directory": "vscode-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/sammcj/m2e/issues"
+  },
+  "homepage": "https://github.com/sammcj/m2e#readme",
+  "engines": {
+    "vscode": "^1.103.0"
+  },
+  "categories": [
+    "Formatters",
+    "Other",
+    "Linters"
+  ],
+  "keywords": [
+    "american",
+    "m2e",
+    "murican",
+    "international",
+    "dictionary",
+    "freedom",
+    "sammcj",
+    "smcleod",
+    "british",
+    "english",
+    "spelling",
+    "converter",
+    "imperial",
+    "metric",
+    "units"
+  ],
+  "icon": "resources/icons/icon.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "activationEvents": [
+    "onLanguage:plaintext",
+    "onLanguage:markdown",
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:python",
+    "onLanguage:go",
+    "onLanguage:java",
+    "onLanguage:c",
+    "onLanguage:cpp",
+    "onLanguage:csharp",
+    "onLanguage:php",
+    "onLanguage:ruby",
+    "onLanguage:rust"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "m2e.convertSelection",
+        "title": "Convert Selection",
+        "category": "M2E"
+      },
+      {
+        "command": "m2e.convertFile",
+        "title": "Convert File",
+        "category": "M2E"
+      },
+      {
+        "command": "m2e.convertCommentsOnly",
+        "title": "Convert Comments Only",
+        "category": "M2E"
+      },
+      {
+        "command": "m2e.convertAndPreview",
+        "title": "Convert and Preview",
+        "category": "M2E"
+      },
+      {
+        "command": "m2e.restartServer",
+        "title": "Restart Server",
+        "category": "M2E"
+      },
+      {
+        "command": "m2e.generateReport",
+        "title": "Generate Report",
+        "category": "M2E"
+      },
+      {
+        "command": "m2e.convertProject",
+        "title": "Convert Project",
+        "category": "M2E"
+      },
+      {
+        "command": "m2e.ignoreWord",
+        "title": "Ignore Word",
+        "category": "M2E"
+      },
+      {
+        "command": "m2e.manageIgnoreList",
+        "title": "Manage Ignore List",
+        "category": "M2E"
+      },
+      {
+        "command": "m2e.refreshDiagnostics",
+        "title": "Refresh Diagnostics",
+        "category": "M2E"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "m2e.convertSelection",
+        "key": "cmd+shift+m",
+        "mac": "cmd+shift+m",
+        "linux": "ctrl+shift+m",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "m2e.convertFile",
+        "key": "cmd+alt+m",
+        "mac": "cmd+alt+m",
+        "linux": "ctrl+alt+m"
+      },
+      {
+        "command": "m2e.convertAndPreview",
+        "key": "cmd+shift+alt+m",
+        "mac": "cmd+shift+alt+m",
+        "linux": "ctrl+shift+alt+m"
+      },
+      {
+        "command": "m2e.generateReport",
+        "key": "cmd+shift+r",
+        "mac": "cmd+shift+r",
+        "linux": "ctrl+shift+r"
+      },
+      {
+        "command": "m2e.convertProject",
+        "key": "cmd+alt+shift+m",
+        "mac": "cmd+alt+shift+m",
+        "linux": "ctrl+alt+shift+m"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "m2e.convertSelection",
+          "when": "editorHasSelection",
+          "group": "1_modification@1"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "m2e.convertFile",
+          "when": "!explorerResourceIsFolder",
+          "group": "1_modification@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "m2e.convertSelection",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "m2e.convertFile"
+        },
+        {
+          "command": "m2e.convertCommentsOnly"
+        },
+        {
+          "command": "m2e.convertAndPreview"
+        },
+        {
+          "command": "m2e.restartServer"
+        },
+        {
+          "command": "m2e.generateReport"
+        },
+        {
+          "command": "m2e.convertProject"
+        },
+        {
+          "command": "m2e.manageIgnoreList"
+        },
+        {
+          "command": "m2e.refreshDiagnostics"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "M2E Configuration",
+      "properties": {
+        "m2e.enableDiagnostics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable diagnostic highlighting of American spellings"
+        },
+        "m2e.diagnosticSeverity": {
+          "type": "string",
+          "enum": [
+            "Information",
+            "Warning",
+            "Error"
+          ],
+          "default": "Information",
+          "description": "Severity level for American spelling diagnostics"
+        },
+        "m2e.enableUnitConversion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable imperial to metric unit conversion"
+        },
+        "m2e.serverPort": {
+          "type": "number",
+          "default": 18181,
+          "description": "Preferred port for the M2E server (will auto-increment if busy)"
+        },
+        "m2e.customServerPath": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path to m2e-server binary (overrides bundled binary)"
+        },
+        "m2e.excludePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/node_modules/**",
+            "**/.git/**",
+            "**/dist/**",
+            "**/build/**"
+          ],
+          "description": "Additional glob patterns to exclude from processing"
+        },
+        "m2e.showStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show server status in the status bar"
+        },
+        "m2e.codeAwareConversion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable code-aware conversion that preserves syntax"
+        },
+        "m2e.preserveCodeSyntax": {
+          "type": "boolean",
+          "default": true,
+          "description": "Preserve code syntax while converting comments"
+        },
+        "m2e.debugLogging": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug-level logging for development"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "build": "npm run compile",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "npm run test:unit",
+    "test:unit": "mocha",
+    "test:integration": "mocha out/test/integration/**/*.test.js",
+    "clean": "rimraf out",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.3.0",
+    "@types/vscode": "^1.103.0",
+    "@typescript-eslint/eslint-plugin": "8.40.0",
+    "@typescript-eslint/parser": "8.40.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.6.0",
+    "eslint": "^9.33.0",
+    "glob": "^11.0.3",
+    "mocha": "^11.7.1",
+    "rimraf": "^6.0.1",
+    "ts-node": "10.9.2",
+    "typescript": "5.9.2"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "os": [
+    "darwin",
+    "linux"
+  ]
+}
