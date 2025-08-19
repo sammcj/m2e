@@ -45,7 +45,7 @@ lint: fmt
 
 # Run tests
 .PHONY: test
-test:
+test: build-cli
 	@echo "Running tests..."
 	go test -v ./tests/...
 
