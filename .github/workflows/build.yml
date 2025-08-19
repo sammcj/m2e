@@ -27,9 +27,6 @@ jobs:
         with:
           go-version-file: 'go.mod'
 
-      - name: Clean Go module cache
-        run: go clean -modcache
-
       - name: Cache Go modules
         uses: actions/cache@v4
         with:
@@ -72,9 +69,6 @@ jobs:
         with:
           go-version: '1.23'
           check-latest: true
-
-      - name: Clean Go module cache
-        run: go clean -modcache
 
       - name: Cache Go modules
         uses: actions/cache@v4
@@ -125,9 +119,6 @@ jobs:
         with:
           go-version: '1.24'
           check-latest: true
-
-      - name: Clean Go module cache
-        run: go clean -modcache
 
       - name: Cache Go modules
         uses: actions/cache@v4
