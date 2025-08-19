@@ -68,7 +68,7 @@ Note: There is a known issue with typing directly in the freedom text box, I'll 
 ### CLI
 
 ```bash
-go install github.com/sammcj/m2e/cmd/m2e-cli@HEAD
+go install github.com/sammcj/m2e/cmd/m2e@HEAD
 ```
 
 Note: The binary will may installed as `m2e` (not `m2e-cli`) depending on your system.
