@@ -136,6 +136,7 @@ type Converter struct {
 	dict                   *Dictionaries
 	unitProcessor          *UnitProcessor
 	contextualWordDetector ContextualWordDetector
+	ignoreProcessor        *CommentIgnoreProcessor
 }
 
 // SmartQuotesMap holds mappings for smart quotes and em-dashes to their normal equivalents
@@ -159,13 +160,31 @@ func NewConverter() (*Converter, error) {
 		dict:                   dict,
 		unitProcessor:          NewUnitProcessor(),
 		contextualWordDetector: NewContextAwareWordDetector(),
+		ignoreProcessor:        NewCommentIgnoreProcessor(),
 	}, nil
 }
 
 // ConvertToBritish converts American English text to British English
 func (c *Converter) ConvertToBritish(text string, normaliseSmartQuotes bool) string {
-	// Use code-aware processing for all text
-	return c.ProcessCodeAware(text, normaliseSmartQuotes)
+	// Process ignore comments first
+	return c.ConvertToBritishWithIgnoreComments(text, normaliseSmartQuotes)
+}
+
+// ConvertToBritishWithIgnoreComments handles ignore comments and selective conversion
+func (c *Converter) ConvertToBritishWithIgnoreComments(text string, normaliseSmartQuotes bool) string {
+	// Find all ignore directives in the text
+	ignoreMatches := c.ignoreProcessor.ProcessIgnoreComments(text)
+
+	// If the entire file should be ignored, return original text
+	if c.ignoreProcessor.ShouldIgnoreFile(ignoreMatches) {
+		return text
+	}
+
+	// Apply selective ignore using the ignore processor
+	return c.ignoreProcessor.ApplySelectiveIgnore(text, ignoreMatches, func(lineText string) string {
+		// Use code-aware processing for each non-ignored line
+		return c.ProcessCodeAware(lineText, normaliseSmartQuotes)
+	})
 }
 
 // ConvertToBritishSimple converts text without code-awareness (for internal use)
@@ -235,6 +254,29 @@ func (c *Converter) SetContextualWordDetectionEnabled(enabled bool) {
 // IsContextualWordDetectionEnabled returns whether contextual word detection is enabled
 func (c *Converter) IsContextualWordDetectionEnabled() bool {
 	return c.contextualWordDetector != nil && c.contextualWordDetector.IsEnabled()
+}
+
+// GetIgnoreDirectives analyses text and returns ignore directives found
+func (c *Converter) GetIgnoreDirectives(text string) []IgnoreMatch {
+	if c.ignoreProcessor == nil {
+		return nil
+	}
+	return c.ignoreProcessor.ProcessIgnoreComments(text)
+}
+
+// GetIgnoreStats returns statistics about ignore directives in the text
+func (c *Converter) GetIgnoreStats(text string) map[string]int {
+	if c.ignoreProcessor == nil {
+		return make(map[string]int)
+	}
+	ignoreMatches := c.ignoreProcessor.ProcessIgnoreComments(text)
+	return c.ignoreProcessor.ExtractIgnoreStats(ignoreMatches)
+}
+
+// ConvertToBritishWithoutIgnores bypasses ignore comments and processes all text
+func (c *Converter) ConvertToBritishWithoutIgnores(text string, normaliseSmartQuotes bool) string {
+	// Use code-aware processing for all text, bypassing ignore comments
+	return c.ProcessCodeAware(text, normaliseSmartQuotes)
 }
 
 // NormaliseSmartQuotes converts smart quotes and em-dashes to their normal equivalents

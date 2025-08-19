@@ -15,6 +15,7 @@ A lightweight application for converting text from American to International Eng
 - Report mode with comprehensive analysis, diff output, and CI/CD integration
 - MCP (~~Murican Conversion Protocol~~ Model Context Protocol) server for use with AI agents and agentic coding tools
 - Code-aware conversion that preserves code syntax while converting comments (BETA)
+- Ignore comment directives to exclude specific lines or entire files from conversion
 - Configurable unit conversion with user preferences
 - macOS Services integration
 
@@ -35,6 +36,7 @@ MCP Server Use
     - [VSCode Extension](#vscode-extension)
   - [How It Works](#how-it-works)
     - [Adding New Words](#adding-new-words)
+    - [Ignore Comments](#ignore-comments)
     - [macOS Services Integration](#macos-services-integration)
   - [Freedom Unit Conversion](#freedom-unit-conversion)
     - [Supported Unit Types](#supported-unit-types)
@@ -117,6 +119,75 @@ The user dictionary provides several advantages:
 - Can override built-in dictionary entries
 - Robust error handling - invalid JSON will show a warning but won't break the application
 - Automatically created with an example entry on first run
+
+### Ignore Comments
+
+M2E supports linter-style ignore comments to exclude specific lines or entire files from conversion. This is particularly useful when you have American spellings that should be preserved (e.g., in code comments, technical documentation, or quoted material).
+
+#### Ignore Directives
+
+- **`m2e-ignore`** or **`m2e-ignore-line`**: Ignore the same line where the comment appears
+- **`m2e-ignore-next`**: Ignore the next line after the comment
+- **`m2e-ignore-file`**: Ignore the entire file
+
+#### Supported Comment Syntaxes
+
+Works with all major comment formats:
+- `//` (C, C++, Go, JavaScript, TypeScript)
+- `#` (Python, Ruby, Shell, YAML, Perl)
+- `--` (SQL, Haskell, Ada)
+- `%` (LaTeX, MATLAB, PostScript)
+- `<!-- -->` (HTML, XML, Markdown)
+- `;` (Assembly, Lisp, INI files)
+- `'` (VB.NET, VBScript)
+- `REM` (Batch files, BASIC)
+
+#### Examples
+
+**Same-line ignore:**
+```go
+// This comment about color will not be converted m2e-ignore
+fmt.Println("Processing colors") // This comment will be converted to colours
+```
+
+**Next-line ignore:**
+```python
+# m2e-ignore-next
+# This comment about color will be ignored
+def process_colors():  # This comment will be converted to colours
+    pass
+```
+
+**Mixed usage:**
+```javascript
+// m2e-ignore
+console.log("color"); // This line is ignored because of the comment above
+// This comment about flavor will be converted to flavour
+// m2e-ignore-next
+// This comment about color will be ignored
+const result = "Both comments and code processed normally";
+```
+
+**File-level ignore:**
+```sql
+-- m2e-ignore-file
+-- This entire SQL file will be ignored
+SELECT color, flavor FROM american_table;
+```
+
+**Case insensitive:**
+```javascript
+// M2E-IGNORE
+// Works with any capitalisation
+```
+
+#### Integration
+
+Ignore comments work seamlessly with:
+- **Code-aware processing**: Preserves code functionality while respecting ignore directives
+- **All interfaces**: GUI, CLI, API server, and MCP server
+- **Unit conversion**: Ignored content also skips unit conversion
+- **Contextual word detection**: Ignored content bypasses advanced grammar-aware conversion
 
 ### macOS Services Integration
 
