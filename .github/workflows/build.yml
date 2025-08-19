@@ -4,6 +4,9 @@ on:
   push:
     branches: [ main ]
     tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -95,12 +98,14 @@ jobs:
           go build -ldflags="-s -w" -trimpath -o build/bin/m2e-mcp-${{ matrix.suffix }} ./cmd/m2e-mcp
 
       - name: Create CLI tools archive
+        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         run: |
           cd build/bin
           tar -czf "m2e-cli-tools-${{ matrix.suffix }}.tar.gz" m2e-${{ matrix.suffix }} m2e-server-${{ matrix.suffix }} m2e-mcp-${{ matrix.suffix }}
           cd ../..
 
       - name: Upload CLI tools as artifact
+        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: m2e-cli-tools-${{ matrix.suffix }}
@@ -110,6 +115,7 @@ jobs:
   build-macos:
     runs-on: macos-latest
     needs: [test, build-cli-tools]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
