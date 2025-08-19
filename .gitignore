@@ -9,3 +9,10 @@
 **/bin/**
 coverage.html
 coverage.out
+
+# VSCode extension
+vscode-extension/out/
+vscode-extension/.vscode-test/
+vscode-extension/*.vsix
+vscode-extension/.nyc_output/
+vscode-extension/coverage/

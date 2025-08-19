@@ -1,4 +1,4 @@
-.PHONY: help lint fmt test build build-wails build-cli build-server build-mcp clean all
+.PHONY: help lint fmt test build build-wails build-cli build-server build-mcp clean all vscode-install vscode-lint vscode-build vscode-test vscode-package vscode-clean
 
 # Default target
 all: lint test build
@@ -6,16 +6,24 @@ all: lint test build
 # Help target
 help:
 	@echo "Available targets:"
-	@echo "  lint        - Run linter and check formatting"
-	@echo "  fmt         - Format code with gofmt"
-	@echo "  test        - Run all tests"
-	@echo "  build       - Build all applications (Wails app, CLI, server, MCP)"
-	@echo "  build-wails - Build the Wails application only"
-	@echo "  build-cli   - Build the CLI application only"
-	@echo "  build-server- Build the server application only"
-	@echo "  build-mcp   - Build the MCP server application only"
-	@echo "  clean       - Clean build artifacts"
-	@echo "  all         - Run lint, test, and build (default)"
+	@echo "  lint            - Run linter and check formatting"
+	@echo "  fmt             - Format code with gofmt"
+	@echo "  test            - Run all tests"
+	@echo "  build           - Build all applications (Wails app, CLI, server, MCP)"
+	@echo "  build-wails     - Build the Wails application only"
+	@echo "  build-cli       - Build the CLI application only"
+	@echo "  build-server    - Build the server application only"
+	@echo "  build-mcp       - Build the MCP server application only"
+	@echo "  clean           - Clean build artifacts"
+	@echo "  all             - Run lint, test, and build (default)"
+	@echo ""
+	@echo "VSCode Extension targets:"
+	@echo "  vscode-install  - Install VSCode extension dependencies"
+	@echo "  vscode-lint     - Run ESLint on VSCode extension"
+	@echo "  vscode-build    - Compile VSCode extension TypeScript"
+	@echo "  vscode-test     - Run VSCode extension tests"
+	@echo "  vscode-package  - Package VSCode extension as VSIX"
+	@echo "  vscode-clean    - Clean VSCode extension build artifacts"
 
 # Format code with gofmt
 .PHONY: fmt
@@ -37,7 +45,7 @@ lint: fmt
 
 # Run tests
 .PHONY: test
-test:
+test: build-cli
 	@echo "Running tests..."
 	go test -v ./tests/...
 
@@ -136,3 +144,35 @@ quality: lint test security
 inspect:
 	@echo "Running MCP inspector tool..."
 	DANGEROUSLY_OMIT_AUTH=true npx -y @modelcontextprotocol/inspector "
+
+# VSCode Extension targets
+.PHONY: vscode-install
+vscode-install:
+	@echo "Installing VSCode extension dependencies..."
+	cd vscode-extension && npm ci
+
+.PHONY: vscode-lint
+vscode-lint: vscode-install
+	@echo "Running ESLint on VSCode extension..."
+	cd vscode-extension && npm run lint
+
+.PHONY: vscode-build
+vscode-build: vscode-install
+	@echo "Compiling VSCode extension TypeScript..."
+	cd vscode-extension && npm run compile
+
+.PHONY: vscode-test
+vscode-test: vscode-build vscode-lint
+	@echo "Running VSCode extension tests..."
+	cd vscode-extension && npm test
+
+.PHONY: vscode-package
+vscode-package: vscode-build
+	@echo "Packaging VSCode extension as VSIX..."
+	cd vscode-extension && npm run package
+
+.PHONY: vscode-clean
+vscode-clean:
+	@echo "Cleaning VSCode extension build artifacts..."
+	cd vscode-extension && rm -rf out dist node_modules *.vsix
+	cd vscode-extension && rm -rf resources/bin
