@@ -72,8 +72,8 @@ export class M2ECodeActionProvider implements vscode.CodeActionProvider {
                 actions.push(...ignoreActions);
             }
 
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`[Code Actions] Error providing actions: ${message}`);
         }
 
@@ -118,8 +118,8 @@ export class M2ECodeActionProvider implements vscode.CodeActionProvider {
 
             return response;
             
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`[Code Actions] Failed to get conversion data: ${message}`);
             return null;
         }
@@ -164,8 +164,8 @@ export class M2ECodeActionProvider implements vscode.CodeActionProvider {
             
             actions.push(convertWordAction);
 
-        } catch (error) {
-            this.logDebug(`Error creating word action: ${error}`);
+        } catch {
+            this.logDebug(`Error creating word action`);
         }
 
         return actions;
@@ -210,15 +210,15 @@ export class M2ECodeActionProvider implements vscode.CodeActionProvider {
                     }
                     
                     convertAllAction.edit.replace(document.uri, range, change.converted);
-                } catch (error) {
+                } catch {
                     this.logDebug(`Skipping invalid position: ${change.position}`);
                 }
             }
             
             actions.push(convertAllAction);
 
-        } catch (error) {
-            this.logDebug(`Error creating document actions: ${error}`);
+        } catch {
+            this.logDebug(`Error creating document actions`);
         }
 
         return actions;
@@ -253,8 +253,8 @@ export class M2ECodeActionProvider implements vscode.CodeActionProvider {
             
             actions.push(ignoreWordAction);
 
-        } catch (error) {
-            this.logDebug(`Error creating ignore actions: ${error}`);
+        } catch {
+            this.logDebug(`Error creating ignore actions`);
         }
 
         return actions;
@@ -296,8 +296,8 @@ export function registerIgnoreWordCommand(
         try {
             await diagnosticProvider.addToIgnoreList(word);
             vscode.window.showInformationMessage(`M2E: Added "${word}" to workspace ignore list`);
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             vscode.window.showErrorMessage(`M2E: Failed to ignore word: ${message}`);
         }
     });
@@ -337,8 +337,8 @@ export function registerManageIgnoreListCommand(
                 vscode.window.showInformationMessage(`M2E: Removed "${selected.label}" from ignore list`);
             }
 
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             vscode.window.showErrorMessage(`M2E: Failed to manage ignore list: ${message}`);
         }
     });
@@ -359,8 +359,8 @@ export function registerRefreshDiagnosticsCommand(
             codeActionProvider.clearCache();
             diagnosticProvider.refreshAll();
             vscode.window.showInformationMessage('M2E: Refreshed diagnostics for all open documents');
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             vscode.window.showErrorMessage(`M2E: Failed to refresh diagnostics: ${message}`);
         }
     });

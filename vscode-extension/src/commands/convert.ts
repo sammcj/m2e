@@ -60,13 +60,13 @@ export class ConvertCommands {
                 try {
                     const result = await this.apiClient.convertSelection(selectedText, fileType);
                     await this.applySelectionConversion(editor, selection, result);
-                } catch (error) {
-                    throw error; // Re-throw to be caught by outer try-catch
+                } catch {
+                    throw new Error("Unknown error"); // Re-throw to be caught by outer try-catch
                 }
             });
 
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`Convert selection failed: ${message}`);
             vscode.window.showErrorMessage(`M2E: Failed to convert selection: ${message}`);
         }
@@ -83,8 +83,8 @@ export class ConvertCommands {
                 // Called from explorer context menu
                 try {
                     document = await vscode.workspace.openTextDocument(uri);
-                } catch (error) {
-                    vscode.window.showErrorMessage(`M2E: Cannot open file: ${error instanceof Error ? error.message : String(error)}`);
+                } catch {
+                    vscode.window.showErrorMessage(`M2E: Cannot open file`);
                     return;
                 }
             } else {
@@ -145,13 +145,13 @@ export class ConvertCommands {
                 try {
                     const result = await this.apiClient.convertFile(fileContent, fileType);
                     await this.applyFileConversion(document, result, fileContent.length);
-                } catch (error) {
-                    throw error; // Re-throw to be caught by outer try-catch
+                } catch {
+                    throw new Error("Unknown error"); // Re-throw to be caught by outer try-catch
                 }
             });
 
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`Convert file failed: ${message}`);
             vscode.window.showErrorMessage(`M2E: Failed to convert file: ${message}`);
         }
@@ -210,13 +210,13 @@ export class ConvertCommands {
                 try {
                     const result = await this.apiClient.convertCommentsOnly(fileContent, fileType);
                     await this.applyFileConversion(document, result, fileContent.length, true);
-                } catch (error) {
-                    throw error; // Re-throw to be caught by outer try-catch
+                } catch {
+                    throw new Error("Unknown error"); // Re-throw to be caught by outer try-catch
                 }
             });
 
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`Convert comments only failed: ${message}`);
             vscode.window.showErrorMessage(`M2E: Failed to convert comments: ${message}`);
         }
@@ -240,8 +240,8 @@ export class ConvertCommands {
                 this.outputChannel.appendLine('Server restart failed');
             }
 
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`Restart server failed: ${message}`);
             vscode.window.showErrorMessage(`M2E: Failed to restart server: ${message}`);
         }
@@ -421,10 +421,9 @@ export class ConvertCommands {
                                 );
                             }
                         }
-                    } catch (error) {
-                        const errorMessage = error instanceof Error ? error.message : String(error);
-                        errors.push(`${relativePath}: ${errorMessage}`);
-                        this.outputChannel.appendLine(`Error converting ${relativePath}: ${errorMessage}`);
+                    } catch {
+                        errors.push(`${relativePath}: Unknown error`);
+                        this.outputChannel.appendLine(`Error converting ${relativePath}`);
                     }
                 }
 
@@ -445,12 +444,12 @@ export class ConvertCommands {
 
                 if (errors.length > 0) {
                     this.outputChannel.appendLine(`Errors encountered in ${errors.length} files:`);
-                    errors.forEach(error => this.outputChannel.appendLine(`  ${error}`));
+                    errors.forEach(errorStr => this.outputChannel.appendLine(`  ${errorStr}`));
                 }
             });
 
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`Convert project failed: ${message}`);
             vscode.window.showErrorMessage(`M2E: Failed to convert project: ${message}`);
         }
@@ -500,7 +499,7 @@ export class ConvertCommands {
                     1000 // Limit to 1000 files for performance
                 );
                 files.push(...foundFiles);
-            } catch (error) {
+            } catch {
                 // Continue with other patterns if one fails
             }
         }

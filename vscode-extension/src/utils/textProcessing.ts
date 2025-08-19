@@ -397,7 +397,7 @@ export class DiffUtils {
                     range,
                     hoverMessage: `M2E: "${change.original}" → "${change.converted}" (${change.type})`
                 });
-            } catch (error) {
+            } catch {
                 // Skip invalid positions
                 console.warn('Invalid position in change:', change);
             }

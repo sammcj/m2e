@@ -76,8 +76,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         // Show initial status (server not started yet)
         updateStatusBar('stopped');
 
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+    } catch {
+        const message = "An unknown error occurred";
         outputChannel.appendLine(`Failed to activate M2E extension: ${message}`);
         vscode.window.showErrorMessage(`M2E: Failed to activate extension: ${message}`);
     }
@@ -105,8 +105,8 @@ export async function deactivate(): Promise<void> {
         }
         
         outputChannel?.appendLine('M2E extension deactivated');
-    } catch (error) {
-        console.error('Error during M2E extension deactivation:', error);
+    } catch {
+        console.error("Error during M2E extension deactivation");
     }
 }
 

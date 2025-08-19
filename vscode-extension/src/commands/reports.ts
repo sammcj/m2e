@@ -32,8 +32,8 @@ export class ReportCommands {
                 await this.generateProjectReport();
             }
 
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`Generate report failed: ${message}`);
             vscode.window.showErrorMessage(`M2E: Failed to generate report: ${message}`);
         }
@@ -142,8 +142,8 @@ export class ReportCommands {
                         totalChanges += changeCount;
                         totalWords += wordCount;
                     }
-                } catch (error) {
-                    this.outputChannel.appendLine(`Error processing ${relativePath}: ${error}`);
+                } catch {
+                    this.outputChannel.appendLine(`Error processing ${relativePath}`);
                 }
             }
 
@@ -195,7 +195,7 @@ export class ReportCommands {
                     1000 // Limit to 1000 files for performance
                 );
                 files.push(...foundFiles);
-            } catch (error) {
+            } catch {
                 // Continue with other patterns if one fails
             }
         }

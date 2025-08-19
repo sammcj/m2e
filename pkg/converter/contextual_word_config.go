@@ -100,20 +100,20 @@ func GetDefaultContextualWordConfig() *ContextualWordConfig {
 			`(?i)["']\s*\w*\b(?:license|practice|advice)\w*\s*["']\s*(?:=|:|\)|;|,)`,
 
 			// Dialog in code contexts (HTML, JavaScript, CSS, etc.)
-			`(?i)<dialog\b`,                                           // HTML dialog element
-			`(?i)</dialog>`,                                           // HTML dialog closing tag
-			`(?i)\bdialog\s*\.\s*\w+`,                               // dialog.method() calls
-			`(?i)\w*\.dialog\b`,                                     // object.dialog properties
-			`(?i)\.dialog\b`,                                        // CSS .dialog classes
-			`(?i)#dialog\b`,                                         // CSS #dialog IDs
-			`(?i)data-dialog`,                                       // data-dialog attributes
-			`(?i)dialog-\w+`,                                        // dialog-* attributes/classes
-			`(?i)\b(?:show|open|close|hide|modal)Dialog\b`,         // showDialog, openDialog functions
-			`(?i)\bdialog(?:Box|Modal|Window|Panel)\b`,             // dialogBox, dialogModal compound words
+			`(?i)<dialog\b`,           // HTML dialog element
+			`(?i)</dialog>`,           // HTML dialog closing tag
+			`(?i)\bdialog\s*\.\s*\w+`, // dialog.method() calls
+			`(?i)\w*\.dialog\b`,       // object.dialog properties
+			`(?i)\.dialog\b`,          // CSS .dialog classes
+			`(?i)#dialog\b`,           // CSS #dialog IDs
+			`(?i)data-dialog`,         // data-dialog attributes
+			`(?i)dialog-\w+`,          // dialog-* attributes/classes
+			`(?i)\b(?:show|open|close|hide|modal)Dialog\b`,                                    // showDialog, openDialog functions
+			`(?i)\bdialog(?:Box|Modal|Window|Panel)\b`,                                        // dialogBox, dialogModal compound words
 			`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*\bdialog\w*`, // variable/function names
-			`(?i)\w*\bdialog\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,   // dialog in expressions
-			`(?i)(?:=|:)\s*["']\s*\w*\bdialog\w*\s*["']`,           // quoted dialog strings in code
-			`(?i)["']\s*\w*\bdialog\w*\s*["']\s*(?:=|:|\)|;|,)`,    // dialog in quoted assignments
+			`(?i)\w*\bdialog\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,                              // dialog in expressions
+			`(?i)(?:=|:)\s*["']\s*\w*\bdialog\w*\s*["']`,                                      // quoted dialog strings in code
+			`(?i)["']\s*\w*\bdialog\w*\s*["']\s*(?:=|:|\)|;|,)`,                               // dialog in quoted assignments
 		},
 		Preferences: ContextualWordPreferences{
 			PreferNounOnAmbiguity: true,  // Default to noun when uncertain

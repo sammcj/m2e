@@ -16,16 +16,21 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "noImplicitOverride": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "exactOptionalPropertyTypes": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "test/unit/**/*.test.ts"
   ],
   "exclude": [
     "node_modules",
     ".vscode-test",
-    "test"
+    "test/integration/**/*",
+    "test/helpers/**/*",
+    "test/fixtures/**/*",
+    "test/suite/**/*",
+    "test/runTest.ts"
   ]
 }

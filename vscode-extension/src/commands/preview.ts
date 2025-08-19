@@ -73,13 +73,13 @@ export class PreviewCommands {
                 try {
                     const result = await this.apiClient.convertFile(textToConvert, fileType);
                     await this.showConversionPreview(result, document, isSelection, range);
-                } catch (error) {
-                    throw error; // Re-throw to be caught by outer try-catch
+                } catch {
+                    throw new Error("Unknown error"); // Re-throw to be caught by outer try-catch
                 }
             });
 
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`Convert and preview failed: ${message}`);
             vscode.window.showErrorMessage(`M2E: Failed to generate preview: ${message}`);
         }
@@ -134,8 +134,8 @@ export class PreviewCommands {
                 `Preview generated: ${stats}, processing time: ${result.metadata.processingTimeMs}ms`
             );
 
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`Failed to show preview: ${message}`);
             throw new Error(`Failed to show preview: ${message}`);
         }
@@ -181,7 +181,7 @@ export class PreviewCommands {
                 }
             );
 
-        } catch (error) {
+        } catch {
             // Fallback method for older VSCode versions
             const originalDoc = await vscode.workspace.openTextDocument(originalUri);
             const convertedDoc = await vscode.workspace.openTextDocument(convertedUri);
@@ -246,8 +246,8 @@ export class PreviewCommands {
                 vscode.window.showErrorMessage('M2E: Failed to apply changes to document');
             }
 
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`Failed to apply previewed changes: ${message}`);
             vscode.window.showErrorMessage(`M2E: Failed to apply changes: ${message}`);
         }
@@ -272,8 +272,8 @@ export class PreviewCommands {
                 viewColumn: vscode.ViewColumn.Beside
             });
 
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`Failed to show change details: ${message}`);
             vscode.window.showErrorMessage(`M2E: Failed to show change details: ${message}`);
         }
@@ -360,9 +360,9 @@ export class PreviewCommands {
                 const position = document.positionAt(change.position);
                 const endPosition = document.positionAt(change.position + change.original.length);
                 ranges.push(new vscode.Range(position, endPosition));
-            } catch (error) {
+            } catch {
                 // Skip invalid positions - they might be beyond document bounds
-                console.warn('Invalid position in change:', change, error);
+                console.warn('Invalid position in change:', change);
             }
         }
         

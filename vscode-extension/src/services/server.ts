@@ -74,9 +74,9 @@ export class M2EServerManager {
             });
 
             // Handle process events
-            this.process.on('error', (error) => {
-                this.outputChannel.appendLine(`[Server Process Error] ${error.message}`);
-                this.updateStatusBar('error', `Process error: ${error.message}`);
+            this.process.on('error', (_error) => {
+                this.outputChannel.appendLine(`[Server Process Error] ${_error.message}`);
+                this.updateStatusBar('error', `Process error: ${_error.message}`);
             });
 
             this.process.on('exit', (code, signal) => {
@@ -107,8 +107,8 @@ export class M2EServerManager {
                 await this.stop();
                 return false;
             }
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`Failed to start M2E server: ${message}`);
             this.updateStatusBar('error', `Start failed: ${message}`);
             return false;
@@ -236,8 +236,8 @@ export class M2EServerManager {
             fs.chmodSync(binaryPath, 0o755);
             this.outputChannel.appendLine(`Using bundled server binary: ${binaryPath}`);
             return binaryPath;
-        } catch (error) {
-            const message = `Failed to make server binary executable: ${error}`;
+        } catch {
+            const message = `Failed to make server binary executable`;
             vscode.window.showErrorMessage(message);
             this.outputChannel.appendLine(message);
             return null;

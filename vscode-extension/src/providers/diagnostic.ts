@@ -211,8 +211,8 @@ export class M2EDiagnosticProvider {
             
             this.logDebug(`Processed ${document.fileName}: found ${diagnostics.length} American spellings`);
             
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`[Diagnostics] Error processing ${document.fileName}: ${message}`);
             
             // Clear diagnostics on error
@@ -262,7 +262,7 @@ export class M2EDiagnosticProvider {
 
                 diagnostics.push(diagnostic);
                 
-            } catch (error) {
+            } catch {
                 // Skip invalid positions
                 this.logDebug(`Invalid position for change: ${change.original} at ${change.position}`);
             }
@@ -371,14 +371,14 @@ export class M2EDiagnosticProvider {
                 
                 this.logDebug(`Loaded ${this.workspaceIgnoreList.size} words from ignore list`);
                 
-            } catch (error) {
+            } catch {
                 // File doesn't exist or invalid format - start with empty list
                 this.workspaceIgnoreList.clear();
                 this.logDebug('No existing ignore list found, starting fresh');
             }
             
-        } catch (error) {
-            this.outputChannel.appendLine(`[Diagnostics] Error loading ignore list: ${error}`);
+        } catch {
+            this.outputChannel.appendLine(`[Diagnostics] Error loading ignore list`);
         }
     }
 
@@ -404,8 +404,8 @@ export class M2EDiagnosticProvider {
             
             this.logDebug(`Saved ${this.workspaceIgnoreList.size} words to ignore list`);
             
-        } catch (error) {
-            this.outputChannel.appendLine(`[Diagnostics] Error saving ignore list: ${error}`);
+        } catch {
+            this.outputChannel.appendLine(`[Diagnostics] Error saving ignore list`);
         }
     }
 

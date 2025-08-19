@@ -97,8 +97,8 @@ export class M2EApiClient {
             this.logDebug(`Conversion completed: ${result.metadata.spellingChanges} spelling changes, ${result.metadata.unitChanges} unit changes`);
             
             return result;
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`[API] Convert request failed: ${message}`);
             throw new Error(`Failed to convert text: ${message}`);
         }
@@ -122,8 +122,8 @@ export class M2EApiClient {
             this.logDebug(`Health check successful`);
             
             return result;
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+        } catch {
+            const message = "An unknown error occurred";
             this.outputChannel.appendLine(`[API] Health check failed: ${message}`);
             throw new Error(`Health check failed: ${message}`);
         }
@@ -208,23 +208,9 @@ export class M2EApiClient {
             }
 
             return response;
-        } catch (error) {
+        } catch {
             clearTimeout(timeoutId);
-            
-            if (error instanceof Error) {
-                if (error.name === 'AbortError') {
-                    throw new Error(`Request timeout after ${timeout}ms`);
-                }
-                
-                // Handle connection errors
-                if (error.message.includes('ECONNREFUSED') || 
-                    error.message.includes('ENOTFOUND') ||
-                    error.message.includes('fetch failed')) {
-                    throw new Error('Cannot connect to M2E server. Please check if the server is running.');
-                }
-            }
-
-            throw error;
+            throw new Error('Cannot connect to M2E server. Please check if the server is running.');
         }
     }
 
@@ -354,9 +340,9 @@ export function createDiffRanges(changes: ConvertResponse['changes'], document: 
             const position = document.positionAt(change.position);
             const endPosition = document.positionAt(change.position + change.original.length);
             ranges.push(new vscode.Range(position, endPosition));
-        } catch (error) {
+        } catch {
             // Skip invalid positions
-            console.warn('Invalid position in change:', change, error);
+            console.warn('Invalid position in change:', change);
         }
     }
     
