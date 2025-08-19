@@ -115,6 +115,31 @@ func (p *ContextualWordPatterns) initialiseDefaultWordConfigs() {
 			Verb:    "advise",
 			Enabled: true,
 		},
+		"program": {
+			Noun:    "programme", // For non-computer contexts (TV programme, training programme)
+			Verb:    "program",   // Less common as verb, but kept consistent
+			Enabled: true,
+		},
+		"check": {
+			Noun:    "cheque", // Financial instrument only
+			Verb:    "check",  // Verification/examination
+			Enabled: true,
+		},
+		"story": {
+			Noun:    "storey", // Building floor context
+			Verb:    "story",  // Rarely used as verb
+			Enabled: true,
+		},
+		"inquiry": {
+			Noun:    "enquiry", // General questions in British
+			Verb:    "enquire", // To ask/question
+			Enabled: true,
+		},
+		"disk": {
+			Noun:    "disc", // Optical media, brake discs
+			Verb:    "disc", // Rarely used as verb
+			Enabled: true,
+		},
 	}
 }
 
@@ -124,17 +149,25 @@ func (p *ContextualWordPatterns) initialiseGeneralPatterns() {
 		// NOUN PATTERNS
 		{
 			Name: "determiner_noun",
-			// Matches: "a|an|the|this|that|my|your|his|her|our|their|each|every|any|some" + optional words + target word
+			// Matches: "a|an|the|this|that|my|your|his|her|its|our|their|each|every|any|some|no" + optional words + target word
 			// Examples: "a device", "the licence", "my advice", "some practice sessions"
-			Template:   `(?i)\b(?:a|an|the|this|that|my|your|his|her|our|their|each|every|any|some)\s+(?:\w+\s+)*?['"]?({WORD})['"]?\b`,
+			Template:   `(?i)\b(?:a|an|the|this|that|my|your|his|her|its|our|their|each|every|any|some|no)\s+(?:\w+\s+)*?['"]?({WORD})['"]?\b`,
 			TargetType: Noun,
 			Confidence: 0.8,
+		},
+		{
+			Name: "plural_noun",
+			// Matches: plural forms with s/es ending
+			// Examples: "practices", "licences", "stories"
+			Template:   `(?i)\b['"]?({WORD})(?:s|es)['"]?\b`,
+			TargetType: Noun,
+			Confidence: 0.85,
 		},
 		{
 			Name: "preposition_object",
 			// Matches: preposition + optional words + target word as object
 			// Examples: "with a licence", "for advice", "about the device", "regarding practice"
-			Template:   `(?i)\b(?:with|without|by|under|for|against|on|in|of|from|about|regarding|concerning)\s+(?:\w+\s+)*?['"]?({WORD})['"]?(?:\s|$)`,
+			Template:   `(?i)\b(?:with|without|by|under|for|against|on|in|of|from|about|regarding|concerning|during|through|across|between|among)\s+(?:\w+\s+)*?['"]?({WORD})['"]?(?:\s|$)`,
 			TargetType: Noun,
 			Confidence: 0.85,
 		},
@@ -149,10 +182,18 @@ func (p *ContextualWordPatterns) initialiseGeneralPatterns() {
 		{
 			Name: "compound_noun",
 			// Matches: target word + common noun compounds
-			// Examples: "licence holder", "device number", "practice sessions"
-			Template:   `(?i)\b['"]?({WORD})['"]?\s+(?:holder|number|plate|renewal|application|fee|requirement|agreement|terms|expiration|document|copy|file)\b`,
+			// Examples: "licence holder", "practice sessions", "cheque book"
+			Template:   `(?i)\b['"]?({WORD})['"]?\s+(?:holder|number|plate|renewal|application|fee|requirement|agreement|terms|expiration|document|copy|file|sessions?|book|account|building|floor)\b`,
 			TargetType: Noun,
 			Confidence: 0.9,
+		},
+		{
+			Name: "high_confidence_noun_phrases",
+			// Matches: high-confidence noun phrases like "best practice", "common practice"
+			// Examples: "best practice", "standard practice", "driving licence"
+			Template:   `(?i)\b(?:best|common|standard|good|bad|usual|normal|general|medical|legal|professional|driving|software|fishing|hunting)\s+['"]?({WORD})['"]?\b`,
+			TargetType: Noun,
+			Confidence: 0.95,
 		},
 		{
 			Name: "sentence_end_noun",
@@ -176,25 +217,73 @@ func (p *ContextualWordPatterns) initialiseGeneralPatterns() {
 			Name: "modal_verb",
 			// Matches: modal verb + optional words + target word
 			// Examples: "will license", "can devise", "should practise", "might advise"
-			Template:   `(?i)\b(?:will|shall|must|can|could|should|would|may|might)\s+(?:\w+\s+)*?['"]?({WORD})['"]?\b`,
+			Template:   `(?i)\b(?:will|shall|must|can|could|should|would|may|might|ought\s+to)\s+(?:\w+\s+)*?['"]?({WORD})['"]?\b`,
 			TargetType: Verb,
 			Confidence: 0.95,
+		},
+		{
+			Name: "auxiliary_verb",
+			// Matches: auxiliary verbs (have/has/had/been) + target word
+			// Examples: "have practised", "has licensed", "been practising"
+			Template:   `(?i)\b(?:have|has|had|having|been|being)\s+(?:\w+\s+)*?['"]?({WORD})(?:d|ed)?['"]?\b`,
+			TargetType: Verb,
+			Confidence: 0.9,
+		},
+		{
+			Name: "gerund_participle",
+			// Matches: -ing forms in verb contexts
+			// Examples: "is practising", "was advising", "been licensing"
+			Template:   `(?i)\b(?:is|are|was|were|am|be|been|being|keep|keeps|kept|start|started|stop|stopped|continue|continued|finish|finished)\s+['"]?({WORD})(?:ing)['"]?\b`,
+			TargetType: Verb,
+			Confidence: 0.85,
+		},
+		{
+			Name: "question_verb",
+			// Matches: question words + target word
+			// Examples: "Do you practice?", "Can I advise?", "Should we license?"
+			Template:   `(?i)\b(?:do|does|did|can|could|should|would|will|shall|may|might)\s+(?:\w+\s+)*?['"]?({WORD})['"]?\b\?`,
+			TargetType: Verb,
+			Confidence: 0.9,
+		},
+		{
+			Name: "negative_verb",
+			// Matches: negative constructions with verbs
+			// Examples: "don't practice", "won't advise", "can't license"
+			Template:   `(?i)\b(?:don't|doesn't|didn't|won't|wouldn't|can't|couldn't|shouldn't|mustn't|mightn't|mayn't|shan't|haven't|hasn't|hadn't)\s+['"]?({WORD})['"]?\b`,
+			TargetType: Verb,
+			Confidence: 0.92,
+		},
+		{
+			Name: "imperative_start",
+			// Matches: imperative at sentence start
+			// Examples: "Practice daily.", "License the software.", "Check your work."
+			Template:   `(?i)^['"]?({WORD})['"]?\s+(?:\w+)`,
+			TargetType: Verb,
+			Confidence: 0.75,
 		},
 		{
 			Name: "subject_verb",
 			// Matches: subject pronoun + optional adverbs + target word
 			// Examples: "I license", "they devise", "we practise", "you advise"
-			Template:   `(?i)\b(?:I|you|we|they|he|she|it|who)\s+(?:also\s+|often\s+|always\s+|never\s+|sometimes\s+|usually\s+)?['"]?({WORD})['"]?\b`,
+			Template:   `(?i)\b(?:I|you|we|they|he|she|it|who)\s+(?:also\s+|often\s+|always\s+|never\s+|sometimes\s+|usually\s+|regularly\s+|frequently\s+)?['"]?({WORD})['"]?\b`,
 			TargetType: Verb,
 			Confidence: 0.8,
 		},
 		{
 			Name: "direct_object",
-			// Matches: target word + direct object (technology/software terms)
-			// Examples: "license software", "devise technology", "practise skills"
-			Template:   `(?i)\b['"]?({WORD})['"]?\s+(?:software|technology|content|users|products|materials|code|applications|services|data|information)\b`,
+			// Matches: target word + direct object
+			// Examples: "license software", "practise skills", "check accounts"
+			Template:   `(?i)\b['"]?({WORD})['"]?\s+(?:the\s+)?(?:software|technology|content|users|products|materials|code|applications|services|data|information|skills|medicine|law|accounts|results|work)\b`,
 			TargetType: Verb,
 			Confidence: 0.9,
+		},
+		{
+			Name: "professional_verb_context",
+			// Matches: professional contexts where word is likely a verb
+			// Examples: "practice medicine", "practice law"
+			Template:   `(?i)\b['"]?({WORD})['"]?\s+(?:medicine|law|dentistry|nursing|accounting|engineering)\b`,
+			TargetType: Verb,
+			Confidence: 0.95,
 		},
 	}
 }
@@ -206,31 +295,50 @@ func (p *ContextualWordPatterns) initialiseExclusionPatterns() {
 		// Software license names and technical terms - avoid converting in legal/technical contexts
 		`(?i)(?:MIT|BSD|GPL|Apache|Creative\s+Commons|GNU|Mozilla)\s+license`,
 		// License files - avoid converting when referring to license documents
-		`(?i)license\s+(?:file|txt|md|doc)`,
+		`(?i)license\s+(?:file|txt|md|mdx|doc)`,
 		// Software license agreements - avoid converting in legal contexts
 		`(?i)software\s+license\s+(?:agreement|terms)`,
 		// License plate - avoid converting vehicle license plates
 		`(?i)license\s+plate`,
 
 		// License filenames - avoid converting literal filename references
-		`(?i)LICENSE\s*\.(?:txt|md|doc|pdf|html)`,
+		`(?i)LICENSE\s*\.(?:txt|md|mdx|doc|pdf|html)`,
 		// License file references with "the" article
-		`(?i)the\s+LICENSE\s*\.(?:txt|md|doc|pdf|html)\s+file`,
+		`(?i)the\s+LICENSE\s*\.(?:txt|md|mdx|doc|pdf|html)\s+file`,
+
+		// Computer program contexts - keep "program" for software
+		`(?i)(?:computer|software|application|executable|binary)\s+program`,
+		`(?i)program\s+(?:file|files|code|source|binary|executable)`,
+		`(?i)(?:C|Java|Python|Go|Rust|JavaScript|TypeScript)\s+program`,
+
+		// Financial check contexts that should NOT convert to cheque
+		`(?i)(?:spell|grammar|syntax|error|bounds|null|type|security|health|status)\s+check`,
+		`(?i)check\s+(?:box|boxes|mark|list|point|up|out|in|off|over)`,
+		`(?i)(?:background|reference|credit|fact)\s+check`,
+
+		// Story contexts that should NOT convert to storey
+		`(?i)(?:news|short|long|love|horror|fairy|folk|bed\s*time)\s+story`,
+		`(?i)story\s+(?:teller|telling|book|books|line|lines|arc|board)`,
+		`(?i)(?:tell|telling|told|write|writing|wrote|read|reading)\s+(?:a\s+|the\s+)?story`,
+
+		// Disk contexts for computer storage
+		`(?i)(?:hard|floppy|solid\s+state|SSD|HDD|magnetic)\s+disk`,
+		`(?i)disk\s+(?:drive|drives|space|usage|storage|partition|format|image)`,
 
 		// URLs and file paths - avoid converting in web addresses and paths
-		`(?i)(?:https?://|www\.)\S*license\S*`,
-		// File system paths containing license
-		`(?i)(?:/|\\)\S*license\S*(?:/|\\|\.)`,
+		`(?i)(?:https?://|www\.)\S*(?:license|program|check|story|disk|inquiry)\S*`,
+		// File system paths containing these words
+		`(?i)(?:/|\\)\S*(?:license|program|check|story|disk|inquiry)\S*(?:/|\\|\.)`,
 
 		// Code variable names and identifiers - avoid converting programming constructs
-		`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*\b(?:license|practice|advice)\w*`,
+		`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*\b(?:license|practice|advice|program|check|story|disk|inquiry)\w*`,
 		// Variable assignments and operators - avoid converting in code assignments
-		`(?i)\w*\b(?:license|practice|advice)\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,
+		`(?i)\w*\b(?:license|practice|advice|program|check|story|disk|inquiry)\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,
 
 		// Quoted strings in code contexts - avoid converting in string literals
-		`(?i)(?:=|:)\s*["']\s*\w*\b(?:license|practice|advice)\w*\s*["']`,
+		`(?i)(?:=|:)\s*["']\s*\w*\b(?:license|practice|advice|program|check|story|disk|inquiry)\w*\s*["']`,
 		// String literals with trailing operators
-		`(?i)["']\s*\w*\b(?:license|practice|advice)\w*\s*["']\s*(?:=|:|\))`,
+		`(?i)["']\s*\w*\b(?:license|practice|advice|program|check|story|disk|inquiry)\w*\s*["']\s*(?:=|:|\))`,
 	}
 
 	for _, pattern := range exclusions {
