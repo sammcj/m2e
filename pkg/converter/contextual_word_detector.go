@@ -8,25 +8,6 @@ import (
 	"strings"
 )
 
-// ContextualWordDetector interface defines the contract for contextual word detection
-type ContextualWordDetector interface {
-	DetectWords(text string) []ContextualWordMatch
-	SupportedWords() []string
-	SetMinConfidence(confidence float64)
-	SetEnabled(enabled bool)
-	IsEnabled() bool
-}
-
-// ContextAwareWordDetector implements contextual word detection with confidence scoring
-type ContextAwareWordDetector struct {
-	patterns *ContextualWordPatterns
-	config   *ContextualWordConfig
-
-	// Configuration for contextual detection
-	minConfidence float64 // Minimum confidence threshold for matches
-	enabled       bool    // Whether contextual detection is enabled
-}
-
 // NewContextAwareWordDetector creates a new contextual word detector
 func NewContextAwareWordDetector() *ContextAwareWordDetector {
 	// Load configuration with defaults
@@ -132,18 +113,33 @@ func (d *ContextAwareWordDetector) findPatternMatches(text string, pattern Conte
 	allMatches := pattern.Pattern.FindAllStringSubmatchIndex(text, -1)
 
 	for _, match := range allMatches {
-		if len(match) < 4 { // Need at least start, end, group start, group end
-			continue
+		var start, end int
+		var originalWord string
+
+		// Handle semantic patterns differently (they match the entire phrase but replace captured group)
+		if pattern.WordType == Unknown { // Semantic patterns
+			if len(match) < 4 { // Need at least full match and first capture group
+				continue
+			}
+			start = match[2] // Start of first capture group (the word to replace)
+			end = match[3]   // End of first capture group
+			if start == -1 || end == -1 {
+				continue
+			}
+			originalWord = text[start:end]
+		} else { // Traditional grammatical patterns
+			if len(match) < 4 { // Need at least start, end, group start, group end
+				continue
+			}
+			start = match[2] // Start of first capture group
+			end = match[3]   // End of first capture group
+
+			if start == -1 || end == -1 {
+				continue
+			}
+			originalWord = text[start:end]
 		}
 
-		start := match[2] // Start of first capture group
-		end := match[3]   // End of first capture group
-
-		if start == -1 || end == -1 {
-			continue
-		}
-
-		originalWord := text[start:end]
 		if originalWord == "" {
 			continue
 		}
@@ -215,8 +211,52 @@ func (d *ContextAwareWordDetector) getReplacementWord(originalWord string, patte
 		return pattern.Replacement
 	}
 
-	// Preserve case of original word
+	// For semantic patterns, handle smart replacement with singular/plural preservation
+	if pattern.WordType == Unknown {
+		replacement := pattern.Replacement
+
+		// Handle singular/plural for semantic patterns
+		isOriginalPlural := strings.HasSuffix(strings.ToLower(originalWord), "s")
+		isReplacementPlural := strings.HasSuffix(strings.ToLower(replacement), "s")
+
+		// If original is singular but replacement is plural, make replacement singular
+		if !isOriginalPlural && isReplacementPlural {
+			// Remove the 's' from the end
+			replacement = replacement[:len(replacement)-1]
+		}
+		// If original is plural but replacement is singular, make replacement plural
+		if isOriginalPlural && !isReplacementPlural {
+			replacement = replacement + "s"
+		}
+
+		return d.preserveCaseInPhrase(replacement, originalWord)
+	}
+
+	// For grammatical patterns, preserve case of the single word
 	return d.preserveCase(pattern.Replacement, originalWord)
+}
+
+// preserveCaseInPhrase preserves case patterns in phrase replacements
+func (d *ContextAwareWordDetector) preserveCaseInPhrase(replacement, original string) string {
+	if len(original) == 0 || len(replacement) == 0 {
+		return replacement
+	}
+
+	// For phrases, we try to preserve the case pattern of key words
+	// This is a simple approach that handles the most common cases
+	if original == strings.ToUpper(original) && original != strings.ToLower(original) {
+		return strings.ToUpper(replacement)
+	}
+
+	// Check if first character is capitalised
+	if len(original) > 0 && len(replacement) > 0 {
+		if original[0:1] == strings.ToUpper(original[0:1]) {
+			return strings.ToUpper(replacement[0:1]) + replacement[1:]
+		}
+	}
+
+	// Default: keep replacement as-is (lowercase)
+	return replacement
 }
 
 // preserveCase preserves the case pattern of the original word when applying replacement
@@ -333,36 +373,10 @@ func (d *ContextAwareWordDetector) UpdateConfiguration(config *ContextualWordCon
 	d.patterns.initialiseExclusionPatterns() // Add default exclusions
 
 	// Add custom exclusion patterns from config that aren't already included
+	defaultPatterns := GetDefaultExclusionPatterns()
 	for _, pattern := range config.ExcludePatterns {
 		// Skip default patterns that are already added
 		isDefault := false
-		defaultPatterns := []string{
-			// Software license names and technical terms - avoid converting in legal/technical contexts
-			`(?i)(?:MIT|BSD|GPL|Apache|Creative\s+Commons|GNU|Mozilla)\s+license`,
-			// License files - avoid converting when referring to license documents
-			`(?i)license\s+(?:file|txt|md|doc)`,
-			// Software license agreements - avoid converting in legal contexts
-			`(?i)software\s+license\s+(?:agreement|terms)`,
-			// License plate - avoid converting vehicle license plates
-			`(?i)license\s+plate`,
-			// License filenames - avoid converting literal filename references
-			`(?i)LICENSE\s*\.(?:txt|md|doc|pdf|html)`,
-			// License file references with "the" article
-			`(?i)the\s+LICENSE\s*\.(?:txt|md|doc|pdf|html)\s+file`,
-			// URLs and file paths - avoid converting in web addresses and paths
-			`(?i)(?:https?://|www\.)\S*license\S*`,
-			// File system paths containing license
-			`(?i)(?:/|\\)\S*license\S*(?:/|\\|\.)`,
-			// Code variable names and identifiers - avoid converting programming constructs
-			`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*\b(?:license|practice|advice)\w*`,
-			// Variable assignments and operators - avoid converting in code assignments
-			`(?i)\w*\b(?:license|practice|advice)\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,
-			// Quoted strings in code contexts - avoid converting in string literals
-			`(?i)(?:=|:)\s*["']\s*\w*\b(?:license|practice|advice)\w*\s*["']`,
-			// String literals with trailing operators
-			`(?i)["']\s*\w*\b(?:license|practice|advice)\w*\s*["']\s*(?:=|:|\))`,
-		}
-
 		for _, defaultPattern := range defaultPatterns {
 			if pattern == defaultPattern {
 				isDefault = true

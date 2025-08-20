@@ -6,9 +6,6 @@ import (
 	"strings"
 )
 
-// WordType represents the grammatical role of a word
-type WordType int
-
 const (
 	Noun WordType = iota
 	Verb
@@ -28,73 +25,6 @@ func (wt WordType) String() string {
 	default:
 		return "unknown"
 	}
-}
-
-// ContextualWordPattern represents a regex pattern for detecting words in specific grammatical contexts
-type ContextualWordPattern struct {
-	Pattern     *regexp.Regexp // Regex pattern to match the word in context
-	WordType    WordType       // The grammatical role this pattern detects
-	BaseWord    string         // The base word this pattern applies to (e.g., "license")
-	Replacement string         // The appropriate spelling for this context (e.g., "licence" for noun)
-	Confidence  float64        // Base confidence for this pattern (0.0-1.0)
-	Description string         // Human-readable description of this pattern
-}
-
-// ContextualWordMatch represents a detected word that needs contextual conversion
-type ContextualWordMatch struct {
-	Start        int      // Start position in text
-	End          int      // End position in text
-	OriginalWord string   // The original word found
-	WordType     WordType // Detected grammatical role
-	Replacement  string   // The contextually appropriate replacement
-	Confidence   float64  // Confidence score for this match (0.0-1.0)
-	Context      string   // Surrounding context used for detection
-	BaseWord     string   // The base word this match relates to
-}
-
-// WordConfig represents the configuration for a contextual word pair
-type WordConfig struct {
-	Noun    string `json:"noun"`    // British spelling when used as noun
-	Verb    string `json:"verb"`    // British spelling when used as verb
-	Enabled bool   `json:"enabled"` // Whether this word pair is enabled
-}
-
-// GeneralPattern represents a reusable pattern template
-type GeneralPattern struct {
-	Name       string   // Pattern identifier
-	Template   string   // Pattern template with {WORD} placeholder
-	TargetType WordType // The grammatical role this pattern detects
-	Confidence float64  // Base confidence for this pattern (0.0-1.0)
-}
-
-// ContextualWordPatterns holds all the patterns and configuration for contextual word detection
-type ContextualWordPatterns struct {
-	// Word configurations by base word
-	WordConfigs map[string]WordConfig
-
-	// Generated patterns by base word
-	GeneratedPatterns map[string][]ContextualWordPattern
-
-	// Exclusion patterns for ambiguous or problematic contexts
-	ExclusionPatterns []*regexp.Regexp
-
-	// General pattern templates
-	GeneralPatterns []GeneralPattern
-}
-
-// NewContextualWordPatterns creates and initialises the contextual word detection system
-func NewContextualWordPatterns() *ContextualWordPatterns {
-	patterns := &ContextualWordPatterns{
-		WordConfigs:       make(map[string]WordConfig),
-		GeneratedPatterns: make(map[string][]ContextualWordPattern),
-	}
-
-	patterns.initialiseDefaultWordConfigs()
-	patterns.initialiseGeneralPatterns()
-	patterns.initialiseExclusionPatterns()
-	patterns.generateAllPatterns()
-
-	return patterns
 }
 
 // initialiseDefaultWordConfigs sets up the default word configurations
@@ -441,6 +371,177 @@ func (p *ContextualWordPatterns) initialiseExclusionPatterns() {
 	}
 }
 
+// GetDefaultContextualWordConfig returns the default configuration with sensible defaults
+func GetDefaultContextualWordConfig() *ContextualWordConfig {
+	config := &ContextualWordConfig{
+		Enabled: true,
+		WordConfigs: map[string]WordConfig{
+			"license": {
+				Noun:    "licence",
+				Verb:    "license",
+				Enabled: true,
+			},
+			"practice": {
+				Noun:    "practice",
+				Verb:    "practise",
+				Enabled: true,
+				// Semantic variants: ensure plural nouns stay as "practices"
+				SemanticVariants: map[string]string{
+					// Ensure "best practices" stays as noun (plural)
+					`(?i)best\s+(practices)\b`:        "practices",
+					`(?i)good\s+(practices)\b`:        "practices",
+					`(?i)common\s+(practices)\b`:      "practices",
+					`(?i)standard\s+(practices)\b`:    "practices",
+					`(?i)coding\s+(practices)\b`:      "practices",
+					`(?i)security\s+(practices)\b`:    "practices",
+					`(?i)business\s+(practices)\b`:    "practices",
+					`(?i)development\s+(practices)\b`: "practices",
+					`(?i)engineering\s+(practices)\b`: "practices",
+					`(?i)programming\s+(practices)\b`: "practices",
+					`(?i)software\s+(practices)\b`:    "practices",
+					`(?i)testing\s+(practices)\b`:     "practices",
+					`(?i)deployment\s+(practices)\b`:  "practices",
+					`(?i)industry\s+(practices)\b`:    "practices",
+					`(?i)recommended\s+(practices)\b`: "practices",
+				},
+			},
+			"practices": {
+				// Semantic variants for plural form: ensure they stay as "practices" (noun plural)
+				SemanticVariants: map[string]string{
+					// These patterns ensure plural stays plural
+					`(?i)best\s+(practices)\b`:        "practices",
+					`(?i)good\s+(practices)\b`:        "practices",
+					`(?i)common\s+(practices)\b`:      "practices",
+					`(?i)standard\s+(practices)\b`:    "practices",
+					`(?i)coding\s+(practices)\b`:      "practices",
+					`(?i)security\s+(practices)\b`:    "practices",
+					`(?i)business\s+(practices)\b`:    "practices",
+					`(?i)development\s+(practices)\b`: "practices",
+					`(?i)engineering\s+(practices)\b`: "practices",
+					`(?i)programming\s+(practices)\b`: "practices",
+					`(?i)software\s+(practices)\b`:    "practices",
+					`(?i)testing\s+(practices)\b`:     "practices",
+					`(?i)deployment\s+(practices)\b`:  "practices",
+					`(?i)industry\s+(practices)\b`:    "practices",
+					`(?i)recommended\s+(practices)\b`: "practices",
+				},
+				Enabled: true,
+			},
+			"advice": {
+				Noun:    "advice",
+				Verb:    "advise",
+				Enabled: true,
+			},
+			"principal": {
+				// Semantic variants: correct specific technical misuses
+				SemanticVariants: map[string]string{
+					// Security/design contexts should be "principle"
+					`(?i)(principal)\s+of\s+least\s+privile?ge?d?`: "principle",
+					`(?i)security\s+(principals?)\b`:               "principle", // when referring to guidelines
+					`(?i)design\s+(principals?)\b`:                 "principle",
+					`(?i)fundamental\s+(principals?)\b`:            "principle",
+					`(?i)core\s+(principals?)\b`:                   "principle",
+					`(?i)guiding\s+(principals?)\b`:                "principle",
+					`(?i)basic\s+(principals?)\b`:                  "principle",
+					`(?i)engineering\s+(principals?)\b`:            "principle",
+					`(?i)architectural\s+(principals?)\b`:          "principle",
+					`(?i)programming\s+(principals?)\b`:            "principle",
+					`(?i)DRY\s+(principals?)\b`:                    "principle",
+					`(?i)SOLID\s+(principals?)\b`:                  "principle",
+				},
+				Enabled: true,
+			},
+			"principle": {
+				// Semantic variants: correct specific technical misuses
+				SemanticVariants: map[string]string{
+					// AWS/IAM contexts should be "principal"
+					`(?i)AWS\s+IAM\s+(principles?)\b`:      "principal",
+					`(?i)service\s+(principles?)\b`:        "principal",
+					`(?i)user\s+(principles?)\b`:           "principal",
+					`(?i)(principle)\s+ARN\b`:              "principal",
+					`(?i)authentication\s+(principles?)\b`: "principal",
+					`(?i)Kerberos\s+(principles?)\b`:       "principal",
+					`(?i)OAuth\s+(principles?)\b`:          "principal",
+					`(?i)database\s+(principles?)\b`:       "principal",
+					`(?i)login\s+(principles?)\b`:          "principal",
+					`(?i)(principle)\s+name\b`:             "principal",
+					`(?i)(principle)\s+ID\b`:               "principal",
+					// Finance contexts
+					`(?i)loan\s+(principles?)\b`:  "principal",
+					`(?i)(principle)\s+amount\b`:  "principal",
+					`(?i)(principle)\s+payment\b`: "principal",
+				},
+				Enabled: true,
+			},
+		},
+		MinConfidence: 0.7,
+		ExcludePatterns: []string{
+			// Software license names
+			`(?i)(?:MIT|BSD|GPL|Apache|Creative\s+Commons|GNU|Mozilla)\s+license`,
+			`(?i)software\s+license\s+(?:agreement|terms)`,
+
+			// License filenames
+			`(?i)LICENSE\s*\.(?:txt|md|doc|pdf|html)`,
+			`(?i)the\s+LICENSE\s*\.(?:txt|md|doc|pdf|html)\s+file`,
+
+			// URLs and file paths
+			`(?i)(?:https?://|www\.)\S*license\S*`,
+			`(?i)(?:/|\\)\S*license\S*(?:/|\\|\.)`,
+
+			// Code contexts
+			`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*\b(?:license|practice|advice)\w*`,
+			`(?i)\w*\b(?:license|practice|advice)\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,
+
+			// Quoted strings in code contexts
+			`(?i)(?:=|:)\s*["']\s*\w*\b(?:license|practice|advice)\w*\s*["']`,
+			`(?i)["']\s*\w*\b(?:license|practice|advice)\w*\s*["']\s*(?:=|:|\)|;|,)`,
+
+			// Dialog in code contexts (HTML, JavaScript, CSS, etc.)
+			`(?i)<dialog\b`,           // HTML dialog element
+			`(?i)</dialog>`,           // HTML dialog closing tag
+			`(?i)\bdialog\s*\.\s*\w+`, // dialog.method() calls
+			`(?i)\w*\.dialog\b`,       // object.dialog properties
+			`(?i)\.dialog\b`,          // CSS .dialog classes
+			`(?i)#dialog\b`,           // CSS #dialog IDs
+			`(?i)data-dialog`,         // data-dialog attributes
+			`(?i)dialog-\w+`,          // dialog-* attributes/classes
+			`(?i)\b(?:show|open|close|hide|modal)Dialog\b`,                                    // showDialog, openDialog functions
+			`(?i)\bdialog(?:Box|Modal|Window|Panel)\b`,                                        // dialogBox, dialogModal compound words
+			`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*\bdialog\w*`, // variable/function names
+			`(?i)\w*\bdialog\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,                              // dialog in expressions
+			`(?i)(?:=|:)\s*["']\s*\w*\bdialog\w*\s*["']`,                                      // quoted dialog strings in code
+			`(?i)["']\s*\w*\bdialog\w*\s*["']\s*(?:=|:|\)|;|,)`,                               // dialog in quoted assignments
+		},
+		Preferences: ContextualWordPreferences{
+			PreferNounOnAmbiguity: true,  // Default to noun when uncertain
+			FallbackToDictionary:  false, // Don't use dictionary for contextual words
+			ShowAmbiguityWarnings: false,
+			CaseSensitive:         false,
+			ConvertQuotedText:     false, // Skip quoted text by default
+		},
+	}
+
+	// Populate backward compatibility fields
+	config.populateBackwardCompatibilityFields()
+
+	return config
+}
+
+// NewContextualWordPatterns creates and initialises the contextual word detection system
+func NewContextualWordPatterns() *ContextualWordPatterns {
+	patterns := &ContextualWordPatterns{
+		WordConfigs:       make(map[string]WordConfig),
+		GeneratedPatterns: make(map[string][]ContextualWordPattern),
+	}
+
+	patterns.initialiseDefaultWordConfigs()
+	patterns.initialiseGeneralPatterns()
+	patterns.initialiseExclusionPatterns()
+	patterns.generateAllPatterns()
+
+	return patterns
+}
+
 // generateAllPatterns generates contextual patterns for all enabled words
 func (p *ContextualWordPatterns) generateAllPatterns() {
 	for baseWord, config := range p.WordConfigs {
@@ -455,29 +556,53 @@ func (p *ContextualWordPatterns) generateAllPatterns() {
 func (p *ContextualWordPatterns) generatePatternsForWord(word string, config WordConfig) []ContextualWordPattern {
 	var patterns []ContextualWordPattern
 
-	for _, generalPattern := range p.GeneralPatterns {
-		// Replace {WORD} placeholder with actual word
-		patternText := strings.ReplaceAll(generalPattern.Template, "{WORD}", word)
-		compiled, err := regexp.Compile(patternText)
-		if err != nil {
-			continue // Skip invalid patterns
-		}
+	// Generate semantic variant patterns FIRST (higher priority)
+	if config.SemanticVariants != nil {
+		for patternText, replacement := range config.SemanticVariants {
+			compiled, err := regexp.Compile(patternText)
+			if err != nil {
+				continue // Skip invalid patterns
+			}
 
-		var replacement string
-		if generalPattern.TargetType == Noun {
-			replacement = config.Noun
-		} else {
-			replacement = config.Verb
+			patterns = append(patterns, ContextualWordPattern{
+				Pattern:     compiled,
+				WordType:    Unknown, // Semantic variants don't have grammatical types
+				BaseWord:    word,
+				Replacement: replacement,
+				Confidence:  0.99, // Very high confidence for specific semantic patterns
+				Description: "semantic pattern for " + word + " -> " + replacement,
+			})
 		}
+	}
 
-		patterns = append(patterns, ContextualWordPattern{
-			Pattern:     compiled,
-			WordType:    generalPattern.TargetType,
-			BaseWord:    word,
-			Replacement: replacement,
-			Confidence:  generalPattern.Confidence,
-			Description: generalPattern.Name + " pattern for " + word,
-		})
+	// Generate traditional grammatical patterns if Noun/Verb are defined
+	if config.Noun != "" || config.Verb != "" {
+		for _, generalPattern := range p.GeneralPatterns {
+			// Replace {WORD} placeholder with actual word
+			patternText := strings.ReplaceAll(generalPattern.Template, "{WORD}", word)
+			compiled, err := regexp.Compile(patternText)
+			if err != nil {
+				continue // Skip invalid patterns
+			}
+
+			var replacement string
+			if generalPattern.TargetType == Noun && config.Noun != "" {
+				replacement = config.Noun
+			} else if generalPattern.TargetType == Verb && config.Verb != "" {
+				replacement = config.Verb
+			} else {
+				continue // Skip if no replacement defined
+			}
+
+			patterns = append(patterns, ContextualWordPattern{
+				Pattern:     compiled,
+				WordType:    generalPattern.TargetType,
+				BaseWord:    word,
+				Replacement: replacement,
+				Confidence:  generalPattern.Confidence,
+				Description: generalPattern.Name + " pattern for " + word,
+			})
+		}
 	}
 
 	return patterns
@@ -567,4 +692,34 @@ func (p *ContextualWordPatterns) AddWordConfig(word string, config WordConfig) {
 func (p *ContextualWordPatterns) GetWordConfig(word string) (WordConfig, bool) {
 	config, exists := p.WordConfigs[strings.ToLower(word)]
 	return config, exists
+}
+
+// GetDefaultExclusionPatterns returns the default exclusion patterns
+func GetDefaultExclusionPatterns() []string {
+	return []string{
+		// Software license names and technical terms - avoid converting in legal/technical contexts
+		`(?i)(?:MIT|BSD|GPL|Apache|Creative\s+Commons|GNU|Mozilla)\s+license`,
+		// License files - avoid converting when referring to license documents
+		`(?i)license\s+(?:file|txt|md|doc)`,
+		// Software license agreements - avoid converting in legal contexts
+		`(?i)software\s+license\s+(?:agreement|terms)`,
+		// License plate - avoid converting vehicle license plates
+		`(?i)license\s+plate`,
+		// License filenames - avoid converting literal filename references
+		`(?i)LICENSE\s*\.(?:txt|md|doc|pdf|html)`,
+		// License file references with "the" article
+		`(?i)the\s+LICENSE\s*\.(?:txt|md|doc|pdf|html)\s+file`,
+		// URLs and file paths - avoid converting in web addresses and paths
+		`(?i)(?:https?://|www\.)\S*license\S*`,
+		// File system paths containing license
+		`(?i)(?:/|\\)\S*license\S*(?:/|\\|\.)`,
+		// Code variable names and identifiers - avoid converting programming constructs
+		`(?i)(?:var|const|let|def|function|class|interface|struct|type)\s+\w*\b(?:license|practice|advice)\w*`,
+		// Variable assignments and operators - avoid converting in code assignments
+		`(?i)\w*\b(?:license|practice|advice)\w*\s*(?:=|:=|==|!=|<|>|\+|\-|\*|/)`,
+		// Quoted strings in code contexts - avoid converting in string literals
+		`(?i)(?:=|:)\s*["']\s*\w*\b(?:license|practice|advice)\w*\s*["']`,
+		// String literals with trailing operators
+		`(?i)["']\s*\w*\b(?:license|practice|advice)\w*\s*["']\s*(?:=|:|\))`,
+	}
 }
