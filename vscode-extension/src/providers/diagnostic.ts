@@ -298,50 +298,6 @@ export class M2EDiagnosticProvider {
         }
     }
 
-    /**
-     * Check if a spelling change involves contextual words that depend on usage context
-     */
-    private isContextualWordChange_UNUSED(original: string, converted: string): boolean {
-        // Define the contextual word pairs that require context-aware detection
-        const contextualWordPairs = [
-            // license/licence pairs
-            { american: 'license', british: 'licence' },
-            { american: 'licensed', british: 'licenced' },
-            { american: 'licensing', british: 'licencing' },
-            { american: 'licenses', british: 'licences' },
-            
-            // practice/practise pairs
-            { american: 'practice', british: 'practise' },
-            { american: 'practiced', british: 'practised' },
-            { american: 'practicing', british: 'practising' },
-            { american: 'practices', british: 'practises' },
-            
-            // advice/advise pairs
-            { american: 'advice', british: 'advise' },
-            { american: 'adviced', british: 'advised' }, // Less common but possible
-            { american: 'advicing', british: 'advising' },
-            
-            // check/cheque pairs (financial context)
-            { american: 'check', british: 'cheque' },
-            { american: 'checks', british: 'cheques' },
-            
-            // program/programme pairs
-            { american: 'program', british: 'programme' },
-            { american: 'programs', british: 'programmes' },
-            
-            // story/storey pairs (building context)
-            { american: 'story', british: 'storey' },
-            { american: 'stories', british: 'storeys' }
-        ];
-        
-        const originalLower = original.toLowerCase();
-        const convertedLower = converted.toLowerCase();
-        
-        return contextualWordPairs.some(pair => 
-            (originalLower === pair.american.toLowerCase() && convertedLower === pair.british.toLowerCase()) ||
-            (originalLower === pair.british.toLowerCase() && convertedLower === pair.american.toLowerCase())
-        );
-    }
 
     /**
      * Clear diagnostics for a document

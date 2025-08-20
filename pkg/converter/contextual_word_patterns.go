@@ -189,7 +189,7 @@ func (p *ContextualWordPatterns) initialiseGeneralPatterns() {
 			Name: "plural_noun",
 			// Matches: plural forms with s/es ending
 			// Examples: "practices", "licences", "stories"
-			Template:   `(?i)\b['"]?({WORD})(?:s|es)['"]?\b`,
+			Template:   `(?i)\b['"]?({WORD})(?:s|es)(?!\w)['"]?\b`,
 			TargetType: Noun,
 			Confidence: 0.85,
 		},
