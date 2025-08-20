@@ -276,19 +276,19 @@ jobs:
           npm run compile
           vsce package
 
-          - name: Publish to VS Code Marketplace
-          env:
-            VSCE_PAT: ${{ secrets.VSCE_PAT }}
-            run: |
-            # Find the newly built VSIX file
-            VSIX_FILE=$(find ./vscode-extension -name "*.vsix" | head -1)
-            if [ -z "$VSIX_FILE" ]; then
+      - name: Publish to VS Code Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          # Find the newly built VSIX file
+          VSIX_FILE=$(find ./vscode-extension -name "*.vsix" | head -1)
+          if [ -z "$VSIX_FILE" ]; then
             echo "No VSIX file found!"
             exit 1
-            fi
+          fi
 
-            echo "Publishing $VSIX_FILE to VS Code Marketplace..."
-            vsce publish --packagePath "$VSIX_FILE"
+          echo "Publishing $VSIX_FILE to VS Code Marketplace..."
+          vsce publish --packagePath "$VSIX_FILE"
 
       # - name: Publish to Open VSX Registry
       #   env:
