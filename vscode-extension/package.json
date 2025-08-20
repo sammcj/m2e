@@ -2,7 +2,7 @@
   "name": "m2e-vscode",
   "displayName": "M2E - 'Murican to English Converter",
   "description": "Convert American text to standard international / British English with freedom unit to metric conversion",
-  "version": "0.1.0",
+  "version": "0.27.3",
   "publisher": "SamMcLeod",
   "license": "MIT",
   "repository": {
