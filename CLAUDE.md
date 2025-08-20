@@ -47,6 +47,11 @@ make build-server   # HTTP API server
 make build-mcp      # MCP server for AI tools
 ```
 
+### Lint Github Actions
+```bash
+actionlint
+```
+
 ### Development Mode
 ```bash
 wails dev           # Hot-reload development server
@@ -113,4 +118,3 @@ Requires Go 1.24+ (specified in go.mod with toolchain go1.24.1)
 ## Note
 
 - Always run `make lint && make test` before stating you have completed the task.
-

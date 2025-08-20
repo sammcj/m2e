@@ -124,19 +124,6 @@ jobs:
         working-directory: ./vscode-extension
         run: npm run compile
 
-      - name: Package extension
-        working-directory: ./vscode-extension
-        run: |
-          npm install -g @vscode/vsce
-          vsce package
-
-      - name: Upload VSIX artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: vscode-extension
-          path: vscode-extension/*.vsix
-          retention-days: 1
-
   # Automated version bumping for VSCode extension
   version-bump:
     name: Bump VSCode Extension Version
@@ -178,13 +165,17 @@ jobs:
           MAIN_VERSION=$(git tag -l 'v*' | grep -v 'vscode' | sort -V | tail -1 | sed 's/^v//')
           echo "Latest main version: $MAIN_VERSION"
 
+          # Extract major.minor from main version for version calculation
+          MAJOR=$(echo "$MAIN_VERSION" | cut -d. -f1)
+          MINOR=$(echo "$MAIN_VERSION" | cut -d. -f3)  # Use patch as minor
+          
           # Find existing VSCode extension versions for this base version
-          EXISTING_VSCODE_VERSIONS=$(git tag -l "vscode-v${MAIN_VERSION}-*" | wc -l)
+          EXISTING_VSCODE_VERSIONS=$(git tag -l "vscode-v${MAJOR}.${MINOR}.*" | wc -l)
           NEXT_REVISION=$((EXISTING_VSCODE_VERSIONS + 1))
 
-          # Create new VSCode extension version
-          NEW_VERSION="${MAIN_VERSION}-vscode.${NEXT_REVISION}"
-          NEW_TAG="vscode-v${MAIN_VERSION}-${NEXT_REVISION}"
+          # Create new VSCode extension version using semantic versioning
+          NEW_VERSION="${MAJOR}.${MINOR}.${NEXT_REVISION}"
+          NEW_TAG="vscode-v${NEW_VERSION}"
 
           echo "Calculated new version: $NEW_VERSION"
           echo "New tag: $NEW_TAG"

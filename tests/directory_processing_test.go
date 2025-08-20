@@ -351,3 +351,72 @@ func TestDirectoryWalkWithPermissionIssues(t *testing.T) {
 		t.Error("Should have found the readable file despite permission errors")
 	}
 }
+
+func TestFindTextFilesIgnoresHiddenDirectories(t *testing.T) {
+	// Create temporary directory structure with hidden directories
+	tempDir, err := os.MkdirTemp("", "m2e-test-")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer func() {
+		_ = os.RemoveAll(tempDir)
+	}()
+
+	// Create regular file
+	regularFile := filepath.Join(tempDir, "regular.txt")
+	err = os.WriteFile(regularFile, []byte("This is a regular file."), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create regular file: %v", err)
+	}
+
+	// Create hidden directory with file inside
+	hiddenDir := filepath.Join(tempDir, ".hidden")
+	err = os.MkdirAll(hiddenDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create hidden directory: %v", err)
+	}
+
+	hiddenFile := filepath.Join(hiddenDir, "secret.txt")
+	err = os.WriteFile(hiddenFile, []byte("This is a hidden file."), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create hidden file: %v", err)
+	}
+
+	// Create nested hidden directory
+	nestedHiddenDir := filepath.Join(tempDir, ".config", "app")
+	err = os.MkdirAll(nestedHiddenDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create nested hidden directory: %v", err)
+	}
+
+	nestedFile := filepath.Join(nestedHiddenDir, "config.txt")
+	err = os.WriteFile(nestedFile, []byte("This is a nested hidden file."), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create nested hidden file: %v", err)
+	}
+
+	// Test finding text files - should ignore hidden directories
+	files, err := fileutil.FindTextFiles(tempDir)
+	if err != nil {
+		t.Fatalf("FindTextFiles failed: %v", err)
+	}
+
+	// Should only find the regular file, not files in hidden directories
+	if len(files) != 1 {
+		t.Errorf("Expected 1 file, got %d files: %v", len(files), files)
+	}
+
+	// Verify the found file is the regular one
+	if len(files) > 0 {
+		if files[0].RelativePath != "regular.txt" {
+			t.Errorf("Expected to find regular.txt, got %s", files[0].RelativePath)
+		}
+	}
+
+	// Verify no hidden files were found
+	for _, file := range files {
+		if strings.Contains(file.Path, ".hidden") || strings.Contains(file.Path, ".config") {
+			t.Errorf("Found file in hidden directory: %s", file.Path)
+		}
+	}
+}
