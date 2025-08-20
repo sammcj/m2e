@@ -239,6 +239,9 @@ jobs:
     needs: [build-main, build-extension, version-bump]
     # Only publish when version was changed or on explicit version tags, skip PRs and [skip-ci] commits
     if: ${{ github.event_name != 'pull_request' && !contains(github.event.head_commit.message, '[skip-ci]') && (needs.version-bump.outputs.version-changed == 'true' || startsWith(github.ref, 'refs/tags/vscode-v') || github.event_name == 'workflow_dispatch') }}
+    permissions:
+      contents: write
+      packages: write
     steps:
       - name: Checkout code with updated version
         uses: actions/checkout@v5
