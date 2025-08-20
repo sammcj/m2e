@@ -146,12 +146,14 @@ jobs:
     if: ${{ github.event_name != 'pull_request' && !contains(github.event.head_commit.message, '[skip-ci]') && (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') }}
     permissions:
       contents: write
+      packages: write
     outputs:
       new-version: ${{ steps.calc-version.outputs.new-version }}
       new-tag: ${{ steps.calc-version.outputs.new-tag }}
       main-version: ${{ steps.calc-version.outputs.main-version }}
       revision: ${{ steps.calc-version.outputs.revision }}
       version-changed: ${{ steps.calc-version.outputs.version-changed }}
+      commit-sha: ${{ steps.version-bump.outputs.commit-sha }}
     steps:
       - name: Checkout code with full history
         uses: actions/checkout@v5
@@ -230,10 +232,14 @@ jobs:
           git push origin HEAD:"${{ github.ref_name }}" || true  # Ignore if branch already exists
           git push origin "$NEW_TAG"
 
+          # Get the commit SHA for the version bump
+          COMMIT_SHA=$(git rev-parse HEAD)
+
           echo "newTag=$NEW_TAG" >> $GITHUB_OUTPUT
           echo "version-changed=true" >> $GITHUB_OUTPUT
+          echo "commit-sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
 
-          echo "✅ Version bumped to $NEW_VERSION and tagged as $NEW_TAG"
+          echo "✅ Version bumped to $NEW_VERSION and tagged as $NEW_TAG (commit: $COMMIT_SHA)"
 
   # Publish to VS Code Marketplace (only on version tags or manual trigger)
   publish-extension:
@@ -246,28 +252,34 @@ jobs:
       - name: Checkout code with updated version
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ needs.version-bump.outputs.commit-sha || github.ref_name }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Download extension artifact
-        uses: actions/download-artifact@v5
+      - name: Set up Go (for building server binaries)
+        uses: actions/setup-go@v5
         with:
-          name: vscode-extension
-          path: ./
+          go-version: ${{ env.GO_VERSION }}
 
-      - name: Rebuild extension with updated version
+      - name: Build cross-platform binaries for extension
+        run: |
+          # Build binaries for all platforms that the extension supports
+          GOOS=darwin GOARCH=arm64 go build -o vscode-extension/resources/bin/darwin-arm64/m2e-server ./cmd/m2e-server
+          GOOS=linux GOARCH=amd64 go build -o vscode-extension/resources/bin/linux-x64/m2e-server ./cmd/m2e-server
+          GOOS=linux GOARCH=arm64 go build -o vscode-extension/resources/bin/linux-arm64/m2e-server ./cmd/m2e-server
+
+      - name: Build extension with updated version
         working-directory: ./vscode-extension
         run: |
           # Install dependencies
           npm ci
-          # Rebuild with updated version
-          npm run compile
-          # Repackage with new version
+          # Install vsce for packaging
           npm install -g @vscode/vsce
+          # Compile and package with the updated version
+          npm run compile
           vsce package
 
       - name: Install Open VSX CLI

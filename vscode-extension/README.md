@@ -10,7 +10,7 @@ Convert 'Murican to standard international English and freedom units to standard
 
 M2E is a VSCode extension that provides seamless conversion of American English spellings to British English, with optional imperial-to-metric unit conversion. The extension integrates with the existing M2E converter infrastructure through a local HTTP API server, providing accurate text conversion without leaving your IDE.
 
-M2E provides a CLI, MCP and GUI as well as the VSCode extension: https://github.com/sammcj/m2e
+M2E provides a CLI, MCP and GUI as well as the VSCode extension, see the the project on Github for more information and documentation: https://github.com/sammcj/m2e
 
 ### Key Features
 
@@ -136,13 +136,6 @@ The extension manages a local M2E server process automatically:
 - **Health Monitoring**: Continuous health checks ensure server availability
 - **Auto-Restart**: Intelligent restart on configuration changes
 - **Clean Shutdown**: Graceful server termination when VSCode closes
-
-#### Status Monitoring
-Monitor server status via the status bar indicator:
-
-- **🟢 Running**: Server is active and ready
-- **⚪ Stopped**: Server is not running
-- **🔴 Error**: Server encountered an error (click to restart)
 
 ### Unit Conversion
 
