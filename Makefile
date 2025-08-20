@@ -9,7 +9,7 @@ help:
 	@echo "  lint            - Run linter and check formatting (Go + VSCode extension)"
 	@echo "  fmt             - Format code with gofmt"
 	@echo "  test            - Run all tests (Go + VSCode extension)"
-	@echo "  build           - Build all applications (Wails app, CLI, server, MCP)"
+	@echo "  build           - Build all applications (Wails app, CLI, server, MCP, VSCode extension)"
 	@echo "  build-wails     - Build the Wails application only"
 	@echo "  build-cli       - Build the CLI application only"
 	@echo "  build-server    - Build the server application only"
@@ -53,7 +53,7 @@ test: build-cli vscode-build
 
 # Build all applications
 .PHONY: build
-build: build-wails build-cli build-server build-mcp
+build: build-wails build-cli build-server build-mcp vscode-build
 	ls -tarl build/bin/
 	@echo "All applications built successfully!"
 

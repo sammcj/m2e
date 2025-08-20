@@ -35,8 +35,7 @@ make build          # Build all applications (GUI, CLI, server, MCP)
 #### Build VSCode Extension
 
 ```bash
-make vscode-build   # Build VSCode extension for M2E
-make vscode-package # Package VSCode extension for distribution
+make vscode-build   # Build VSCode extension for M2E - This is already triggered by `make build`
 ```
 
 #### Individual Builds
@@ -45,6 +44,7 @@ make build-wails    # GUI application (macOS app bundle)
 make build-cli      # Command-line interface with integrated report mode
 make build-server   # HTTP API server
 make build-mcp      # MCP server for AI tools
+make build-vscode   # VSCode extension
 ```
 
 ### Lint Github Actions
