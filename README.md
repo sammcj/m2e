@@ -15,6 +15,7 @@ A lightweight application for converting text from American to International Eng
 - Report mode with comprehensive analysis, diff output, and CI/CD integration
 - MCP (~~Murican Conversion Protocol~~ Model Context Protocol) server for use with AI agents and agentic coding tools
 - Code-aware conversion that preserves code syntax while converting comments (BETA)
+- Ignore comment directives to exclude specific lines or entire files from conversion
 - Configurable unit conversion with user preferences
 - macOS Services integration
 
@@ -35,10 +36,11 @@ MCP Server Use
     - [VSCode Extension](#vscode-extension)
   - [How It Works](#how-it-works)
     - [Adding New Words](#adding-new-words)
+    - [Ignore Comments](#ignore-comments)
     - [macOS Services Integration](#macos-services-integration)
   - [Freedom Unit Conversion](#freedom-unit-conversion)
     - [Supported Unit Types](#supported-unit-types)
-    - [Examples](#examples)
+    - [Examples](#examples-1)
     - [Configuration](#configuration)
     - [Interface Integration](#interface-integration)
     - [Troubleshooting](#troubleshooting)
@@ -84,6 +86,8 @@ go install github.com/sammcj/m2e/cmd/m2e-mcp@HEAD
 
 You can also install m2e as a VSCode extension which provides linting and conversion capabilities directly within VSCode.
 
+The extension includes differential diagnostic severity for contextual words (like license/licence, practice/practise) where confidence may be lower due to context-dependent spelling. Regular American spellings show as Information-level diagnostics, while contextual words show as Hint-level diagnostics by default.
+
 Browse the VSCode marketplace for 'm2e', or browse to the marketplace online: https://marketplace.visualstudio.com/items?itemName=sammcj.m2e-vscode
 
 ![VSCode Extension Suggestion](screenshots/vscode-extension.png)
@@ -117,6 +121,59 @@ The user dictionary provides several advantages:
 - Can override built-in dictionary entries
 - Robust error handling - invalid JSON will show a warning but won't break the application
 - Automatically created with an example entry on first run
+
+### Ignore Comments
+
+M2E supports linter-style ignore comments to exclude specific lines or entire files from conversion. This is particularly useful when you have American spellings that should be preserved (e.g., in code comments, technical documentation, or quoted material).
+
+#### Ignore Directives
+
+- **`m2e-ignore`** or **`m2e-ignore-line`**: Ignore the same line where the comment appears
+- **`m2e-ignore-next`**: Ignore the next line after the comment
+- **`m2e-ignore-file`**: Ignore the entire file
+
+#### Supported Comment Syntaxes
+
+Works with all major comment formats:
+- `//` (C, C++, Go, JavaScript, TypeScript)
+- `#` (Python, Ruby, Shell, YAML, Perl)
+- `--` (SQL, Haskell, Ada)
+- `%` (LaTeX, MATLAB, PostScript)
+- `<!-- -->` (HTML, XML, Markdown)
+- `;` (Assembly, Lisp, INI files)
+- `'` (VB.NET, VBScript)
+- `REM` (Batch files, BASIC)
+
+#### Examples
+
+**Same-line ignore:**
+```go
+// This comment about color will not be converted m2e-ignore
+fmt.Println("Processing colors") // This comment will be converted to colours
+```
+
+**Next-line ignore:**
+```python
+# m2e-ignore-next
+# This comment about color will be ignored
+def process_colors():  # This comment will be converted to colours
+    pass
+```
+
+**File-level ignore:**
+```sql
+-- m2e-ignore-file
+-- This entire SQL file will be ignored
+SELECT color, flavor FROM american_table;
+```
+
+#### Integration
+
+Ignore comments work seamlessly with:
+- **Code-aware processing**: Preserves code functionality while respecting ignore directives
+- **All interfaces**: GUI, CLI, API server, and MCP server
+- **Unit conversion**: Ignored content also skips unit conversion
+- **Contextual word detection**: Ignored content bypasses advanced grammar-aware conversion
 
 ### macOS Services Integration
 
@@ -586,9 +643,41 @@ The server will start on port 8080 by default. You can change this by setting th
   **Response:**
   ```json
   {
-    "text": "I love colour and flavour. The room is 3.7 metres wide."
+    "text": "I love colour and flavour. The room is 3.7 metres wide.",
+    "changes": [
+      {
+        "position": 7,
+        "original": "color",
+        "converted": "colour",
+        "type": "spelling",
+        "is_contextual": false
+      },
+      {
+        "position": 17,
+        "original": "flavor",
+        "converted": "flavour",
+        "type": "spelling",
+        "is_contextual": false
+      },
+      {
+        "position": 35,
+        "original": "12 feet",
+        "converted": "3.7 metres",
+        "type": "unit",
+        "is_contextual": false
+      }
+    ]
   }
   ```
+
+  **Response Fields:**
+  - `text` (string): The converted text
+  - `changes` (array, optional): Detailed information about each change made
+    - `position` (number): Character position in original text where change occurred
+    - `original` (string): Original text that was changed
+    - `converted` (string): New text after conversion
+    - `type` (string): Type of change ("spelling" or "unit")
+    - `is_contextual` (boolean, optional): Whether this is a contextual word change (e.g., license/licence) where context determines correct form
 
 - `GET /api/v1/health`
 
@@ -625,24 +714,52 @@ This will create a native application optimised for Apple Silicon in the `build/
 ```
 m2e/
 ├── build/                # Build artifacts
+├── cmd/                  # Command-line applications
+│   ├── m2e/             # CLI application
+│   ├── m2e-server/      # HTTP API server
+│   └── m2e-mcp/         # MCP server
 ├── frontend/             # Frontend code using React
 │   ├── src/
 │   │   ├── App.jsx       # Main application component
 │   │   └── App.css       # Application styles
 │   ├── index.html
 │   └── package.json
-├── pkg/
-│   └── converter/        # Go package for conversion logic
-│       ├── converter.go  # Main conversion functionality
-│       ├── codeaware.go  # Code-aware conversion with syntax highlighting
-│       └── data/         # JSON dictionaries
-├── tests/                # Test files
+├── pkg/                  # Go packages
+│   ├── converter/        # Core conversion logic
+│   │   ├── converter.go  # Main conversion functionality
+│   │   ├── dictionary.go # Dictionary loading and management
+│   │   ├── unit_processor.go # Unit conversion processing
+│   │   ├── utils.go      # Helper utility functions
+│   │   ├── codeaware.go  # Code-aware conversion with syntax highlighting
+│   │   ├── ignore_comments.go # Ignore comment processing
+│   │   ├── contextual_word_detector.go # Context-aware word detection
+│   │   ├── contextual_word_patterns.go # Contextual word patterns
+│   │   ├── contextual_word_config.go   # Contextual word configuration
+│   │   ├── sentence_aware_converter.go # Sentence-aware processing
+│   │   ├── unit_converter.go # Unit conversion logic
+│   │   ├── unit_detector.go  # Unit detection patterns
+│   │   ├── unit_patterns.go  # Unit conversion patterns
+│   │   ├── unit_config.go    # Unit conversion configuration
+│   │   └── data/         # JSON dictionaries
+│   ├── fileutil/         # File processing utilities
+│   └── report/           # Report generation and analysis
+├── tests/                # Comprehensive test suite
 │   ├── converter_test.go # Basic conversion tests
-│   ├── codeaware_test.go # Code-aware functionality tests
-│   ├── chroma_test.go    # Syntax highlighting tests
-│   └── mcp_convert_file_test.go # MCP convert_file tool tests
+│   ├── contextual_word_test.go # Contextual word detection tests
+│   ├── ignore_comments_test.go # Ignore comment functionality tests
+│   ├── unit_*_test.go    # Unit conversion tests
+│   ├── cli_test.go       # CLI functionality tests
+│   ├── api_server_test.go # API server tests
+│   ├── mcp_*_test.go     # MCP server tests
+│   └── chroma_test.go    # Syntax highlighting tests
+├── vscode-extension/     # VSCode extension
+│   ├── src/              # TypeScript source code
+│   │   ├── providers/    # Diagnostic and code action providers
+│   │   ├── services/     # API client and server management
+│   │   └── commands/     # Extension commands
+│   └── package.json      # Extension manifest
 ├── Makefile              # Development automation
-├── main.go               # Main application entry
+├── main.go               # Main GUI application entry
 ├── app.go                # Application setup and binding to frontend
 └── wails.json            # Wails configuration
 ```

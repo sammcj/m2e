@@ -1,4 +1,4 @@
-.PHONY: help lint fmt test build build-wails build-cli build-server build-mcp clean all vscode-install vscode-lint vscode-build vscode-test vscode-package vscode-clean
+.PHONY: help lint fmt test build build-wails build-cli build-server build-mcp clean all vscode-install vscode-build vscode-package vscode-clean
 
 # Default target
 all: lint test build
@@ -6,9 +6,9 @@ all: lint test build
 # Help target
 help:
 	@echo "Available targets:"
-	@echo "  lint            - Run linter and check formatting"
+	@echo "  lint            - Run linter and check formatting (Go + VSCode extension)"
 	@echo "  fmt             - Format code with gofmt"
-	@echo "  test            - Run all tests"
+	@echo "  test            - Run all tests (Go + VSCode extension)"
 	@echo "  build           - Build all applications (Wails app, CLI, server, MCP)"
 	@echo "  build-wails     - Build the Wails application only"
 	@echo "  build-cli       - Build the CLI application only"
@@ -19,9 +19,7 @@ help:
 	@echo ""
 	@echo "VSCode Extension targets:"
 	@echo "  vscode-install  - Install VSCode extension dependencies"
-	@echo "  vscode-lint     - Run ESLint on VSCode extension"
 	@echo "  vscode-build    - Compile VSCode extension TypeScript"
-	@echo "  vscode-test     - Run VSCode extension tests"
 	@echo "  vscode-package  - Package VSCode extension as VSIX"
 	@echo "  vscode-clean    - Clean VSCode extension build artifacts"
 
@@ -33,8 +31,8 @@ fmt:
 
 # Lint and check formatting
 .PHONY: lint
-lint: fmt
-	@echo "Running linter..."
+lint: fmt vscode-install
+	@echo "Running Go linter..."
 	@if command -v golangci-lint >/dev/null 2>&1; then \
 		golangci-lint run; \
 	else \
@@ -42,12 +40,16 @@ lint: fmt
 		go vet ./...; \
 		gofmt -l . | grep -v "^$$" && echo "Files not formatted properly" && exit 1 || echo "All files properly formatted"; \
 	fi
+	@echo "Running VSCode extension linter..."
+	cd vscode-extension && npm run lint
 
 # Run tests
 .PHONY: test
-test: build-cli
-	@echo "Running tests..."
+test: build-cli vscode-build
+	@echo "Running Go tests..."
 	go test -v ./tests/...
+	@echo "Running VSCode extension tests..."
+	cd vscode-extension && npm test
 
 # Build all applications
 .PHONY: build
@@ -134,11 +136,6 @@ install-app:
 		echo "M2E.app not found in build/bin/ directory."; \
 	fi
 
-# Run all quality checks
-.PHONY: quality
-quality: lint test security
-	@echo "All quality checks passed!"
-
 # Run MCP's inspector tool
 .PHONY: inspect
 inspect:
@@ -151,20 +148,10 @@ vscode-install:
 	@echo "Installing VSCode extension dependencies..."
 	cd vscode-extension && npm ci
 
-.PHONY: vscode-lint
-vscode-lint: vscode-install
-	@echo "Running ESLint on VSCode extension..."
-	cd vscode-extension && npm run lint
-
 .PHONY: vscode-build
 vscode-build: vscode-install
 	@echo "Compiling VSCode extension TypeScript..."
 	cd vscode-extension && npm run compile
-
-.PHONY: vscode-test
-vscode-test: vscode-build vscode-lint
-	@echo "Running VSCode extension tests..."
-	cd vscode-extension && npm test
 
 .PHONY: vscode-package
 vscode-package: vscode-build

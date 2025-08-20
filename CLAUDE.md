@@ -32,7 +32,13 @@ make test           # Run all tests in tests/ directory
 make build          # Build all applications (GUI, CLI, server, MCP)
 ```
 
-### Individual Builds
+#### Build VSCode Extension
+
+```bash
+make build-vscode   # Build VSCode extension for M2E
+```
+
+#### Individual Builds
 ```bash
 make build-wails    # GUI application (macOS app bundle)
 make build-cli      # Command-line interface with integrated report mode
@@ -49,8 +55,8 @@ wails dev           # Hot-reload development server
 ```bash
 make test-coverage  # Generate coverage report
 make security       # Run govulncheck for vulnerabilities
-make quality        # Run lint, test, and security checks
 ```
+
 
 ## Testing Strategy
 

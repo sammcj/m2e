@@ -20,6 +20,7 @@ export interface ConvertResponse {
         original: string;
         converted: string;
         type: 'spelling' | 'unit';
+        is_contextual?: boolean;
     }>;
     metadata: {
         spellingChanges: number;
@@ -31,6 +32,13 @@ export interface ConvertResponse {
 // Internal API response from server
 interface ApiResponse {
     text: string;
+    changes?: Array<{
+        position: number;
+        original: string;
+        converted: string;
+        type: string;
+        is_contextual?: boolean;
+    }>;
 }
 
 export interface HealthResponse {
@@ -79,7 +87,22 @@ export class M2EApiClient {
             const apiResult = await response.json() as ApiResponse;
             
             // Transform API response to match our interface
-            const changes = this.generateChanges(request.text, apiResult.text);
+            let changes: ConvertResponse['changes'] = [];
+            
+            if (apiResult.changes && apiResult.changes.length > 0) {
+                // Use changes from the enhanced API response
+                changes = apiResult.changes.map(change => ({
+                    position: change.position,
+                    original: change.original,
+                    converted: change.converted,
+                    type: change.type as 'spelling' | 'unit',
+                    ...(change.is_contextual !== undefined && { is_contextual: change.is_contextual })
+                }));
+            } else {
+                // Fallback to generating changes if not provided
+                changes = this.generateChanges(request.text, apiResult.text);
+            }
+            
             const spellingChanges = changes.filter(c => c.type === 'spelling').length;
             const unitChanges = changes.filter(c => c.type === 'unit').length;
             

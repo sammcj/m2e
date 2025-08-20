@@ -226,6 +226,7 @@ export class M2EDiagnosticProvider {
     private createDiagnostics(document: vscode.TextDocument, response: ConvertResponse): vscode.Diagnostic[] {
         const config = vscode.workspace.getConfiguration('m2e');
         const severity = this.getSeverityFromConfig(config.get<string>('diagnosticSeverity', 'Information'));
+        const contextualSeverity = this.getSeverityFromConfig(config.get<string>('contextualWordSeverity', 'Hint'));
         
         const diagnostics: vscode.Diagnostic[] = [];
         
@@ -243,20 +244,28 @@ export class M2EDiagnosticProvider {
                 const endPos = document.positionAt(change.position + change.original.length);
                 const range = new vscode.Range(startPos, endPos);
                 
+                // Determine if this is a contextual word change
+                const isContextualWord = change.is_contextual || false;
+                const useSeverity = isContextualWord ? contextualSeverity : severity;
+                
                 const diagnostic = new vscode.Diagnostic(
                     range,
-                    `American spelling: "${change.original}" → suggest "${change.converted}"`,
-                    severity
+                    isContextualWord 
+                        ? `Contextual spelling: "${change.original}" → suggest "${change.converted}" (context-dependent)`
+                        : `American spelling: "${change.original}" → suggest "${change.converted}"`,
+                    useSeverity
                 );
                 
                 diagnostic.source = 'M2E';
-                diagnostic.code = 'american-spelling';
+                diagnostic.code = isContextualWord ? 'contextual-spelling' : 'american-spelling';
                 
                 // Add related information
                 diagnostic.relatedInformation = [
                     new vscode.DiagnosticRelatedInformation(
                         new vscode.Location(document.uri, range),
-                        `British spelling: ${change.converted}`
+                        isContextualWord 
+                            ? `British spelling: ${change.converted} (depends on usage as noun/verb)`
+                            : `British spelling: ${change.converted}`
                     )
                 ];
 
@@ -281,10 +290,14 @@ export class M2EDiagnosticProvider {
             case 'warning':
                 return vscode.DiagnosticSeverity.Warning;
             case 'information':
+                return vscode.DiagnosticSeverity.Information;
+            case 'hint':
+                return vscode.DiagnosticSeverity.Hint;
             default:
                 return vscode.DiagnosticSeverity.Information;
         }
     }
+
 
     /**
      * Clear diagnostics for a document

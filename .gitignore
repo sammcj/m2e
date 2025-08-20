@@ -16,3 +16,8 @@ vscode-extension/.vscode-test/
 vscode-extension/*.vsix
 vscode-extension/.nyc_output/
 vscode-extension/coverage/
+
+build/**/m2e-server
+build/**/m2e-cli
+build/**/m2e-mcp
+build/**/m2e

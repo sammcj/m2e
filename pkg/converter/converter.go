@@ -3,10 +3,6 @@ package converter
 
 import (
 	"embed"
-	"encoding/json"
-	"fmt"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"unicode"
@@ -23,119 +19,12 @@ type Dictionaries struct {
 	AmericanToBritish map[string]string
 }
 
-// getUserDictionaryPath returns the path to the user's custom dictionary file
-func getUserDictionaryPath() (string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("failed to get user home directory: %w", err)
-	}
-
-	configDir := filepath.Join(homeDir, ".config", "m2e")
-	dictPath := filepath.Join(configDir, "american_spellings.json")
-
-	return dictPath, nil
-}
-
-// createUserDictionary creates the user dictionary file with an example entry if it doesn't exist
-func createUserDictionary(dictPath string) error {
-	// Create the directory if it doesn't exist
-	configDir := filepath.Dir(dictPath)
-	if err := os.MkdirAll(configDir, 0755); err != nil {
-		return fmt.Errorf("failed to create config directory %s: %w", configDir, err)
-	}
-
-	// Check if file already exists
-	if _, err := os.Stat(dictPath); err == nil {
-		return nil // File already exists
-	}
-
-	// Create the file with example entries and a note
-	exampleDict := map[string]string{
-		"customize":    "customise",
-		"example_note": "For context-aware conversions like license/licence based on noun vs verb usage, see ~/.config/m2e/contextual_word_config.json",
-	}
-
-	data, err := json.MarshalIndent(exampleDict, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal example dictionary: %w", err)
-	}
-
-	if err := os.WriteFile(dictPath, data, 0644); err != nil {
-		return fmt.Errorf("failed to create user dictionary file %s: %w", dictPath, err)
-	}
-
-	return nil
-}
-
-// loadUserDictionary loads the user's custom dictionary if it exists
-func loadUserDictionary() (map[string]string, error) {
-	dictPath, err := getUserDictionaryPath()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user dictionary path: %w", err)
-	}
-
-	// Try to create the user dictionary if it doesn't exist
-	if err := createUserDictionary(dictPath); err != nil {
-		return nil, fmt.Errorf("failed to create user dictionary: %w", err)
-	}
-
-	// Read the user dictionary file
-	data, err := os.ReadFile(dictPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			// File doesn't exist, return empty dictionary
-			return make(map[string]string), nil
-		}
-		return nil, fmt.Errorf("failed to read user dictionary file %s: %w", dictPath, err)
-	}
-
-	// Parse the user dictionary
-	userDict := make(map[string]string)
-	if err := json.Unmarshal(data, &userDict); err != nil {
-		return nil, fmt.Errorf("failed to parse user dictionary file %s (please check JSON format): %w", dictPath, err)
-	}
-
-	return userDict, nil
-}
-
-// LoadDictionaries loads the American to British spelling dictionary from the embedded JSON file
-// and merges it with the user's custom dictionary
-func LoadDictionaries() (*Dictionaries, error) {
-	// Load built-in American to British dictionary
-	amToBrData, err := dictFS.ReadFile("data/american_spellings.json")
-	if err != nil {
-		return nil, fmt.Errorf("failed to read built-in American spellings dictionary: %w", err)
-	}
-
-	// Parse the built-in dictionary
-	amToBr := make(map[string]string)
-	if err := json.Unmarshal(amToBrData, &amToBr); err != nil {
-		return nil, fmt.Errorf("failed to parse built-in American spellings dictionary: %w", err)
-	}
-
-	// Load user dictionary
-	userDict, err := loadUserDictionary()
-	if err != nil {
-		// Log the error but don't fail completely - just use the built-in dictionary
-		fmt.Fprintf(os.Stderr, "Warning: Failed to load user dictionary: %v\n", err)
-		userDict = make(map[string]string)
-	}
-
-	// Merge user dictionary into built-in dictionary (user entries override built-in ones)
-	for american, british := range userDict {
-		amToBr[american] = british
-	}
-
-	return &Dictionaries{
-		AmericanToBritish: amToBr,
-	}, nil
-}
-
 // Converter provides methods to convert between American and British English
 type Converter struct {
 	dict                   *Dictionaries
 	unitProcessor          *UnitProcessor
 	contextualWordDetector ContextualWordDetector
+	ignoreProcessor        *CommentIgnoreProcessor
 }
 
 // SmartQuotesMap holds mappings for smart quotes and em-dashes to their normal equivalents
@@ -159,13 +48,31 @@ func NewConverter() (*Converter, error) {
 		dict:                   dict,
 		unitProcessor:          NewUnitProcessor(),
 		contextualWordDetector: NewContextAwareWordDetector(),
+		ignoreProcessor:        NewCommentIgnoreProcessor(),
 	}, nil
 }
 
 // ConvertToBritish converts American English text to British English
 func (c *Converter) ConvertToBritish(text string, normaliseSmartQuotes bool) string {
-	// Use code-aware processing for all text
-	return c.ProcessCodeAware(text, normaliseSmartQuotes)
+	// Process ignore comments first
+	return c.ConvertToBritishWithIgnoreComments(text, normaliseSmartQuotes)
+}
+
+// ConvertToBritishWithIgnoreComments handles ignore comments and selective conversion
+func (c *Converter) ConvertToBritishWithIgnoreComments(text string, normaliseSmartQuotes bool) string {
+	// Find all ignore directives in the text
+	ignoreMatches := c.ignoreProcessor.ProcessIgnoreComments(text)
+
+	// If the entire file should be ignored, return original text
+	if c.ignoreProcessor.ShouldIgnoreFile(ignoreMatches) {
+		return text
+	}
+
+	// Apply selective ignore using the ignore processor
+	return c.ignoreProcessor.ApplySelectiveIgnore(text, ignoreMatches, func(lineText string) string {
+		// Use code-aware processing for each non-ignored line
+		return c.ProcessCodeAware(lineText, normaliseSmartQuotes)
+	})
 }
 
 // ConvertToBritishSimple converts text without code-awareness (for internal use)
@@ -235,6 +142,29 @@ func (c *Converter) SetContextualWordDetectionEnabled(enabled bool) {
 // IsContextualWordDetectionEnabled returns whether contextual word detection is enabled
 func (c *Converter) IsContextualWordDetectionEnabled() bool {
 	return c.contextualWordDetector != nil && c.contextualWordDetector.IsEnabled()
+}
+
+// GetIgnoreDirectives analyses text and returns ignore directives found
+func (c *Converter) GetIgnoreDirectives(text string) []IgnoreMatch {
+	if c.ignoreProcessor == nil {
+		return nil
+	}
+	return c.ignoreProcessor.ProcessIgnoreComments(text)
+}
+
+// GetIgnoreStats returns statistics about ignore directives in the text
+func (c *Converter) GetIgnoreStats(text string) map[string]int {
+	if c.ignoreProcessor == nil {
+		return make(map[string]int)
+	}
+	ignoreMatches := c.ignoreProcessor.ProcessIgnoreComments(text)
+	return c.ignoreProcessor.ExtractIgnoreStats(ignoreMatches)
+}
+
+// ConvertToBritishWithoutIgnores bypasses ignore comments and processes all text
+func (c *Converter) ConvertToBritishWithoutIgnores(text string, normaliseSmartQuotes bool) string {
+	// Use code-aware processing for all text, bypassing ignore comments
+	return c.ProcessCodeAware(text, normaliseSmartQuotes)
 }
 
 // NormaliseSmartQuotes converts smart quotes and em-dashes to their normal equivalents
@@ -606,52 +536,6 @@ func (c *Converter) convert(text string, dict map[string]string) string {
 	return strings.Join(resultLines, "\n")
 }
 
-// Helper functions for case preservation
-func isCapitalized(s string) bool {
-	if len(s) == 0 {
-		return false
-	}
-	firstChar := s[0]
-	return 'A' <= firstChar && firstChar <= 'Z'
-}
-
-func isAllCaps(s string) bool {
-	for _, c := range s {
-		if 'a' <= c && c <= 'z' {
-			return false
-		}
-	}
-	return true
-}
-
-func capitalize(s string) string {
-	if len(s) == 0 {
-		return s
-	}
-	return strings.ToUpper(s[:1]) + s[1:]
-}
-
-// splitPunctuation separates a word from its trailing punctuation
-func splitPunctuation(word string) (string, string) {
-	for i := len(word) - 1; i >= 0; i-- {
-		if isLetter(word[i]) || isDigit(word[i]) {
-			if i == len(word)-1 {
-				return word, ""
-			}
-			return word[:i+1], word[i+1:]
-		}
-	}
-	return word, ""
-}
-
-func isLetter(c byte) bool {
-	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
-}
-
-func isDigit(c byte) bool {
-	return '0' <= c && c <= '9'
-}
-
 // applyContextualWordConversion applies contextual word detection and conversion to text
 func (c *Converter) applyContextualWordConversion(text string) string {
 	if c.contextualWordDetector == nil || !c.contextualWordDetector.IsEnabled() {
@@ -684,306 +568,4 @@ func (c *Converter) applyContextualWordConversion(text string) string {
 	}
 
 	return result
-}
-
-// UnitProcessor handles unit detection and conversion
-type UnitProcessor struct {
-	detector  UnitDetector
-	converter UnitConverter
-	config    *UnitConfig
-}
-
-// NewUnitProcessor creates a new UnitProcessor with default components
-func NewUnitProcessor() *UnitProcessor {
-	// Load configuration with defaults
-	config, err := LoadConfigWithDefaults()
-	if err != nil {
-		// Fall back to default config if loading fails
-		fmt.Fprintf(os.Stderr, "Warning: Failed to load unit configuration: %v\n", err)
-		config = GetDefaultUnitConfig()
-	}
-
-	processor := &UnitProcessor{
-		detector:  NewContextualUnitDetector(),
-		converter: NewBasicUnitConverter(),
-		config:    config,
-	}
-
-	// Apply configuration to components
-	processor.applyConfigToComponents()
-
-	return processor
-}
-
-// NewUnitProcessorWithConfig creates a new UnitProcessor with a specific configuration
-func NewUnitProcessorWithConfig(config *UnitConfig) *UnitProcessor {
-	if config == nil {
-		config = GetDefaultUnitConfig()
-	}
-
-	processor := &UnitProcessor{
-		detector:  NewContextualUnitDetector(),
-		converter: NewBasicUnitConverter(),
-		config:    config,
-	}
-
-	// Apply configuration to components
-	processor.applyConfigToComponents()
-
-	return processor
-}
-
-// SetEnabled enables or disables unit processing
-func (p *UnitProcessor) SetEnabled(enabled bool) {
-	if p.config != nil {
-		p.config.Enabled = enabled
-	}
-}
-
-// IsEnabled returns whether unit processing is enabled
-func (p *UnitProcessor) IsEnabled() bool {
-	return p.config != nil && p.config.Enabled
-}
-
-// GetConfig returns the current configuration
-func (p *UnitProcessor) GetConfig() *UnitConfig {
-	return p.config
-}
-
-// SetConfig sets a new configuration
-func (p *UnitProcessor) SetConfig(config *UnitConfig) {
-	if config != nil {
-		p.config = config
-		// Apply configuration to detector and converter
-		p.applyConfigToComponents()
-	}
-}
-
-// applyConfigToComponents applies the current configuration to detector and converter
-func (p *UnitProcessor) applyConfigToComponents() {
-	if p.config == nil {
-		return
-	}
-
-	// Apply configuration to detector
-	if detector, ok := p.detector.(*ContextualUnitDetector); ok {
-		detector.SetMinConfidence(p.config.Detection.MinConfidence)
-		detector.SetMaxNumberDistance(p.config.Detection.MaxNumberDistance)
-	}
-
-	// Apply configuration to converter
-	if converter, ok := p.converter.(*BasicUnitConverter); ok {
-		// Set precision for each unit type
-		for unitType := range p.config.Precision {
-			switch unitType {
-			case "length":
-				converter.SetPrecision(Length, p.config.GetPrecisionForUnitType(Length))
-			case "mass":
-				converter.SetPrecision(Mass, p.config.GetPrecisionForUnitType(Mass))
-			case "volume":
-				converter.SetPrecision(Volume, p.config.GetPrecisionForUnitType(Volume))
-			case "temperature":
-				converter.SetPrecision(Temperature, p.config.GetPrecisionForUnitType(Temperature))
-			case "area":
-				converter.SetPrecision(Area, p.config.GetPrecisionForUnitType(Area))
-			}
-		}
-
-		// Set conversion preferences
-		converter.SetPreferences(p.config.Preferences)
-	}
-}
-
-// ProcessText processes text for unit conversion
-func (p *UnitProcessor) ProcessText(text string, isCode bool, language string) string {
-	if !p.IsEnabled() {
-		return text
-	}
-
-	// If this is code, don't process units directly - only in comments
-	if isCode {
-		return p.ProcessComments(text, language)
-	}
-
-	// For regular text, detect and convert all units
-	return p.convertUnitsInText(text)
-}
-
-// ProcessComments processes only comments within code for unit conversion
-func (p *UnitProcessor) ProcessComments(code string, language string) string {
-	if !p.IsEnabled() {
-		return code
-	}
-
-	// Extract comments from the code using the same patterns as extractCommentsManually
-	comments := p.extractCommentsFromCode(code)
-
-	if len(comments) == 0 {
-		return code
-	}
-
-	// Process comments in reverse order to maintain positions
-	result := code
-	for i := len(comments) - 1; i >= 0; i-- {
-		comment := comments[i]
-
-		// Convert units in the comment content
-		convertedContent := p.convertUnitsInText(comment.Content)
-
-		// If the original comment had a trailing newline, preserve it
-		originalBlock := code[comment.Start:comment.End]
-		if strings.HasSuffix(originalBlock, "\n") && !strings.HasSuffix(convertedContent, "\n") {
-			convertedContent += "\n"
-		}
-
-		// Replace this comment in the code
-		before := result[:comment.Start]
-		after := result[comment.End:]
-		result = before + convertedContent + after
-	}
-
-	return result
-}
-
-// extractCommentsFromCode extracts comments from code using the same patterns as extractCommentsManually
-func (p *UnitProcessor) extractCommentsFromCode(code string) []CommentBlock {
-	var comments []CommentBlock
-
-	// Line comment patterns that should include newlines
-	lineCommentPatterns := []*regexp.Regexp{
-		regexp.MustCompile(`//.*?(?:\n|$)`), // Line comments: // comment with newline
-		regexp.MustCompile(`#.*?(?:\n|$)`),  // Hash comments: # comment with newline
-	}
-
-	// Block comment patterns (already include their boundaries)
-	blockCommentPatterns := []*regexp.Regexp{
-		regexp.MustCompile(`(?s)/\*.*?\*/`), // Block comments: /* comment */
-		regexp.MustCompile(`(?s)""".*?"""`), // Python docstrings: """comment"""
-		regexp.MustCompile(`(?s)'''.*?'''`), // Python docstrings: '''comment'''
-		regexp.MustCompile(`<!--.*?-->`),    // HTML comments: <!-- comment -->
-	}
-
-	// Find line comments (include newline if present)
-	for _, pattern := range lineCommentPatterns {
-		matches := pattern.FindAllStringIndex(code, -1)
-		for _, match := range matches {
-			start := match[0]
-			end := match[1]
-			content := code[start:end]
-
-			// Remove trailing newline from content for processing, but keep the position
-			content = strings.TrimSuffix(content, "\n")
-
-			comments = append(comments, CommentBlock{
-				Start:   start,
-				End:     end,
-				Content: content,
-			})
-		}
-	}
-
-	// Find block comments
-	for _, pattern := range blockCommentPatterns {
-		matches := pattern.FindAllStringIndex(code, -1)
-		for _, match := range matches {
-			start := match[0]
-			end := match[1]
-			content := code[start:end]
-
-			comments = append(comments, CommentBlock{
-				Start:   start,
-				End:     end,
-				Content: content,
-			})
-		}
-	}
-
-	return comments
-}
-
-// convertUnitsInText performs the actual unit detection and conversion
-func (p *UnitProcessor) convertUnitsInText(text string) string {
-	// Detect units in the text
-	matches := p.detector.DetectUnits(text)
-
-	if len(matches) == 0 {
-		return text
-	}
-
-	// Filter matches based on configuration
-	var filteredMatches []UnitMatch
-	for _, match := range matches {
-		// Check if this unit type is enabled
-		if !p.config.IsUnitTypeEnabled(match.UnitType) {
-			continue
-		}
-
-		// Check if this match should be excluded based on custom patterns
-		if p.shouldExcludeMatch(match, text) {
-			continue
-		}
-
-		filteredMatches = append(filteredMatches, match)
-	}
-
-	if len(filteredMatches) == 0 {
-		return text
-	}
-
-	// Process matches in reverse order to maintain positions
-	result := text
-	for i := len(filteredMatches) - 1; i >= 0; i-- {
-		match := filteredMatches[i]
-
-		// Convert the unit
-		conversion, err := p.converter.Convert(match)
-		if err != nil {
-			// Log error but continue processing other units
-			fmt.Fprintf(os.Stderr, "Warning: Unit conversion failed for %s: %v\n", match.Unit, err)
-			continue
-		}
-
-		// Handle compound units specially to preserve hyphen structure
-		var replacement string
-		if match.IsCompound {
-			// For compound units like "9-foot", format as "2.7-metre"
-			replacement = fmt.Sprintf("%.1f-%s", conversion.MetricValue, conversion.MetricUnit)
-		} else {
-			replacement = conversion.Formatted
-		}
-
-		// Replace the original unit with the converted one
-		before := result[:match.Start]
-		after := result[match.End:]
-		result = before + replacement + after
-	}
-
-	return result
-}
-
-// shouldExcludeMatch checks if a match should be excluded based on custom exclude patterns
-func (p *UnitProcessor) shouldExcludeMatch(match UnitMatch, text string) bool {
-	if p.config == nil || len(p.config.ExcludePatterns) == 0 {
-		return false
-	}
-
-	// Get the context around the match for pattern matching
-	contextStart := match.Start - 50
-	if contextStart < 0 {
-		contextStart = 0
-	}
-	contextEnd := match.End + 50
-	if contextEnd > len(text) {
-		contextEnd = len(text)
-	}
-	context := text[contextStart:contextEnd]
-
-	// Check each exclude pattern
-	for _, pattern := range p.config.ExcludePatterns {
-		if matched, err := regexp.MatchString(pattern, context); err == nil && matched {
-			return true
-		}
-	}
-
-	return false
 }

@@ -210,6 +210,17 @@
           "default": "Information",
           "description": "Severity level for American spelling diagnostics"
         },
+        "m2e.contextualWordSeverity": {
+          "type": "string",
+          "enum": [
+            "Hint",
+            "Information",
+            "Warning",
+            "Error"
+          ],
+          "default": "Hint",
+          "description": "Severity level for contextual words (license/licence, practice/practise, etc.) where context determines correct form"
+        },
         "m2e.enableUnitConversion": {
           "type": "boolean",
           "default": true,
