@@ -168,7 +168,7 @@ jobs:
           # Extract major.minor from main version for version calculation
           MAJOR=$(echo "$MAIN_VERSION" | cut -d. -f1)
           MINOR=$(echo "$MAIN_VERSION" | cut -d. -f3)  # Use patch as minor
-          
+
           # Find existing VSCode extension versions for this base version
           EXISTING_VSCODE_VERSIONS=$(git tag -l "vscode-v${MAJOR}.${MINOR}.*" | wc -l)
           NEXT_REVISION=$((EXISTING_VSCODE_VERSIONS + 1))
@@ -276,28 +276,25 @@ jobs:
           npm run compile
           vsce package
 
-      - name: Install Open VSX CLI
-        run: |
-          npm install -g ovsx
-
-      - name: Publish to VS Code Marketplace
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: |
-          # Find the newly built VSIX file
-          VSIX_FILE=$(find ./vscode-extension -name "*.vsix" | head -1)
-          if [ -z "$VSIX_FILE" ]; then
+          - name: Publish to VS Code Marketplace
+          env:
+            VSCE_PAT: ${{ secrets.VSCE_PAT }}
+            run: |
+            # Find the newly built VSIX file
+            VSIX_FILE=$(find ./vscode-extension -name "*.vsix" | head -1)
+            if [ -z "$VSIX_FILE" ]; then
             echo "No VSIX file found!"
             exit 1
-          fi
+            fi
 
-          echo "Publishing $VSIX_FILE to VS Code Marketplace..."
-          vsce publish --packagePath "$VSIX_FILE"
+            echo "Publishing $VSIX_FILE to VS Code Marketplace..."
+            vsce publish --packagePath "$VSIX_FILE"
 
       # - name: Publish to Open VSX Registry
       #   env:
       #     OVSX_PAT: ${{ secrets.OVSX_PAT }}
       #   run: |
+      #     npm install -g ovsx
       #     # Find the VSIX file
       #     VSIX_FILE=$(find . -name "*.vsix" | head -1)
       #     if [ -z "$VSIX_FILE" ]; then

@@ -38,6 +38,8 @@ M2E provides a CLI, MCP and GUI as well as the VSCode extension, see the the pro
 3. Search for "M2E - American to British English Converter"
 4. Click Install
 
+You can also browse to the [VSCoode Marketplace online](https://marketplace.visualstudio.com/items?itemName=SamMcLeod.m2e-vscode).
+
 ### From VSIX File
 
 1. Download the latest `.vsix` file from [GitHub Releases](https://github.com/sammcj/m2e/releases)

@@ -88,7 +88,7 @@ You can also install m2e as a VSCode extension which provides linting and conver
 
 The extension includes differential diagnostic severity for contextual words (like license/licence, practice/practise) where confidence may be lower due to context-dependent spelling. Regular American spellings show as Information-level diagnostics, while contextual words show as Hint-level diagnostics by default.
 
-Browse the VSCode marketplace for 'm2e', or browse to the marketplace online: https://marketplace.visualstudio.com/items?itemName=sammcj.m2e-vscode
+Browse the VSCode marketplace for 'm2e', or browse to the [VSCoode Marketplace online](https://marketplace.visualstudio.com/items?itemName=SamMcLeod.m2e-vscode).
 
 ![VSCode Extension Suggestion](screenshots/vscode-extension.png)
 
