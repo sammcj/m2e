@@ -26,7 +26,7 @@ M2E is a text conversion application that converts American English to standard 
 
 ### Build and Test
 ```bash
-make                 # Default: lint, test, build all
+make                # Default: lint, test, build all
 make lint           # Run golangci-lint and formatting checks
 make test           # Run all tests in tests/ directory
 make build          # Build all applications (GUI, CLI, server, MCP)
@@ -35,7 +35,8 @@ make build          # Build all applications (GUI, CLI, server, MCP)
 #### Build VSCode Extension
 
 ```bash
-make build-vscode   # Build VSCode extension for M2E
+make vscode-build   # Build VSCode extension for M2E
+make vscode-package # Package VSCode extension for distribution
 ```
 
 #### Individual Builds
@@ -56,7 +57,6 @@ wails dev           # Hot-reload development server
 make test-coverage  # Generate coverage report
 make security       # Run govulncheck for vulnerabilities
 ```
-
 
 ## Testing Strategy
 

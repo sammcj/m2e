@@ -3,7 +3,7 @@
   "displayName": "M2E - 'Murican to English Converter",
   "description": "Convert American text to standard international / British English with freedom unit to metric conversion",
   "version": "0.1.0",
-  "publisher": "sammcj",
+  "publisher": "SamMcLeod",
   "license": "MIT",
   "repository": {
     "type": "git",
