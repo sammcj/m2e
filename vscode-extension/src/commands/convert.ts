@@ -342,6 +342,101 @@ export class ConvertCommands {
     }
 
     /**
+     * Fix all American spellings detected in the current document
+     */
+    async fixAllAmericanisations(): Promise<void> {
+        try {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                vscode.window.showWarningMessage('M2E: No active editor found');
+                return;
+            }
+
+            const document = editor.document;
+            const fileContent = document.getText();
+            if (!fileContent.trim()) {
+                vscode.window.showWarningMessage('M2E: File is empty');
+                return;
+            }
+
+            await this.ensureServerRunning();
+
+            const fileType = getFileTypeFromDocument(document);
+            this.outputChannel.appendLine(`Fixing all American spellings in ${document.fileName} (type: ${fileType})`);
+
+            // Show progress
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: 'M2E: Fixing all American spellings...',
+                cancellable: false
+            }, async () => {
+                try {
+                    // Get conversion results to identify all American spellings
+                    const result = await this.apiClient.convert({
+                        text: fileContent,
+                        options: {
+                            ...(fileType && { fileType }),
+                            codeAware: true,
+                            preserveCodeSyntax: true,
+                            enableUnitConversion: false // Only focus on spellings
+                        }
+                    });
+
+                    const spellingChanges = result.changes.filter(change => change.type === 'spelling');
+                    
+                    if (spellingChanges.length === 0) {
+                        vscode.window.showInformationMessage('M2E: No American spellings found in this document');
+                        return;
+                    }
+
+                    // Apply changes in reverse order to maintain positions
+                    const success = await editor.edit(editBuilder => {
+                        const sortedChanges = [...spellingChanges].sort((a, b) => b.position - a.position);
+                        
+                        for (const change of sortedChanges) {
+                            try {
+                                const startPos = document.positionAt(change.position);
+                                const endPos = document.positionAt(change.position + change.original.length);
+                                const range = new vscode.Range(startPos, endPos);
+                                
+                                // Verify the word at position matches expected
+                                const actualWord = document.getText(range);
+                                if (actualWord.toLowerCase() === change.original.toLowerCase()) {
+                                    editBuilder.replace(range, change.converted);
+                                } else {
+                                    this.outputChannel.appendLine(`Skipping mismatched word: expected "${change.original}", found "${actualWord}"`);
+                                }
+                            } catch (error) {
+                                this.outputChannel.appendLine(`Error applying change at position ${change.position}: ${error}`);
+                            }
+                        }
+                    });
+
+                    if (success) {
+                        vscode.window.showInformationMessage(
+                            `M2E: Fixed ${spellingChanges.length} American spelling${spellingChanges.length !== 1 ? 's' : ''} in document`
+                        );
+                        
+                        this.outputChannel.appendLine(
+                            `Fixed ${spellingChanges.length} American spellings in ${document.fileName}`
+                        );
+                    } else {
+                        vscode.window.showErrorMessage('M2E: Failed to apply spelling fixes');
+                    }
+
+                } catch {
+                    throw new Error("Unknown error");
+                }
+            });
+
+        } catch {
+            const message = "An unknown error occurred";
+            this.outputChannel.appendLine(`Fix all American spellings failed: ${message}`);
+            vscode.window.showErrorMessage(`M2E: Failed to fix spellings: ${message}`);
+        }
+    }
+
+    /**
      * Convert all text files in the current project
      */
     async convertProject(): Promise<void> {

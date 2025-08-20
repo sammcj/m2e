@@ -61,6 +61,11 @@ export class CommandRegistry {
                 name: 'm2e.convertProject',
                 handler: () => this.convertCommands.convertProject(),
                 description: 'Convert entire project to British English'
+            },
+            {
+                name: 'm2e.fixAllAmericanisations',
+                handler: () => this.convertCommands.fixAllAmericanisations(),
+                description: 'Fix all American spellings in current document'
             }
         ];
 

@@ -245,7 +245,7 @@ export class M2EApiClient {
     }
 
     /**
-     * Generate changes array by comparing original and converted text
+     * Generate changes array by finding specific word replacements in original text
      */
     private generateChanges(originalText: string, convertedText: string): Array<{
         position: number;
@@ -264,33 +264,124 @@ export class M2EApiClient {
             return changes;
         }
 
-        // Simple word-by-word comparison to find changes
-        const originalWords = originalText.split(/(\s+)/);
-        const convertedWords = convertedText.split(/(\s+)/);
-        
-        let position = 0;
-        const maxLength = Math.max(originalWords.length, convertedWords.length);
-        
-        for (let i = 0; i < maxLength; i++) {
-            const originalWord = originalWords[i] || '';
-            const convertedWord = convertedWords[i] || '';
+        // Define common American to British spelling conversions to look for
+        const spellingMap = new Map<string, string>([
+            ['color', 'colour'],
+            ['colors', 'colours'],
+            ['colored', 'coloured'],
+            ['coloring', 'colouring'],
+            ['colorful', 'colourful'],
+            ['organize', 'organise'],
+            ['organizes', 'organises'], 
+            ['organized', 'organised'],
+            ['organizing', 'organising'],
+            ['organization', 'organisation'],
+            ['organizations', 'organisations'],
+            ['center', 'centre'],
+            ['centers', 'centres'],
+            ['centered', 'centred'],
+            ['centering', 'centring'],
+            ['analyze', 'analyse'],
+            ['analyzes', 'analyses'],
+            ['analyzed', 'analysed'],
+            ['analyzing', 'analysing'],
+            ['analyzer', 'analyser'],
+            ['realize', 'realise'],
+            ['realizes', 'realises'],
+            ['realized', 'realised'],
+            ['realizing', 'realising'],
+            ['realization', 'realisation'],
+            ['aluminum', 'aluminium'],
+            ['honor', 'honour'],
+            ['honors', 'honours'],
+            ['honored', 'honoured'],
+            ['honoring', 'honouring'],
+            ['flavor', 'flavour'],
+            ['flavors', 'flavours'],
+            ['flavored', 'flavoured'],
+            ['flavoring', 'flavouring'],
+            ['neighbor', 'neighbour'],
+            ['neighbors', 'neighbours'],
+            ['neighborhood', 'neighbourhood'],
+            ['defense', 'defence'],
+            ['offense', 'offence']
+        ]);
+
+        // Look for each American spelling in the original text
+        for (const [american, british] of spellingMap.entries()) {
+            // Create regex to find whole words only, case insensitive
+            const regex = new RegExp(`\\b${american}\\b`, 'gi');
+            let match;
             
-            if (originalWord !== convertedWord && originalWord.trim() && convertedWord.trim()) {
-                // Simple heuristic: if contains numbers, likely unit conversion
-                const isUnitChange = /\d/.test(originalWord) || /\d/.test(convertedWord);
+            while ((match = regex.exec(originalText)) !== null) {
+                // Check if this word was actually converted in the result
+                const originalWord = match[0];
+                const expectedBritish = this.preserveCase(originalWord, british);
                 
-                changes.push({
-                    position: position,
-                    original: originalWord,
-                    converted: convertedWord,
-                    type: isUnitChange ? 'unit' : 'spelling'
-                });
+                // Verify the conversion actually happened by checking if the British version exists in converted text
+                if (convertedText.includes(expectedBritish)) {
+                    changes.push({
+                        position: match.index,
+                        original: originalWord,
+                        converted: expectedBritish,
+                        type: 'spelling'
+                    });
+                }
             }
-            
-            position += originalWord.length;
+        }
+
+        // Look for unit conversions (simple patterns)
+        const unitPatterns = [
+            // Temperature
+            { pattern: /(\d+(?:\.\d+)?)\s*°F\b/g, type: 'unit' as const },
+            { pattern: /(\d+(?:\.\d+)?)\s*degrees?\s+fahrenheit/gi, type: 'unit' as const },
+            // Distance 
+            { pattern: /(\d+(?:\.\d+)?)\s*feet?\b/g, type: 'unit' as const },
+            { pattern: /(\d+(?:\.\d+)?)\s*ft\b/g, type: 'unit' as const },
+            { pattern: /(\d+(?:\.\d+)?)\s*inches?\b/g, type: 'unit' as const },
+            { pattern: /(\d+(?:\.\d+)?)\s*in\b/g, type: 'unit' as const },
+            { pattern: /(\d+(?:\.\d+)?)\s*miles?\b/g, type: 'unit' as const },
+            { pattern: /(\d+(?:\.\d+)?)\s*yards?\b/g, type: 'unit' as const },
+            // Weight
+            { pattern: /(\d+(?:\.\d+)?)\s*pounds?\b/g, type: 'unit' as const },
+            { pattern: /(\d+(?:\.\d+)?)\s*lbs?\b/g, type: 'unit' as const },
+            { pattern: /(\d+(?:\.\d+)?)\s*ounces?\b/g, type: 'unit' as const },
+            { pattern: /(\d+(?:\.\d+)?)\s*oz\b/g, type: 'unit' as const }
+        ];
+
+        for (const unitPattern of unitPatterns) {
+            let match;
+            while ((match = unitPattern.pattern.exec(originalText)) !== null) {
+                // Only add if this unit appears to be converted (length changed significantly)
+                const originalLength = originalText.length;
+                const convertedLength = convertedText.length;
+                
+                if (Math.abs(convertedLength - originalLength) > 0) {
+                    changes.push({
+                        position: match.index,
+                        original: match[0],
+                        converted: match[0], // We don't know the exact conversion without more analysis
+                        type: 'unit'
+                    });
+                }
+            }
         }
 
         return changes;
+    }
+
+    /**
+     * Preserve the original case pattern when converting words
+     */
+    private preserveCase(original: string, converted: string): string {
+        if (original === original.toUpperCase()) {
+            return converted.toUpperCase();
+        } else if (original === original.toLowerCase()) {
+            return converted.toLowerCase();
+        } else if (original[0] === original[0].toUpperCase()) {
+            return converted.charAt(0).toUpperCase() + converted.slice(1).toLowerCase();
+        }
+        return converted;
     }
 }
 

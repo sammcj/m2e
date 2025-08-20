@@ -1,4 +1,4 @@
-.PHONY: help lint fmt test build build-wails build-cli build-server build-mcp clean all vscode-install vscode-build vscode-package vscode-clean
+.PHONY: help lint fmt test build build-wails build-cli build-server build-mcp clean all vscode-install vscode-build vscode-package vscode-clean install-deps test-coverage security install-app inspect
 
 # Default target
 all: lint test build
@@ -157,6 +157,11 @@ vscode-build: vscode-install
 vscode-package: vscode-build
 	@echo "Packaging VSCode extension as VSIX..."
 	cd vscode-extension && npm run package
+
+.PHONY: vscode-install-visx
+vscode-install-visx:
+	@echo "To install the VSCode extension from VSIX, run:"
+	@echo "code --install-extension vscode-extension/*.vsix --force"
 
 .PHONY: vscode-clean
 vscode-clean:

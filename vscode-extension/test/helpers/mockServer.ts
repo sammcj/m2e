@@ -188,19 +188,77 @@ export class MockM2EServer {
      */
     private handleConvertRequest(data: any): any {
         const text = data.text || '';
-        const convertedText = text.replace(/color/g, 'colour').replace(/organize/g, 'organise');
-        const changes = (text.match(/color|organize/g) || []).length;
+        const changes: Array<{
+            position: number;
+            original: string;
+            converted: string;
+            type: string;
+            is_contextual?: boolean;
+        }> = [];
+        
+        // Define spelling conversions
+        const spellingMap = new Map<string, string>([
+            ['color', 'colour'],
+            ['colors', 'colours'],
+            ['organize', 'organise'],
+            ['organizes', 'organises'],
+            ['organization', 'organisation'],
+            ['analyze', 'analyse'],
+            ['center', 'centre'],
+            ['realize', 'realise']
+        ]);
+        
+        // Find all American spellings first (before any conversions that might shift positions)
+        for (const [american, british] of spellingMap.entries()) {
+            const regex = new RegExp(`\\b${american}\\b`, 'gi');
+            let match;
+            
+            while ((match = regex.exec(text)) !== null) {
+                const originalWord = match[0];
+                const convertedWord = this.preserveCase(originalWord, british);
+                
+                changes.push({
+                    position: match.index,
+                    original: originalWord,
+                    converted: convertedWord,
+                    type: 'spelling',
+                    is_contextual: false
+                });
+            }
+        }
+        
+        // Sort changes by position (descending) to avoid position shifts when applying
+        changes.sort((a, b) => b.position - a.position);
+        
+        // Apply conversions from right to left to avoid position shifts
+        let convertedText = text;
+        for (const change of changes) {
+            convertedText = convertedText.substring(0, change.position) + 
+                          change.converted + 
+                          convertedText.substring(change.position + change.original.length);
+        }
+        
+        // Sort changes back by position (ascending) for the response
+        changes.sort((a, b) => a.position - b.position);
 
         return {
-            originalText: text,
-            convertedText: convertedText,
-            metadata: {
-                spellingChanges: changes,
-                unitChanges: 0,
-                processingTimeMs: Math.floor(Math.random() * 20) + 5,
-                fileType: data.fileType || 'text'
-            }
+            text: convertedText,
+            changes: changes
         };
+    }
+
+    /**
+     * Preserve the original case pattern when converting words
+     */
+    private preserveCase(original: string, converted: string): string {
+        if (original === original.toUpperCase()) {
+            return converted.toUpperCase();
+        } else if (original === original.toLowerCase()) {
+            return converted.toLowerCase();
+        } else if (original[0] === original[0].toUpperCase()) {
+            return converted.charAt(0).toUpperCase() + converted.slice(1).toLowerCase();
+        }
+        return converted;
     }
 
     /**
@@ -214,28 +272,6 @@ export class MockM2EServer {
      * Handle convert comments requests
      */
     private handleConvertCommentsRequest(data: any): any {
-        const text = data.text || '';
-        // Only convert in comments (lines starting with //)
-        const lines = text.split('\n');
-        const convertedLines = lines.map(line => {
-            if (line.trim().startsWith('//')) {
-                return line.replace(/color/g, 'colour').replace(/organize/g, 'organise');
-            }
-            return line;
-        });
-        
-        const convertedText = convertedLines.join('\n');
-        const changes = text.match(/(\/\/.*?color|\/\/.*?organize)/g)?.length || 0;
-
-        return {
-            originalText: text,
-            convertedText: convertedText,
-            metadata: {
-                spellingChanges: changes,
-                unitChanges: 0,
-                processingTimeMs: Math.floor(Math.random() * 20) + 5,
-                fileType: data.fileType || 'javascript'
-            }
-        };
+        return this.handleConvertRequest(data); // Use same logic for now
     }
 }

@@ -240,6 +240,26 @@ export class M2EDiagnosticProvider {
             }
             
             try {
+                // Validate position is within document bounds
+                const documentText = document.getText();
+                if (change.position < 0 || change.position >= documentText.length) {
+                    this.logDebug(`Position ${change.position} out of bounds for document length ${documentText.length}`);
+                    continue;
+                }
+                
+                // Validate the word at position matches what we expect
+                const endPosition = change.position + change.original.length;
+                if (endPosition > documentText.length) {
+                    this.logDebug(`End position ${endPosition} exceeds document length ${documentText.length}`);
+                    continue;
+                }
+                
+                const actualWord = documentText.substring(change.position, endPosition);
+                if (actualWord.toLowerCase() !== change.original.toLowerCase()) {
+                    this.logDebug(`Word mismatch: expected "${change.original}" but found "${actualWord}" at position ${change.position}`);
+                    continue;
+                }
+                
                 const startPos = document.positionAt(change.position);
                 const endPos = document.positionAt(change.position + change.original.length);
                 const range = new vscode.Range(startPos, endPos);
@@ -271,9 +291,9 @@ export class M2EDiagnosticProvider {
 
                 diagnostics.push(diagnostic);
                 
-            } catch {
+            } catch (error) {
                 // Skip invalid positions
-                this.logDebug(`Invalid position for change: ${change.original} at ${change.position}`);
+                this.logDebug(`Error creating diagnostic for change: ${change.original} at ${change.position}: ${error}`);
             }
         }
         

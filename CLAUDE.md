@@ -44,7 +44,7 @@ make build-wails    # GUI application (macOS app bundle)
 make build-cli      # Command-line interface with integrated report mode
 make build-server   # HTTP API server
 make build-mcp      # MCP server for AI tools
-make build-vscode   # VSCode extension
+make vscode-build   # VSCode extension
 ```
 
 ### Lint Github Actions

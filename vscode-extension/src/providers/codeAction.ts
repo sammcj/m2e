@@ -44,6 +44,12 @@ export class M2ECodeActionProvider implements vscode.CodeActionProvider {
                 diagnostic => diagnostic.source === 'M2E' && diagnostic.code === 'american-spelling'
             );
 
+            // Always try to provide "Fix All" source action, even if no diagnostics in current selection
+            if (context.only && context.only.contains(vscode.CodeActionKind.Source)) {
+                const sourceActions = await this.createSourceActions(document);
+                actions.push(...sourceActions);
+            }
+
             if (m2eDiagnostics.length === 0) {
                 return actions;
             }
@@ -60,8 +66,8 @@ export class M2ECodeActionProvider implements vscode.CodeActionProvider {
                 actions.push(...wordActions);
             }
 
-            // Add document-level actions if multiple diagnostics
-            if (m2eDiagnostics.length > 1) {
+            // Add document-level actions if any diagnostics
+            if (m2eDiagnostics.length > 0) {
                 const documentActions = this.createDocumentActions(document, conversionData);
                 actions.push(...documentActions);
             }
@@ -219,6 +225,45 @@ export class M2ECodeActionProvider implements vscode.CodeActionProvider {
 
         } catch {
             this.logDebug(`Error creating document actions`);
+        }
+
+        return actions;
+    }
+
+    /**
+     * Create source actions (appear in "Source Action" menu)
+     */
+    private async createSourceActions(document: vscode.TextDocument): Promise<vscode.CodeAction[]> {
+        const actions: vscode.CodeAction[] = [];
+        
+        try {
+            // Get conversion data to see if there are American spellings to fix
+            const conversionData = await this.getConversionData(document);
+            if (!conversionData) {
+                return actions;
+            }
+
+            const spellingChanges = conversionData.changes.filter(c => c.type === 'spelling');
+            
+            if (spellingChanges.length > 0) {
+                // Create "Fix All American Spellings" source action
+                const fixAllAction = new vscode.CodeAction(
+                    `Fix All American Spellings (${spellingChanges.length} changes)`,
+                    vscode.CodeActionKind.SourceFixAll
+                );
+                
+                // Use command instead of direct edit for better UX
+                fixAllAction.command = {
+                    title: 'Fix All American Spellings',
+                    command: 'm2e.fixAllAmericanisations'
+                };
+                
+                fixAllAction.isPreferred = true;
+                actions.push(fixAllAction);
+            }
+
+        } catch {
+            this.logDebug(`Error creating source actions`);
         }
 
         return actions;

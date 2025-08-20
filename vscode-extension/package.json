@@ -111,6 +111,11 @@
         "command": "m2e.refreshDiagnostics",
         "title": "Refresh Diagnostics",
         "category": "M2E"
+      },
+      {
+        "command": "m2e.fixAllAmericanisations",
+        "title": "Fix All American Spellings",
+        "category": "M2E"
       }
     ],
     "keybindings": [
@@ -144,6 +149,12 @@
         "key": "cmd+alt+shift+m",
         "mac": "cmd+alt+shift+m",
         "linux": "ctrl+alt+shift+m"
+      },
+      {
+        "command": "m2e.fixAllAmericanisations",
+        "key": "cmd+shift+alt+f",
+        "mac": "cmd+shift+alt+f",
+        "linux": "ctrl+shift+alt+f"
       }
     ],
     "menus": {
@@ -152,6 +163,11 @@
           "command": "m2e.convertSelection",
           "when": "editorHasSelection",
           "group": "1_modification@1"
+        },
+        {
+          "command": "m2e.fixAllAmericanisations",
+          "when": "editorTextFocus",
+          "group": "1_modification@2"
         }
       ],
       "explorer/context": [
@@ -189,6 +205,9 @@
         },
         {
           "command": "m2e.refreshDiagnostics"
+        },
+        {
+          "command": "m2e.fixAllAmericanisations"
         }
       ]
     },
