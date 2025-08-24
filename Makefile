@@ -61,7 +61,7 @@ build: build-wails build-cli build-server build-mcp vscode-build
 .PHONY: build-wails
 build-wails:
 	@echo "Building Wails application..."
-	wails build
+	wails build -ldflags "-w -s"
 	@if [ "$(shell uname -s)" = "Darwin" ] && [ "$CI" != "true" ]; then \
 		echo "Copying M2E.app to /Applications..."; \
 		cp -R build/bin/M2E.app /Applications/; \
@@ -71,19 +71,19 @@ build-wails:
 .PHONY: build-cli
 build-cli:
 	@echo "Building CLI application..."
-	go build -o build/bin/m2e ./cmd/m2e
+	go build -ldflags "-w -s" -o build/bin/m2e ./cmd/m2e
 
 # Build the server application
 .PHONY: build-server
 build-server:
 	@echo "Building server application..."
-	go build -o build/bin/m2e-server ./cmd/m2e-server
+	go build -ldflags "-w -s" -o build/bin/m2e-server ./cmd/m2e-server
 
 # Build the MCP server application
 .PHONY: build-mcp
 build-mcp:
 	@echo "Building MCP server application..."
-	go build -o build/bin/m2e-mcp ./cmd/m2e-mcp
+	go build -ldflags "-w -s" -o build/bin/m2e-mcp ./cmd/m2e-mcp
 
 # Clean build artifacts
 .PHONY: clean
