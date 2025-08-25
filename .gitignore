@@ -21,3 +21,6 @@ build/**/m2e-server
 build/**/m2e-cli
 build/**/m2e-mcp
 build/**/m2e
+
+# serena https://github.com/oraios/serena
+.serena/

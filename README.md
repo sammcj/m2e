@@ -352,6 +352,7 @@ rm ~/.config/m2e/unit_config.json
    ```
 3. Build
    ```bash
+   $(cd frontend && npm install && npm run build)
    make build
    ```
 
