@@ -146,7 +146,7 @@ inspect:
 .PHONY: vscode-install
 vscode-install:
 	@echo "Installing VSCode extension dependencies..."
-	cd vscode-extension && npm ci
+	cd vscode-extension && npm install
 
 .PHONY: vscode-build
 vscode-build: vscode-install

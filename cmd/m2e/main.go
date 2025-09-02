@@ -66,6 +66,8 @@ Additional Options:
         Exit with code 1 if changes are detected
   -rename
         Rename files that have American spellings in their filename
+  -size-max-kb int, -s int
+        Maximum file size to process in KB (default: 10240)
 
 Legacy Options (for backwards compatibility):
   -input string
@@ -114,6 +116,8 @@ func main() {
 	width := flag.Int("width", 80, "Set output width for formatting")
 	exitOnChange := flag.Bool("exit-on-change", false, "Exit with code 1 if changes are detected")
 	renameFiles := flag.Bool("rename", false, "Rename files that have American spellings in their filename")
+	maxFileSize := flag.Int("size-max-kb", 10240, "Maximum file size to process in KB (default: 10240)") // 10MB default
+	maxFileSizeShort := flag.Int("s", 10240, "Maximum file size to process in KB (shorthand for --size-max-kb)")
 
 	help := flag.Bool("help", false, "Show help message")
 	helpShort := flag.Bool("h", false, "Show help message")
@@ -139,6 +143,16 @@ func main() {
 			case "-width":
 				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
 					// Parse width manually
+					i++ // Skip the value for now, flag.Parse() will handle it
+				}
+			case "-size-max-kb":
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					// Parse size-max-kb manually
+					i++ // Skip the value for now, flag.Parse() will handle it
+				}
+			case "-s":
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					// Parse -s manually
 					i++ // Skip the value for now, flag.Parse() will handle it
 				}
 			case "-units":
@@ -296,8 +310,13 @@ func main() {
 		}
 	} else {
 		// Handle file or directory input
+		// Use whichever max file size flag was set (they should be the same unless user set both)
+		finalMaxFileSize := *maxFileSize
+		if *maxFileSizeShort != 10240 { // If short flag was explicitly set
+			finalMaxFileSize = *maxFileSizeShort
+		}
 		err = handleFileOrDirectory(inputPath, conv, normaliseSmartQuotes, finalOutputFile,
-			*showDiff, *showDiffInline, *showRaw, *showStats, *saveInPlace, *exitOnChange, *renameFiles, *width)
+			*showDiff, *showDiffInline, *showRaw, *showStats, *saveInPlace, *exitOnChange, *renameFiles, *width, finalMaxFileSize)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing files: %v\n", err)
 			if *exitOnChange {
@@ -483,7 +502,7 @@ func createLineBasedUnifiedDiff(original, converted, filename string) string {
 
 // handleFileOrDirectory processes file or directory input
 func handleFileOrDirectory(inputPath string, conv *converter.Converter, normaliseSmartQuotes bool,
-	outputFile string, showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange, renameFiles bool, width int) error {
+	outputFile string, showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange, renameFiles bool, width, maxFileSize int) error {
 
 	// Check if input is a directory or file
 	info, err := os.Stat(inputPath)
@@ -494,20 +513,20 @@ func handleFileOrDirectory(inputPath string, conv *converter.Converter, normalis
 	if info.IsDir() {
 		// Directory processing
 		return handleDirectory(inputPath, conv, normaliseSmartQuotes, outputFile,
-			showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange, renameFiles, width)
+			showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange, renameFiles, width, maxFileSize)
 	} else {
 		// Single file processing
 		return handleSingleFile(inputPath, conv, normaliseSmartQuotes, outputFile,
-			showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange, width)
+			showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange, width, maxFileSize)
 	}
 }
 
 // handleSingleFile processes a single file
 func handleSingleFile(filePath string, conv *converter.Converter, normaliseSmartQuotes bool,
-	outputFile string, showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange bool, width int) error {
+	outputFile string, showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange bool, width, maxFileSize int) error {
 
 	// Read file content
-	content, err := fileutil.ReadFileContent(filePath)
+	content, err := fileutil.ReadFileContentWithMaxSize(filePath, maxFileSize)
 	if err != nil {
 		return fmt.Errorf("failed to read file %s: %w", filePath, err)
 	}
@@ -591,7 +610,7 @@ func handleSingleFile(filePath string, conv *converter.Converter, normaliseSmart
 
 // handleDirectory processes all text files in a directory recursively
 func handleDirectory(dirPath string, conv *converter.Converter, normaliseSmartQuotes bool,
-	outputFile string, showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange, renameFiles bool, width int) error {
+	outputFile string, showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange, renameFiles bool, width, maxFileSize int) error {
 
 	if outputFile != "" {
 		return fmt.Errorf("output file not supported when processing directories")
@@ -625,7 +644,7 @@ func handleDirectory(dirPath string, conv *converter.Converter, normaliseSmartQu
 		fmt.Printf("Processing: %s\n", file.RelativePath)
 
 		// Read file content
-		content, err := fileutil.ReadFileContent(file.Path)
+		content, err := fileutil.ReadFileContentWithMaxSize(file.Path, maxFileSize)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: Failed to read file %s: %v\n", file.Path, err)
 			continue

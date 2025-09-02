@@ -221,14 +221,19 @@ func FindTextFiles(rootPath string) ([]FileInfo, error) {
 
 // ReadFileContent reads the content of a file safely
 func ReadFileContent(path string) (string, error) {
+	return ReadFileContentWithMaxSize(path, 10240) // Default 10MB in KB
+}
+
+// ReadFileContentWithMaxSize reads the content of a file safely with a configurable max size
+func ReadFileContentWithMaxSize(path string, maxSizeKB int) (string, error) {
 	// Check file size to avoid reading extremely large files
 	info, err := os.Stat(path)
 	if err != nil {
 		return "", fmt.Errorf("failed to stat file %s: %w", path, err)
 	}
 
-	// Limit file size to 10MB for safety
-	const maxFileSize = 10 * 1024 * 1024
+	// Convert KB to bytes
+	maxFileSize := int64(maxSizeKB * 1024)
 	if info.Size() > maxFileSize {
 		return "", fmt.Errorf("file %s is too large (%d bytes, max %d bytes)", path, info.Size(), maxFileSize)
 	}
