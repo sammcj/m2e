@@ -1,8 +1,8 @@
 module github.com/sammcj/m2e
 
-go 1.23.0
+go 1.23.12
 
-toolchain go1.24.1
+toolchain go1.24.7
 
 require (
 	github.com/alecthomas/chroma/v2 v2.20.0
