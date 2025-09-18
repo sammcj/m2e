@@ -55,7 +55,7 @@ Output Mode (mutually exclusive):
         Show only the processed plain text
   -stats
         Show only conversion statistics
-  -save
+  -save, -s
         Overwrite the input file with converted content
   (default: show diff + processed output + stats)
 
@@ -66,8 +66,8 @@ Additional Options:
         Exit with code 1 if changes are detected
   -rename
         Rename files that have American spellings in their filename
-  -size-max-kb int, -s int
-        Maximum file size to process in KB (default: 10240)
+  -size-max-kb int
+        Maximum file size to process in KB (default: 10240 KB = 10 MB)
 
 Legacy Options (for backwards compatibility):
   -input string
@@ -83,6 +83,7 @@ Examples:
   m2e -raw document.txt                     # Show only processed text
   m2e -stats document.txt                   # Show only conversion statistics
   m2e -save document.txt                    # Overwrite file with converted content
+  m2e -s document.txt                       # Same as -save (shorthand)
   m2e -o converted.txt document.txt         # Convert file to output file
   m2e -units document.txt                   # Convert with unit conversion
   m2e /path/to/project                      # Process all text files in directory
@@ -111,13 +112,13 @@ func main() {
 	showRaw := flag.Bool("raw", false, "Show only the processed plain text")
 	showStats := flag.Bool("stats", false, "Show only conversion statistics")
 	saveInPlace := flag.Bool("save", false, "Overwrite the input file with converted content (cannot be used with other output modes)")
+	saveInPlaceShort := flag.Bool("s", false, "Shorthand for -save")
 
 	// Additional flags
 	width := flag.Int("width", 80, "Set output width for formatting")
 	exitOnChange := flag.Bool("exit-on-change", false, "Exit with code 1 if changes are detected")
 	renameFiles := flag.Bool("rename", false, "Rename files that have American spellings in their filename")
 	maxFileSize := flag.Int("size-max-kb", 10240, "Maximum file size to process in KB (default: 10240)") // 10MB default
-	maxFileSizeShort := flag.Int("s", 10240, "Maximum file size to process in KB (shorthand for --size-max-kb)")
 
 	help := flag.Bool("help", false, "Show help message")
 	helpShort := flag.Bool("h", false, "Show help message")
@@ -151,10 +152,7 @@ func main() {
 					i++ // Skip the value for now, flag.Parse() will handle it
 				}
 			case "-s":
-				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
-					// Parse -s manually
-					i++ // Skip the value for now, flag.Parse() will handle it
-				}
+				*saveInPlaceShort = true
 			case "-units":
 				*convertUnits = true
 			case "-no-smart-quotes":
@@ -231,16 +229,43 @@ func main() {
 
 	// Check if there are non-flag arguments (direct text input or file/directory path)
 	if flag.NArg() > 0 {
-		// Could be direct text input or a file/directory path
-		potentialPath := flag.Args()[0]
+		// Handle multiple file arguments or single input
+		if flag.NArg() == 1 {
+			// Single argument - could be direct text input or a file/directory path
+			potentialPath := flag.Args()[0]
 
-		// Check if it's a file or directory path
-		if _, err := os.Stat(potentialPath); err == nil {
-			inputPath = potentialPath
+			// Check if it's a file or directory path
+			if _, err := os.Stat(potentialPath); err == nil {
+				inputPath = potentialPath
+			} else {
+				// Treat as direct text input
+				inputText = potentialPath
+				isDirectText = true
+			}
 		} else {
-			// Treat as direct text input (join all arguments to handle quoted strings)
-			inputText = strings.Join(flag.Args(), " ")
-			isDirectText = true
+			// Multiple arguments - check if they're all valid files
+			allFilesValid := true
+			for _, arg := range flag.Args() {
+				if _, err := os.Stat(arg); err != nil {
+					allFilesValid = false
+					break
+				}
+			}
+
+			if allFilesValid {
+				// All arguments are valid files - process them as multiple files
+				err = handleMultipleFiles(flag.Args(), conv, normaliseSmartQuotes, finalOutputFile,
+					*showDiff, *showDiffInline, *showRaw, *showStats, (*saveInPlace || *saveInPlaceShort), *exitOnChange, *width, *maxFileSize)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error processing files: %v\n", err)
+					os.Exit(1)
+				}
+				return // Exit early after processing multiple files
+			} else {
+				// Not all arguments are valid files - treat as direct text input
+				inputText = strings.Join(flag.Args(), " ")
+				isDirectText = true
+			}
 		}
 	} else if *inputFile != "" {
 		// Legacy support for -input flag
@@ -282,6 +307,10 @@ func main() {
 		outputModeCount++
 	}
 
+	if *saveInPlaceShort {
+		outputModeCount++
+	}
+
 	if outputModeCount > 1 {
 		fmt.Fprintf(os.Stderr, "Error: Only one output mode flag can be specified at a time\n")
 		os.Exit(1)
@@ -294,7 +323,7 @@ func main() {
 	}
 
 	// Check if save flag is used with text input (not allowed)
-	if *saveInPlace && isDirectText {
+	if (*saveInPlace || *saveInPlaceShort) && isDirectText {
 		fmt.Fprintf(os.Stderr, "Error: -save flag can only be used with file input, not text input or stdin\n")
 		os.Exit(1)
 	}
@@ -303,20 +332,17 @@ func main() {
 	if isDirectText {
 		// Handle direct text input (single string or stdin)
 		err = handleSingleText(inputText, conv, normaliseSmartQuotes, finalOutputFile,
-			*showDiff, *showDiffInline, *showRaw, *showStats, *saveInPlace, *exitOnChange, *width)
+			*showDiff, *showDiffInline, *showRaw, *showStats, (*saveInPlace || *saveInPlaceShort), *exitOnChange, *width)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing text: %v\n", err)
 			os.Exit(1)
 		}
 	} else {
 		// Handle file or directory input
-		// Use whichever max file size flag was set (they should be the same unless user set both)
+		// Use max file size flag
 		finalMaxFileSize := *maxFileSize
-		if *maxFileSizeShort != 10240 { // If short flag was explicitly set
-			finalMaxFileSize = *maxFileSizeShort
-		}
 		err = handleFileOrDirectory(inputPath, conv, normaliseSmartQuotes, finalOutputFile,
-			*showDiff, *showDiffInline, *showRaw, *showStats, *saveInPlace, *exitOnChange, *renameFiles, *width, finalMaxFileSize)
+			*showDiff, *showDiffInline, *showRaw, *showStats, (*saveInPlace || *saveInPlaceShort), *exitOnChange, *renameFiles, *width, finalMaxFileSize)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing files: %v\n", err)
 			if *exitOnChange {
@@ -809,6 +835,118 @@ func handleDirectory(dirPath string, conv *converter.Converter, normaliseSmartQu
 		// Default mode exits with status 1 if changes are required
 		if len(changedFiles) > 0 {
 			os.Exit(1)
+		}
+	}
+
+	// Handle exitOnChange
+	if exitOnChange && anyChanges {
+		os.Exit(1)
+	}
+
+	return nil
+}
+
+// handleMultipleFiles processes multiple individual files
+func handleMultipleFiles(filePaths []string, conv *converter.Converter, normaliseSmartQuotes bool,
+	outputFile string, showDiff, showDiffInline, showRaw, showStats, saveInPlace, exitOnChange bool, width, maxFileSize int) error {
+
+	if outputFile != "" {
+		return fmt.Errorf("output file not supported when processing multiple files")
+	}
+
+	// Track changes and files for summary
+	anyChanges := false
+	var totalStats report.ChangeStats
+	var changedFiles []string
+	var unchangedFiles []string
+	analyser := report.NewAnalyser(conv.GetAmericanToBritishDictionary())
+
+	fmt.Printf("Processing %d file(s)...\n", len(filePaths))
+
+	for _, filePath := range filePaths {
+		// Read and process file content
+		originalContent, err := fileutil.ReadFileContentWithMaxSize(filePath, maxFileSize)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to read file %s: %v\n", filePath, err)
+			continue
+		}
+
+		// Convert content
+		convertedContent := conv.ConvertToBritish(originalContent, normaliseSmartQuotes)
+		hasChanges := originalContent != convertedContent
+
+		if hasChanges {
+			anyChanges = true
+			changedFiles = append(changedFiles, filePath)
+
+			// Save file if requested
+			if saveInPlace {
+				err = os.WriteFile(filePath, []byte(convertedContent), 0644)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Warning: Failed to save changes to file %s: %v\n", filePath, err)
+					continue
+				}
+			}
+
+			// Handle diff output modes
+			if showDiff {
+				fmt.Printf("=== %s ===\n", filePath)
+				err := showDiffOutput(originalContent, convertedContent, filePath, false)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Warning: Failed to show diff for %s: %v\n", filePath, err)
+				}
+				fmt.Println()
+			} else if showDiffInline {
+				fmt.Printf("=== %s ===\n", filePath)
+				err := showDiffOutput(originalContent, convertedContent, filePath, true)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Warning: Failed to show diff for %s: %v\n", filePath, err)
+				}
+				fmt.Println()
+			} else if showRaw {
+				fmt.Printf("=== %s ===\n%s\n", filePath, convertedContent)
+			}
+		} else {
+			unchangedFiles = append(unchangedFiles, filePath)
+		}
+
+		// Calculate stats
+		stats := analyser.AnalyseChanges(originalContent, convertedContent)
+		totalStats.TotalWords += stats.TotalWords
+		totalStats.SpellingChanges += stats.SpellingChanges
+		totalStats.UnitConversions += stats.UnitConversions
+		totalStats.QuoteChanges += stats.QuoteChanges
+	}
+
+	// Show summary
+	if len(changedFiles) > 0 {
+		if saveInPlace {
+			fmt.Printf("Saved changes to %d file(s):\n", len(changedFiles))
+		} else {
+			fmt.Printf("Found changes in %d file(s):\n", len(changedFiles))
+		}
+		for _, file := range changedFiles {
+			fmt.Printf("  %s\n", file)
+		}
+	}
+
+	if len(unchangedFiles) > 0 && !showDiff && !showDiffInline && !showRaw {
+		fmt.Printf("No changes needed for %d file(s)\n", len(unchangedFiles))
+	}
+
+	// Show aggregate stats if changes were made or specifically requested
+	if (totalStats.SpellingChanges > 0 || totalStats.UnitConversions > 0 || totalStats.QuoteChanges > 0) || showStats {
+		fmt.Println()
+		if saveInPlace {
+			err := showStatsOutputWithMode(totalStats, true)
+			if err != nil {
+				return err
+			}
+		} else {
+			err := showStatsOutputWithMode(totalStats, false)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

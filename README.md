@@ -309,7 +309,7 @@ echo "Temperature was 75°F" | m2e -units
 
 ### Troubleshooting
 
-For detailed troubleshooting help, see the [Unit Conversion Troubleshooting Guide](docs/UNIT_CONVERSION_GUIDE.md).
+For detailed troubleshooting help, see the [Unit Conversion Troubleshooting Guide](docs/unit-conversion-guide.md).
 
 **Quick fixes:**
 

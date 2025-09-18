@@ -202,7 +202,7 @@ If this doesn't work, unit conversion may be disabled or misconfigured.
 2. **For markdown files:** Code blocks should be preserved
    ```markdown
    The room is 12 feet wide. ← Should convert
-   
+
    ```go
    // Width is 12 feet ← Should convert (comment)
    width := 12        ← Should NOT convert (code)
@@ -279,7 +279,7 @@ Create test files to verify your configuration:
    ```bash
    echo '// Width is 12 feet
    const width = 12;' > test.go
-   
+
    m2e-cli -units -input test.go
    # Expected: Comment converts, code doesn't
    ```
