@@ -7,7 +7,7 @@ echo "Building 'Murican to English Converter for macOS (Apple Silicon)..."
 # Check for Wails CLI
 if ! command -v wails &>/dev/null; then
   echo "Wails CLI not found. Installing..."
-  go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.1
+  go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.2
 fi
 
 # Set environment variables for optimized build
