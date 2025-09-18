@@ -1,8 +1,6 @@
 module github.com/sammcj/m2e
 
-go 1.23.0
-
-toolchain go1.24.1
+go 1.25.1
 
 require (
 	github.com/alecthomas/chroma/v2 v2.20.0
@@ -58,11 +56,11 @@ require (
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	github.com/yuin/goldmark v1.7.8 // indirect
 	github.com/yuin/goldmark-emoji v1.0.5 // indirect
-	golang.org/x/crypto v0.41.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/term v0.34.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/crypto v0.42.0 // indirect
+	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/term v0.35.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 )
 
 // replace github.com/wailsapp/wails/v2 v2.10.1 => /Users/samm/go/pkg/mod
