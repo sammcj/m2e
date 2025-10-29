@@ -2,7 +2,7 @@
   "name": "m2e-vscode",
   "displayName": "M2E - 'Murican to English Converter",
   "description": "Convert American text to standard international / British English with freedom unit to metric conversion",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "SamMcLeod",
   "license": "MIT",
   "repository": {
@@ -301,18 +301,18 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
-    "@types/node": "24.3.0",
-    "@types/vscode": "^1.103.0",
-    "@typescript-eslint/eslint-plugin": "8.40.0",
-    "@typescript-eslint/parser": "8.40.0",
+    "@types/node": "24.9.2",
+    "@types/vscode": "^1.105.0",
+    "@typescript-eslint/eslint-plugin": "8.46.0",
+    "@typescript-eslint/parser": "8.46.2",
     "@vscode/test-electron": "^2.5.2",
-    "@vscode/vsce": "^3.6.0",
-    "eslint": "^9.34.0",
+    "@vscode/vsce": "^3.6.2",
+    "eslint": "^9.38.0",
     "glob": "^11.0.3",
-    "mocha": "^11.7.1",
+    "mocha": "^11.7.4",
     "rimraf": "^6.0.1",
     "ts-node": "10.9.2",
-    "typescript": "5.9.2"
+    "typescript": "5.9.3"
   },
   "dependencies": {
     "node-fetch": "^3.3.2"
