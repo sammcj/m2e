@@ -15,7 +15,7 @@
   },
   "homepage": "https://github.com/sammcj/m2e#readme",
   "engines": {
-    "vscode": "^1.103.0"
+    "vscode": "^1.999.0"
   },
   "categories": [
     "Formatters",
