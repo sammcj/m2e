@@ -26,6 +26,8 @@ export function HandleFileService(arg1:string):Promise<void>;
 
 export function HandleService(arg1:string,arg2:string):Promise<string>;
 
+export function ReadClipboardHTML():Promise<string>;
+
 export function SaveConvertedFile(arg1:string):Promise<void>;
 
 export function SetUnitProcessingEnabled(arg1:boolean):Promise<void>;

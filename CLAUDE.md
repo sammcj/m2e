@@ -118,3 +118,4 @@ Requires Go 1.24+ (specified in go.mod with toolchain go1.24.1)
 ## Note
 
 - Always run `make lint && make test` before stating you have completed the task.
+- When building the app always use 'make build' which will also run the tests for you.

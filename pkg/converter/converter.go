@@ -25,6 +25,7 @@ type Converter struct {
 	unitProcessor          *UnitProcessor
 	contextualWordDetector ContextualWordDetector
 	ignoreProcessor        *CommentIgnoreProcessor
+	markdownProcessor      *MarkdownProcessor
 }
 
 // SmartQuotesMap holds mappings for smart quotes and em-dashes to their normal equivalents
@@ -49,6 +50,7 @@ func NewConverter() (*Converter, error) {
 		unitProcessor:          NewUnitProcessor(),
 		contextualWordDetector: NewContextAwareWordDetector(),
 		ignoreProcessor:        NewCommentIgnoreProcessor(),
+		markdownProcessor:      NewMarkdownProcessor(),
 	}, nil
 }
 
@@ -77,6 +79,19 @@ func (c *Converter) ConvertToBritishWithIgnoreComments(text string, normaliseSma
 
 // ConvertToBritishSimple converts text without code-awareness (for internal use)
 func (c *Converter) ConvertToBritishSimple(text string, normaliseSmartQuotes bool) string {
+	// Wrap the entire conversion in markdown processing to preserve formatting
+	if c.markdownProcessor != nil {
+		return c.markdownProcessor.ProcessWithMarkdown(text, func(innerText string) string {
+			return c.convertWithoutMarkdown(innerText, normaliseSmartQuotes)
+		})
+	}
+
+	// Fallback if markdown processor is not available
+	return c.convertWithoutMarkdown(text, normaliseSmartQuotes)
+}
+
+// convertWithoutMarkdown performs conversion without markdown processing
+func (c *Converter) convertWithoutMarkdown(text string, normaliseSmartQuotes bool) string {
 	// First normalise smart quotes if needed
 	processedText := text
 	if normaliseSmartQuotes {

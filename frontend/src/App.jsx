@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
-import { ConvertToBritish, ConvertToBritishWithUnits, HandleDroppedFile, SaveConvertedFile, GetCurrentFilePath, ClearCurrentFile, GetUnitProcessingStatus, SetUnitProcessingEnabled } from "../wailsjs/go/main/App";
+import { ConvertToBritishWithUnits, SaveConvertedFile, GetCurrentFilePath, ClearCurrentFile, GetUnitProcessingStatus, SetUnitProcessingEnabled, ReadClipboardHTML } from "../wailsjs/go/main/App";
 import HighlightedTextarea from './components/HighlightedTextarea';
 
 function App() {
@@ -224,6 +224,133 @@ function App() {
     // Reference to the American text area
     const americanTextareaRef = useRef(null);
 
+    // Convert HTML to Markdown - simple and reliable approach
+    const htmlToMarkdown = (html) => {
+        // Use DOMParser for safer HTML parsing (avoids innerHTML security issues)
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // Helper to recursively process nodes and build markdown
+        // listCounter is scoped to each OL element to handle nested lists correctly
+        const processNode = (node, parentListType = null, listCounter = { value: 0 }) => {
+            if (node.nodeType === 3) { // Text node
+                return node.textContent;
+            }
+
+            if (node.nodeType !== 1) { // Not an element
+                return '';
+            }
+
+            let result = '';
+            const tag = node.nodeName;
+            const children = Array.from(node.childNodes);
+
+            // Check inline styles for formatting (Google Docs uses this)
+            const style = node.getAttribute('style') || '';
+            const isBoldStyle = style.includes('font-weight:700') || style.includes('font-weight: 700') ||
+                               style.includes('font-weight:bold') || style.includes('font-weight: bold');
+            const isItalicStyle = style.includes('font-style:italic') || style.includes('font-style: italic');
+            const isNormalWeight = style.includes('font-weight:normal') || style.includes('font-weight: normal') ||
+                                  style.includes('font-weight:400') || style.includes('font-weight: 400');
+
+            // Apply markdown based on tag
+            switch (tag) {
+                case 'A':
+                    const href = node.getAttribute('href');
+                    return href ? `[${children.map(child => processNode(child, parentListType, listCounter)).join('')}](${href})` : children.map(child => processNode(child, parentListType, listCounter)).join('');
+
+                case 'STRONG':
+                case 'B':
+                    // Skip if style explicitly sets normal weight (Google Docs wrapper)
+                    if (isNormalWeight) return children.map(child => processNode(child, parentListType, listCounter)).join('');
+                    return `**${children.map(child => processNode(child, parentListType, listCounter)).join('')}**`;
+
+                case 'EM':
+                case 'I':
+                    return `*${children.map(child => processNode(child, parentListType, listCounter)).join('')}*`;
+
+                case 'LI':
+                    const liContent = children.map(child => processNode(child, parentListType, listCounter)).join('');
+                    if (parentListType === 'OL') {
+                        listCounter.value++;
+                        return `${listCounter.value}. ${liContent}\n`;
+                    }
+                    return `- ${liContent}\n`;
+
+                case 'BR':
+                    return '\n';
+
+                case 'P':
+                    return children.map(child => processNode(child, parentListType, listCounter)).join('') + '\n\n';
+
+                case 'SPAN':
+                    // Check if span has bold or italic styles
+                    result = children.map(child => processNode(child, parentListType, listCounter)).join('');
+                    if (isBoldStyle) result = `**${result}**`;
+                    if (isItalicStyle) result = `*${result}*`;
+                    return result;
+
+                case 'DIV':
+                    return children.map(child => processNode(child, parentListType, listCounter)).join('');
+
+                case 'UL':
+                    return children.map(child => processNode(child, 'UL', { value: 0 })).join('') + '\n';
+
+                case 'OL':
+                    // Create new counter for this OL to handle nested lists correctly
+                    const olCounter = { value: 0 };
+                    return children.map(child => processNode(child, 'OL', olCounter)).join('') + '\n';
+
+                case 'H1':
+                    return `# ${children.map(child => processNode(child, parentListType, listCounter)).join('')}\n\n`;
+
+                case 'H2':
+                    return `## ${children.map(child => processNode(child, parentListType, listCounter)).join('')}\n\n`;
+
+                case 'H3':
+                    return `### ${children.map(child => processNode(child, parentListType, listCounter)).join('')}\n\n`;
+
+                default:
+                    return children.map(child => processNode(child, parentListType, listCounter)).join('');
+            }
+        };
+
+        const markdown = processNode(doc.body);
+
+        // Clean up extra whitespace
+        return markdown
+            .replace(/\n\n\n+/g, '\n\n')
+            .replace(/\n\s+\n/g, '\n\n')
+            .trim();
+    };
+
+    // Paste rich text from clipboard (converts HTML to Markdown)
+    const pasteRichText = async () => {
+        try {
+            // Use the Go backend clipboard reader to avoid WebKit permission issues
+            const clipboardContent = await ReadClipboardHTML();
+
+            if (clipboardContent) {
+                // Convert HTML to Markdown
+                const markdown = htmlToMarkdown(clipboardContent);
+
+                // Update the American text with markdown
+                setAmericanText(markdown);
+
+                // Automatically convert to British English
+                if (markdown.trim()) {
+                    setIsTranslating(true);
+                    ConvertToBritishWithUnits(markdown, normaliseSmartQuotes, convertUnits).then((result) => {
+                        setBritishText(result);
+                        setIsTranslating(false);
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('Error pasting rich text:', err);
+        }
+    };
+
     // Paste from clipboard - tries multiple approaches
     const pasteFromClipboard = () => {
         try {
@@ -366,6 +493,13 @@ function App() {
                         Paste
                     </button>
                     <button
+                        className="paste-rich-button"
+                        onClick={pasteRichText}
+                        title="Paste rich text and convert to markdown (browser will ask for permission - click the paste dialog that appears)"
+                    >
+                        Paste Rich Text
+                    </button>
+                    <button
                         className="clear-button"
                         onClick={handleClear}
                     >
@@ -412,8 +546,8 @@ function App() {
                     <HighlightedTextarea
                         value={freedomText}
                         onChange={updateAmericanText}
-                        onFocus={() => console.log('American textarea focused')}
-                        onBlur={() => console.log('American textarea blurred')}
+                        onFocus={() => {}}
+                        onBlur={() => {}}
                         placeholder="Enter freedom text here or drop a text file..."
                         dictionary={syntaxHighlighting ? {} : americanToBritishDict}
                         normaliseSmartQuotes={normaliseSmartQuotes}
@@ -429,8 +563,8 @@ function App() {
                     <HighlightedTextarea
                         value={britishText}
                         onChange={updateBritishText}
-                        onFocus={() => console.log('British textarea focused')}
-                        onBlur={() => console.log('British textarea blurred')}
+                        onFocus={() => {}}
+                        onBlur={() => {}}
                         placeholder="English with less Zs will appear here..."
                         dictionary={{}}
                         normaliseSmartQuotes={normaliseSmartQuotes}
