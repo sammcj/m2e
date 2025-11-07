@@ -256,7 +256,7 @@ html, body {
 }
 
 /* Button styles */
-.convert-button, .clear-button, .copy-button, .paste-button {
+.convert-button, .clear-button, .copy-button, .paste-button, .paste-rich-button {
   padding: 6px 18px;
   border: none;
   border-radius: 4px;
@@ -294,10 +294,17 @@ html, body {
   background-color: #c0392b;
 }
 
-.copy-button, .paste-button {
+.copy-button, .paste-button, .paste-rich-button {
   color: white;
-  width: 80px;
   font-size: 0.9rem;
+}
+
+.copy-button, .paste-button {
+  width: 80px;
+}
+
+.paste-rich-button {
+  width: 140px;
 }
 
 .copy-button {
@@ -308,7 +315,11 @@ html, body {
   background-color: #9b59b6; /* Purple */
 }
 
-.copy-button:hover:not(:disabled), .paste-button:hover:not(:disabled) {
+.paste-rich-button {
+  background-color: #6c5ce7; /* Lighter purple */
+}
+
+.copy-button:hover:not(:disabled), .paste-button:hover:not(:disabled), .paste-rich-button:hover:not(:disabled) {
   transform: translateY(-2px);
 }
 
@@ -320,7 +331,11 @@ html, body {
   background-color: #8e44ad;
 }
 
-.copy-button:disabled, .paste-button:disabled {
+.paste-rich-button:hover:not(:disabled) {
+  background-color: #5f4fd1;
+}
+
+.copy-button:disabled, .paste-button:disabled, .paste-rich-button:disabled {
   background-color: #bdc3c7;
   cursor: not-allowed;
   transform: none;
@@ -399,7 +414,7 @@ html, body {
     width: 100%;
   }
 
-  .convert-button, .clear-button, .copy-button, .paste-button {
+  .convert-button, .clear-button, .copy-button, .paste-button, .paste-rich-button {
     max-width: 100%;
     width: 100%;
   }

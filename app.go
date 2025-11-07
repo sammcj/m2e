@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/sammcj/m2e/pkg/converter"
@@ -12,7 +14,7 @@ import (
 	"github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -71,17 +73,17 @@ func (a *App) domReady(ctx context.Context) {
 	// Try multiple approaches to center the window
 
 	// First, try the built-in center function
-	runtime.WindowCenter(ctx)
+	wailsRuntime.WindowCenter(ctx)
 
 	// Then set the window position to a value that's likely to be centered on most displays
 	// These values are chosen to position the window more centrally on common screen resolutions
-	runtime.WindowSetPosition(ctx, 500, 300)
+	wailsRuntime.WindowSetPosition(ctx, 500, 300)
 
 	// Try a different position that might work better on larger displays
-	runtime.WindowSetPosition(ctx, 600, 350)
+	wailsRuntime.WindowSetPosition(ctx, 600, 350)
 
 	// Finally, try the built-in center function again
-	runtime.WindowCenter(ctx)
+	wailsRuntime.WindowCenter(ctx)
 }
 
 // ConvertToBritish converts American English text to British English
@@ -295,6 +297,43 @@ func (a *App) DetectLanguage(code string) string {
 	}
 
 	return "text"
+}
+
+// ReadClipboardHTML reads HTML content from the clipboard
+func (a *App) ReadClipboardHTML() (string, error) {
+	var cmd *exec.Cmd
+	var fallbackCmd *exec.Cmd
+
+	// Detect platform and use appropriate clipboard command
+	switch runtime.GOOS {
+	case "darwin":
+		// macOS: use AppleScript to get HTML from clipboard
+		// The «class HTML» is the pasteboard type for HTML content
+		script := `osascript -e 'the clipboard as «class HTML»' | perl -ne 'print chr foreach unpack("C*",pack("H*",substr($_,11,-3)))'`
+		cmd = exec.Command("bash", "-c", script)
+		fallbackCmd = exec.Command("pbpaste")
+
+	case "linux":
+		// Linux: use xclip to get HTML from clipboard
+		// Note: requires xclip to be installed (apt install xclip)
+		cmd = exec.Command("xclip", "-selection", "clipboard", "-t", "text/html", "-o")
+		fallbackCmd = exec.Command("xclip", "-selection", "clipboard", "-o")
+
+	default:
+		return "", fmt.Errorf("clipboard HTML reading not supported on %s", runtime.GOOS)
+	}
+
+	// Try to get HTML format first
+	output, err := cmd.Output()
+	if err != nil {
+		// Fallback to plain text if HTML not available
+		output, err = fallbackCmd.Output()
+		if err != nil {
+			return "", fmt.Errorf("failed to read clipboard: %w", err)
+		}
+	}
+
+	return string(output), nil
 }
 
 // shutdown is called when the app is closing

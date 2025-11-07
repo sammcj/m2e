@@ -50,6 +50,10 @@ export function HandleService(arg1, arg2) {
   return window['go']['main']['App']['HandleService'](arg1, arg2);
 }
 
+export function ReadClipboardHTML() {
+  return window['go']['main']['App']['ReadClipboardHTML']();
+}
+
 export function SaveConvertedFile(arg1) {
   return window['go']['main']['App']['SaveConvertedFile'](arg1);
 }
