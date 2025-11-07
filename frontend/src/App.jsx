@@ -226,12 +226,15 @@ function App() {
 
     // Convert HTML to Markdown - simple and reliable approach
     const htmlToMarkdown = (html) => {
-        // Create a temporary div to parse HTML
-        const temp = document.createElement('div');
-        temp.innerHTML = html;
+        // Use DOMParser for safer HTML parsing (avoids innerHTML security issues)
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // Track list context for ordered list numbering
+        const listContext = { type: null, counter: 0 };
 
         // Helper to recursively process nodes and build markdown
-        const processNode = (node) => {
+        const processNode = (node, parentListType = null) => {
             if (node.nodeType === 3) { // Text node
                 return node.textContent;
             }
@@ -243,9 +246,6 @@ function App() {
             let result = '';
             const tag = node.nodeName;
             const children = Array.from(node.childNodes);
-
-            // Process children first
-            const childText = children.map(child => processNode(child)).join('');
 
             // Check inline styles for formatting (Google Docs uses this)
             const style = node.getAttribute('style') || '';
@@ -259,56 +259,65 @@ function App() {
             switch (tag) {
                 case 'A':
                     const href = node.getAttribute('href');
-                    return href ? `[${childText}](${href})` : childText;
+                    return href ? `[${children.map(child => processNode(child, parentListType)).join('')}](${href})` : children.map(child => processNode(child, parentListType)).join('');
 
                 case 'STRONG':
                 case 'B':
                     // Skip if style explicitly sets normal weight (Google Docs wrapper)
-                    if (isNormalWeight) return childText;
-                    return `**${childText}**`;
+                    if (isNormalWeight) return children.map(child => processNode(child, parentListType)).join('');
+                    return `**${children.map(child => processNode(child, parentListType)).join('')}**`;
 
                 case 'EM':
                 case 'I':
-                    return `*${childText}*`;
+                    return `*${children.map(child => processNode(child, parentListType)).join('')}*`;
 
                 case 'LI':
-                    return `- ${childText}\n`;
+                    const liContent = children.map(child => processNode(child, parentListType)).join('');
+                    if (parentListType === 'OL') {
+                        listContext.counter++;
+                        return `${listContext.counter}. ${liContent}\n`;
+                    }
+                    return `- ${liContent}\n`;
 
                 case 'BR':
                     return '\n';
 
                 case 'P':
-                    return childText + '\n\n';
+                    return children.map(child => processNode(child, parentListType)).join('') + '\n\n';
 
                 case 'SPAN':
                     // Check if span has bold or italic styles
-                    result = childText;
+                    result = children.map(child => processNode(child, parentListType)).join('');
                     if (isBoldStyle) result = `**${result}**`;
                     if (isItalicStyle) result = `*${result}*`;
                     return result;
 
                 case 'DIV':
-                    return childText;
+                    return children.map(child => processNode(child, parentListType)).join('');
 
                 case 'UL':
+                    listContext.counter = 0;
+                    return children.map(child => processNode(child, 'UL')).join('') + '\n';
+
                 case 'OL':
-                    return childText + '\n';
+                    listContext.counter = 0;
+                    return children.map(child => processNode(child, 'OL')).join('') + '\n';
 
                 case 'H1':
-                    return `# ${childText}\n\n`;
+                    return `# ${children.map(child => processNode(child, parentListType)).join('')}\n\n`;
 
                 case 'H2':
-                    return `## ${childText}\n\n`;
+                    return `## ${children.map(child => processNode(child, parentListType)).join('')}\n\n`;
 
                 case 'H3':
-                    return `### ${childText}\n\n`;
+                    return `### ${children.map(child => processNode(child, parentListType)).join('')}\n\n`;
 
                 default:
-                    return childText;
+                    return children.map(child => processNode(child, parentListType)).join('');
             }
         };
 
-        const markdown = processNode(temp);
+        const markdown = processNode(doc.body);
 
         // Clean up extra whitespace
         return markdown

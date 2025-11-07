@@ -146,7 +146,20 @@ func (mp *MarkdownProcessor) ProcessWithMarkdown(text string, convertFunc func(s
 			if strings.Contains(linkText, fmt.placeholder) {
 				// Reuse already converted text from map
 				convertedText := convertedFormatting[fmt.placeholder]
-				linkText = strings.ReplaceAll(linkText, fmt.placeholder, fmt.prefix+convertedText+fmt.suffix)
+
+				// Use same logic as step 4 to handle bold vs italic consistently
+				var restored string
+				if fmt.prefix == "**" || fmt.prefix == "__" {
+					restored = fmt.prefix + convertedText + fmt.suffix
+				} else {
+					// Italic - extract just the marker from prefix/suffix
+					marker := "*"
+					if strings.Contains(fmt.prefix, "_") {
+						marker = "_"
+					}
+					restored = marker + convertedText + marker
+				}
+				linkText = strings.ReplaceAll(linkText, fmt.placeholder, restored)
 			}
 		}
 
