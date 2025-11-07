@@ -230,11 +230,9 @@ function App() {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
 
-        // Track list context for ordered list numbering
-        const listContext = { type: null, counter: 0 };
-
         // Helper to recursively process nodes and build markdown
-        const processNode = (node, parentListType = null) => {
+        // listCounter is scoped to each OL element to handle nested lists correctly
+        const processNode = (node, parentListType = null, listCounter = { value: 0 }) => {
             if (node.nodeType === 3) { // Text node
                 return node.textContent;
             }
@@ -259,23 +257,23 @@ function App() {
             switch (tag) {
                 case 'A':
                     const href = node.getAttribute('href');
-                    return href ? `[${children.map(child => processNode(child, parentListType)).join('')}](${href})` : children.map(child => processNode(child, parentListType)).join('');
+                    return href ? `[${children.map(child => processNode(child, parentListType, listCounter)).join('')}](${href})` : children.map(child => processNode(child, parentListType, listCounter)).join('');
 
                 case 'STRONG':
                 case 'B':
                     // Skip if style explicitly sets normal weight (Google Docs wrapper)
-                    if (isNormalWeight) return children.map(child => processNode(child, parentListType)).join('');
-                    return `**${children.map(child => processNode(child, parentListType)).join('')}**`;
+                    if (isNormalWeight) return children.map(child => processNode(child, parentListType, listCounter)).join('');
+                    return `**${children.map(child => processNode(child, parentListType, listCounter)).join('')}**`;
 
                 case 'EM':
                 case 'I':
-                    return `*${children.map(child => processNode(child, parentListType)).join('')}*`;
+                    return `*${children.map(child => processNode(child, parentListType, listCounter)).join('')}*`;
 
                 case 'LI':
-                    const liContent = children.map(child => processNode(child, parentListType)).join('');
+                    const liContent = children.map(child => processNode(child, parentListType, listCounter)).join('');
                     if (parentListType === 'OL') {
-                        listContext.counter++;
-                        return `${listContext.counter}. ${liContent}\n`;
+                        listCounter.value++;
+                        return `${listCounter.value}. ${liContent}\n`;
                     }
                     return `- ${liContent}\n`;
 
@@ -283,37 +281,37 @@ function App() {
                     return '\n';
 
                 case 'P':
-                    return children.map(child => processNode(child, parentListType)).join('') + '\n\n';
+                    return children.map(child => processNode(child, parentListType, listCounter)).join('') + '\n\n';
 
                 case 'SPAN':
                     // Check if span has bold or italic styles
-                    result = children.map(child => processNode(child, parentListType)).join('');
+                    result = children.map(child => processNode(child, parentListType, listCounter)).join('');
                     if (isBoldStyle) result = `**${result}**`;
                     if (isItalicStyle) result = `*${result}*`;
                     return result;
 
                 case 'DIV':
-                    return children.map(child => processNode(child, parentListType)).join('');
+                    return children.map(child => processNode(child, parentListType, listCounter)).join('');
 
                 case 'UL':
-                    listContext.counter = 0;
-                    return children.map(child => processNode(child, 'UL')).join('') + '\n';
+                    return children.map(child => processNode(child, 'UL', { value: 0 })).join('') + '\n';
 
                 case 'OL':
-                    listContext.counter = 0;
-                    return children.map(child => processNode(child, 'OL')).join('') + '\n';
+                    // Create new counter for this OL to handle nested lists correctly
+                    const olCounter = { value: 0 };
+                    return children.map(child => processNode(child, 'OL', olCounter)).join('') + '\n';
 
                 case 'H1':
-                    return `# ${children.map(child => processNode(child, parentListType)).join('')}\n\n`;
+                    return `# ${children.map(child => processNode(child, parentListType, listCounter)).join('')}\n\n`;
 
                 case 'H2':
-                    return `## ${children.map(child => processNode(child, parentListType)).join('')}\n\n`;
+                    return `## ${children.map(child => processNode(child, parentListType, listCounter)).join('')}\n\n`;
 
                 case 'H3':
-                    return `### ${children.map(child => processNode(child, parentListType)).join('')}\n\n`;
+                    return `### ${children.map(child => processNode(child, parentListType, listCounter)).join('')}\n\n`;
 
                 default:
-                    return children.map(child => processNode(child, parentListType)).join('');
+                    return children.map(child => processNode(child, parentListType, listCounter)).join('');
             }
         };
 

@@ -7,11 +7,23 @@ import (
 )
 
 // MarkdownProcessor handles preservation of markdown formatting during conversion
-type MarkdownProcessor struct{}
+type MarkdownProcessor struct {
+	boldAsteriskPattern     *regexp.Regexp
+	boldUnderscorePattern   *regexp.Regexp
+	italicAsteriskPattern   *regexp.Regexp
+	italicUnderscorePattern *regexp.Regexp
+	linkPattern             *regexp.Regexp
+}
 
 // NewMarkdownProcessor creates a new markdown processor
 func NewMarkdownProcessor() *MarkdownProcessor {
-	return &MarkdownProcessor{}
+	return &MarkdownProcessor{
+		boldAsteriskPattern:     regexp.MustCompile(`\*\*([^*]+)\*\*`),
+		boldUnderscorePattern:   regexp.MustCompile(`__([^_]+)__`),
+		italicAsteriskPattern:   regexp.MustCompile(`(\s|^)\*([^\s*][^*]*?)\*(\s|$|[,.!?;:])`),
+		italicUnderscorePattern: regexp.MustCompile(`(\s|^)_([^\s_][^_]*?)_(\s|$|[,.!?;:])`),
+		linkPattern:             regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`),
+	}
 }
 
 // ProcessWithMarkdown converts text while preserving markdown formatting
@@ -41,9 +53,8 @@ func (mp *MarkdownProcessor) ProcessWithMarkdown(text string, convertFunc func(s
 	fmtIdx := 0
 
 	// Handle ** bold
-	boldAsteriskPattern := regexp.MustCompile(`\*\*([^*]+)\*\*`)
-	result = boldAsteriskPattern.ReplaceAllStringFunc(result, func(match string) string {
-		parts := boldAsteriskPattern.FindStringSubmatch(match)
+	result = mp.boldAsteriskPattern.ReplaceAllStringFunc(result, func(match string) string {
+		parts := mp.boldAsteriskPattern.FindStringSubmatch(match)
 		if len(parts) != 2 {
 			return match
 		}
@@ -54,9 +65,8 @@ func (mp *MarkdownProcessor) ProcessWithMarkdown(text string, convertFunc func(s
 	})
 
 	// Handle __ bold
-	boldUnderscorePattern := regexp.MustCompile(`__([^_]+)__`)
-	result = boldUnderscorePattern.ReplaceAllStringFunc(result, func(match string) string {
-		parts := boldUnderscorePattern.FindStringSubmatch(match)
+	result = mp.boldUnderscorePattern.ReplaceAllStringFunc(result, func(match string) string {
+		parts := mp.boldUnderscorePattern.FindStringSubmatch(match)
 		if len(parts) != 2 {
 			return match
 		}
@@ -67,9 +77,8 @@ func (mp *MarkdownProcessor) ProcessWithMarkdown(text string, convertFunc func(s
 	})
 
 	// Handle * italic
-	italicAsteriskPattern := regexp.MustCompile(`(\s|^)\*([^\s*][^*]*?)\*(\s|$|[,.!?;:])`)
-	result = italicAsteriskPattern.ReplaceAllStringFunc(result, func(match string) string {
-		parts := italicAsteriskPattern.FindStringSubmatch(match)
+	result = mp.italicAsteriskPattern.ReplaceAllStringFunc(result, func(match string) string {
+		parts := mp.italicAsteriskPattern.FindStringSubmatch(match)
 		if len(parts) != 4 {
 			return match
 		}
@@ -80,9 +89,8 @@ func (mp *MarkdownProcessor) ProcessWithMarkdown(text string, convertFunc func(s
 	})
 
 	// Handle _ italic
-	italicUnderscorePattern := regexp.MustCompile(`(\s|^)_([^\s_][^_]*?)_(\s|$|[,.!?;:])`)
-	result = italicUnderscorePattern.ReplaceAllStringFunc(result, func(match string) string {
-		parts := italicUnderscorePattern.FindStringSubmatch(match)
+	result = mp.italicUnderscorePattern.ReplaceAllStringFunc(result, func(match string) string {
+		parts := mp.italicUnderscorePattern.FindStringSubmatch(match)
 		if len(parts) != 4 {
 			return match
 		}
@@ -99,10 +107,9 @@ func (mp *MarkdownProcessor) ProcessWithMarkdown(text string, convertFunc func(s
 		url         string
 	}
 	var links []linkInfo
-	linkPattern := regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`)
 	linkIdx := 0
-	result = linkPattern.ReplaceAllStringFunc(result, func(match string) string {
-		parts := linkPattern.FindStringSubmatch(match)
+	result = mp.linkPattern.ReplaceAllStringFunc(result, func(match string) string {
+		parts := mp.linkPattern.FindStringSubmatch(match)
 		if len(parts) != 3 {
 			return match
 		}
