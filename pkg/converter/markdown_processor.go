@@ -1,6 +1,7 @@
 package converter
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -46,7 +47,7 @@ func (mp *MarkdownProcessor) ProcessWithMarkdown(text string, convertFunc func(s
 		if len(parts) != 2 {
 			return match
 		}
-		placeholder := "XMDBLDX" + string(rune(fmtIdx+48)) + "XMDBLDX"
+		placeholder := fmt.Sprintf("XMDBLDX%dXMDBLDX", fmtIdx)
 		formatting = append(formatting, formattingInfo{placeholder, parts[1], "**", "**"})
 		fmtIdx++
 		return placeholder
@@ -59,7 +60,7 @@ func (mp *MarkdownProcessor) ProcessWithMarkdown(text string, convertFunc func(s
 		if len(parts) != 2 {
 			return match
 		}
-		placeholder := "XMDBLDX" + string(rune(fmtIdx+48)) + "XMDBLDX"
+		placeholder := fmt.Sprintf("XMDBLDX%dXMDBLDX", fmtIdx)
 		formatting = append(formatting, formattingInfo{placeholder, parts[1], "__", "__"})
 		fmtIdx++
 		return placeholder
@@ -72,7 +73,7 @@ func (mp *MarkdownProcessor) ProcessWithMarkdown(text string, convertFunc func(s
 		if len(parts) != 4 {
 			return match
 		}
-		placeholder := "XMDITLX" + string(rune(fmtIdx+48)) + "XMDITLX"
+		placeholder := fmt.Sprintf("XMDITLX%dXMDITLX", fmtIdx)
 		formatting = append(formatting, formattingInfo{placeholder, parts[2], parts[1] + "*", "*" + parts[3]})
 		fmtIdx++
 		return parts[1] + placeholder + parts[3]
@@ -85,7 +86,7 @@ func (mp *MarkdownProcessor) ProcessWithMarkdown(text string, convertFunc func(s
 		if len(parts) != 4 {
 			return match
 		}
-		placeholder := "XMDITLX" + string(rune(fmtIdx+48)) + "XMDITLX"
+		placeholder := fmt.Sprintf("XMDITLX%dXMDITLX", fmtIdx)
 		formatting = append(formatting, formattingInfo{placeholder, parts[2], parts[1] + "_", "_" + parts[3]})
 		fmtIdx++
 		return parts[1] + placeholder + parts[3]
@@ -105,7 +106,7 @@ func (mp *MarkdownProcessor) ProcessWithMarkdown(text string, convertFunc func(s
 		if len(parts) != 3 {
 			return match
 		}
-		placeholder := "XMDLINKX" + string(rune(linkIdx+48)) + "XMDLINKX"
+		placeholder := fmt.Sprintf("XMDLINKX%dXMDLINKX", linkIdx)
 		links = append(links, linkInfo{placeholder, parts[1], parts[2]})
 		linkIdx++
 		return placeholder
@@ -115,8 +116,12 @@ func (mp *MarkdownProcessor) ProcessWithMarkdown(text string, convertFunc func(s
 	result = convertFunc(result)
 
 	// Step 4: Restore formatting with converted text
+	// Store converted text to avoid redundant conversions
+	convertedFormatting := make(map[string]string)
 	for _, fmt := range formatting {
 		convertedText := convertFunc(fmt.text)
+		convertedFormatting[fmt.placeholder] = convertedText
+
 		// For bold, use full prefix+text+suffix
 		// For italic, just use the marker without the whitespace (already in place)
 		var restored string
@@ -139,7 +144,8 @@ func (mp *MarkdownProcessor) ProcessWithMarkdown(text string, convertFunc func(s
 		linkText := link.linkText
 		for _, fmt := range formatting {
 			if strings.Contains(linkText, fmt.placeholder) {
-				convertedText := convertFunc(fmt.text)
+				// Reuse already converted text from map
+				convertedText := convertedFormatting[fmt.placeholder]
 				linkText = strings.ReplaceAll(linkText, fmt.placeholder, fmt.prefix+convertedText+fmt.suffix)
 			}
 		}

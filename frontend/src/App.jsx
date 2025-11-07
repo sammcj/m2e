@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
-import { ConvertToBritish, ConvertToBritishWithUnits, HandleDroppedFile, SaveConvertedFile, GetCurrentFilePath, ClearCurrentFile, GetUnitProcessingStatus, SetUnitProcessingEnabled, ReadClipboardHTML } from "../wailsjs/go/main/App";
+import { ConvertToBritishWithUnits, SaveConvertedFile, GetCurrentFilePath, ClearCurrentFile, GetUnitProcessingStatus, SetUnitProcessingEnabled, ReadClipboardHTML } from "../wailsjs/go/main/App";
 import HighlightedTextarea from './components/HighlightedTextarea';
 
 function App() {

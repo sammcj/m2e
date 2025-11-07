@@ -309,13 +309,17 @@ func (a *App) ReadClipboardHTML() (string, error) {
 	case "darwin":
 		// macOS: use AppleScript to get HTML from clipboard
 		// The «class HTML» is the pasteboard type for HTML content
+		// The substr($_,11,-3) removes the AppleScript hex output prefix/suffix (11 chars at start, 3 at end)
 		script := `osascript -e 'the clipboard as «class HTML»' | perl -ne 'print chr foreach unpack("C*",pack("H*",substr($_,11,-3)))'`
 		cmd = exec.Command("bash", "-c", script)
 		fallbackCmd = exec.Command("pbpaste")
 
 	case "linux":
 		// Linux: use xclip to get HTML from clipboard
-		// Note: requires xclip to be installed (apt install xclip)
+		// Check if xclip is available
+		if _, err := exec.LookPath("xclip"); err != nil {
+			return "", fmt.Errorf("xclip is required to read clipboard HTML on Linux but was not found in your PATH. Please install it using: sudo apt install xclip")
+		}
 		cmd = exec.Command("xclip", "-selection", "clipboard", "-t", "text/html", "-o")
 		fallbackCmd = exec.Command("xclip", "-selection", "clipboard", "-o")
 
