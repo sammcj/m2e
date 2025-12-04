@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -67,7 +67,7 @@ jobs:
             suffix: darwin-arm64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -117,7 +117,7 @@ jobs:
     if: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && !contains(github.event.head_commit.message, '[skip-ci]') && !contains(github.event.pull_request.title, '[skip-ci]') }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -141,7 +141,7 @@ jobs:
           echo "PATH=/opt/homebrew/opt/gnu-tar/libexec/gnubin:$PATH" >> $GITHUB_ENV
 
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -228,7 +228,7 @@ jobs:
           git push origin "v${{ steps.version.outputs.version }}"
 
       - name: Download all CLI tool artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
           pattern: m2e-cli-tools-*
           path: cli-artifacts
