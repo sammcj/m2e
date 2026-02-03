@@ -32,7 +32,7 @@ jobs:
           check-latest: true
 
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
         with:
           path: |
             ~/.cache/go-build
@@ -76,7 +76,7 @@ jobs:
           check-latest: true
 
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
         with:
           path: |
             ~/.cache/go-build
@@ -105,7 +105,7 @@ jobs:
 
       - name: Upload CLI tools as artifact
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: m2e-cli-tools-${{ matrix.suffix }}
           path: build/bin/m2e-cli-tools-${{ matrix.suffix }}.*
@@ -126,7 +126,7 @@ jobs:
           check-latest: true
 
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
         with:
           path: |
             ~/.cache/go-build
@@ -228,7 +228,7 @@ jobs:
           git push origin "v${{ steps.version.outputs.version }}"
 
       - name: Download all CLI tool artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           pattern: m2e-cli-tools-*
           path: cli-artifacts
@@ -244,7 +244,7 @@ jobs:
           cd ../..
 
       - name: Upload app as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: m2e-macos-arm64
           path: |
