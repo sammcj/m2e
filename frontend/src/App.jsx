@@ -17,10 +17,32 @@ function App() {
     const [isTranslating, setIsTranslating] = useState(false); // Flag to prevent infinite loops
     const translationTimerRef = useRef(null); // For JS, this is fine; for TS, use: useRef<number | null>(null)
     const [showEagle, setShowEagle] = useState(false); // State to control eagle animation
+    const [toast, setToast] = useState(null);
+    const toastTimerRef = useRef(null);
 
     const appContainerRef = useRef(null);
     // Create a ref for the eagle element
     const eagleRef = useRef(null);
+
+    const showToast = useCallback((message, type = 'info') => {
+        if (toastTimerRef.current) {
+            clearTimeout(toastTimerRef.current);
+        }
+        setToast({ message, type });
+        toastTimerRef.current = setTimeout(() => {
+            setToast(null);
+            toastTimerRef.current = null;
+        }, 3000);
+    }, []);
+
+    // Cleanup toast timer on unmount
+    useEffect(() => {
+        return () => {
+            if (toastTimerRef.current) {
+                clearTimeout(toastTimerRef.current);
+            }
+        };
+    }, []);
 
     // Check if a file was opened with the app and load dictionaries
     useEffect(() => {
@@ -152,7 +174,7 @@ function App() {
         if (currentFilePath && britishText) {
             SaveConvertedFile(britishText).then(() => {
                 setCurrentFilePath('');
-                alert('File saved successfully!');
+                showToast('File saved successfully!');
             }).catch(err => {
                 setFileError(`Error saving file: ${err.message}`);
             });
@@ -181,19 +203,35 @@ function App() {
         });
     };
 
+    // Refs for eagle animation timers (cleaned up on unmount)
+    const eagleShowTimerRef = useRef(null);
+    const eagleHideTimerRef = useRef(null);
+
+    // Cleanup eagle timers on unmount
+    useEffect(() => {
+        return () => {
+            if (eagleShowTimerRef.current) clearTimeout(eagleShowTimerRef.current);
+            if (eagleHideTimerRef.current) clearTimeout(eagleHideTimerRef.current);
+        };
+    }, []);
+
     // Function to trigger the eagle animation
     const triggerEagleAnimation = useCallback(() => {
+        // Clear any existing timers
+        if (eagleShowTimerRef.current) clearTimeout(eagleShowTimerRef.current);
+        if (eagleHideTimerRef.current) clearTimeout(eagleHideTimerRef.current);
+
         // Hide any existing eagle first
         setShowEagle(false);
 
         // Then show a new eagle after a brief delay
-        setTimeout(() => {
+        eagleShowTimerRef.current = setTimeout(() => {
             setShowEagle(true);
 
             // Hide the eagle after animation completes
-            setTimeout(() => {
+            eagleHideTimerRef.current = setTimeout(() => {
                 setShowEagle(false);
-            }, 1500); // Animation duration
+            }, 1500);
         }, 10);
     }, []);
 
@@ -213,11 +251,10 @@ function App() {
     const copyToClipboard = (text) => {
         navigator.clipboard.writeText(text)
             .then(() => {
-                alert('Text copied to clipboard!');
+                showToast('Text copied to clipboard!');
             })
-            .catch(err => {
-                // Handle error copying text to clipboard
-                alert('Failed to copy text to clipboard');
+            .catch(() => {
+                showToast('Failed to copy text to clipboard', 'error');
             });
     };
 
@@ -458,6 +495,13 @@ function App() {
                     <div className="drag-message">
                         Drop text file here to convert
                     </div>
+                </div>
+            )}
+
+            {/* Toast notification */}
+            {toast && (
+                <div className={`toast-notification toast-${toast.type}`}>
+                    {toast.message}
                 </div>
             )}
 

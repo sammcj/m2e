@@ -7,13 +7,62 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
+	"sync"
 
 	"github.com/sammcj/m2e/pkg/converter"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
+
+// sensitivePathPrefixes lists path prefixes that should be rejected for file conversion.
+var sensitivePathPrefixes = []string{
+	"/etc/",
+	"/var/",
+	"/usr/",
+	"/sys/",
+	"/proc/",
+	"/dev/",
+}
+
+// sensitiveFilenames lists filenames that should never be overwritten.
+var sensitiveFilenames = []string{
+	".bashrc", ".bash_profile", ".zshrc", ".zprofile", ".profile",
+	".ssh", ".gnupg", ".env", ".netrc", ".npmrc",
+	"authorized_keys", "known_hosts", "id_rsa", "id_ed25519",
+	"shadow", "passwd", "sudoers",
+}
+
+// validateFilePath checks that a file path is safe to read/write.
+func validateFilePath(filePath string) error {
+	cleaned := filepath.Clean(filePath)
+	absPath, err := filepath.Abs(cleaned)
+	if err != nil {
+		return fmt.Errorf("invalid file path: %w", err)
+	}
+
+	// Reject paths containing .. after cleaning
+	if strings.Contains(absPath, "..") {
+		return fmt.Errorf("path traversal not allowed: %s", filePath)
+	}
+
+	// Reject sensitive system paths
+	for _, prefix := range sensitivePathPrefixes {
+		if strings.HasPrefix(absPath, prefix) {
+			return fmt.Errorf("access to system path not allowed: %s", absPath)
+		}
+	}
+
+	// Reject sensitive filenames
+	base := filepath.Base(absPath)
+	if slices.Contains(sensitiveFilenames, base) {
+		return fmt.Errorf("access to sensitive file not allowed: %s", base)
+	}
+
+	return nil
+}
 
 // isPlainTextFile checks if a file extension indicates it's a plain text file
 // that can be safely converted entirely (not just comments)
@@ -23,13 +72,7 @@ func isPlainTextFile(filePath string) bool {
 		".txt", ".md", ".markdown", ".rst", ".text", ".doc", ".rtf",
 		".tex", ".latex", ".org", ".adoc", ".asciidoc",
 	}
-
-	for _, plainExt := range plainTextExtensions {
-		if ext == plainExt {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(plainTextExtensions, ext)
 }
 
 // convertFileContentWithOptions converts file content based on file type with custom options
@@ -100,6 +143,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create converter: %v", err)
 	}
+	var convMu sync.Mutex // protects mutable converter state during concurrent requests
 
 	convertTool := mcp.NewTool("convert_text",
 		mcp.WithDescription("Convert American English text to British English with optional unit conversion"),
@@ -124,10 +168,12 @@ func main() {
 			normaliseSmartQuotes = strings.ToLower(val) != "false"
 		}
 
-		// Set unit processing based on parameter
+		// Lock around mutable state mutation + conversion for concurrent safety
+		convMu.Lock()
 		conv.SetUnitProcessingEnabled(convertUnits)
-
 		convertedText := conv.ConvertToBritish(text, normaliseSmartQuotes)
+		convMu.Unlock()
+
 		return mcp.NewToolResultText(convertedText), nil
 	})
 
@@ -143,6 +189,12 @@ func main() {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
 
+		// Validate the file path for security
+		if err := validateFilePath(filePath); err != nil {
+			log.Printf("Rejected file path %q: %v", filePath, err)
+			return mcp.NewToolResultError(fmt.Sprintf("File path rejected: %v", err)), nil
+		}
+
 		// Get optional parameters with defaults
 		convertUnits := false
 		if val, err := req.RequireString("convert_units"); err == nil {
@@ -154,10 +206,15 @@ func main() {
 			normaliseSmartQuotes = strings.ToLower(val) != "false"
 		}
 
-		// Check if file exists
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		// Check if file exists and get its permissions
+		fileInfo, err := os.Stat(filePath)
+		if os.IsNotExist(err) {
 			return mcp.NewToolResultError(fmt.Sprintf("File does not exist: %s", filePath)), nil
 		}
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Error accessing file %s: %v", filePath, err)), nil
+		}
+		originalMode := fileInfo.Mode()
 
 		// Read the original file content
 		originalContent, err := os.ReadFile(filePath)
@@ -165,19 +222,19 @@ func main() {
 			return mcp.NewToolResultError(fmt.Sprintf("Error reading file %s: %v", filePath, err)), nil
 		}
 
-		// Set unit processing based on parameter
+		// Lock around mutable state mutation + conversion for concurrent safety
+		convMu.Lock()
 		conv.SetUnitProcessingEnabled(convertUnits)
-
-		// Convert the content based on file type
 		convertedContent := convertFileContentWithOptions(conv, string(originalContent), filePath, normaliseSmartQuotes)
+		convMu.Unlock()
 
 		// Check if there were any changes
 		if string(originalContent) == convertedContent {
 			return mcp.NewToolResultText(fmt.Sprintf("File %s processed but no changes were needed - already in British English", filePath)), nil
 		}
 
-		// Write the converted content back to the file
-		err = os.WriteFile(filePath, []byte(convertedContent), 0644)
+		// Write the converted content back to the file, preserving original permissions
+		err = os.WriteFile(filePath, []byte(convertedContent), originalMode.Perm())
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("Error writing to file %s: %v", filePath, err)), nil
 		}
@@ -188,15 +245,16 @@ func main() {
 	dictionaryResource := mcp.NewResource("dictionary://american-to-british", "American to British Dictionary")
 	s.AddResource(dictionaryResource, func(ctx context.Context, req mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
 		dict := conv.GetAmericanToBritishDictionary()
-		var dictString string
+		var b strings.Builder
+		b.Grow(len(dict) * 30)
 		for k, v := range dict {
-			dictString += fmt.Sprintf("%s: %s\n", k, v)
+			fmt.Fprintf(&b, "%s: %s\n", k, v)
 		}
 		return []mcp.ResourceContents{
 			mcp.TextResourceContents{
 				URI:      "dictionary://american-to-british",
 				MIMEType: "text/plain",
-				Text:     dictString,
+				Text:     b.String(),
 			},
 		}, nil
 	})

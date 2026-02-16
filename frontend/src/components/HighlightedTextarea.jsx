@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import './HighlightedTextarea.css';
 import './SyntaxHighlighting.css';
 import { GetSyntaxHighlightedHTML, DetectLanguage } from '../../wailsjs/go/main/App';
@@ -91,66 +91,41 @@ function HighlightedTextarea({
         setHighlightedText(escapeHtml(value));
     };
 
+    // Memoise compiled regex patterns keyed on dictionary content
+    const compiledWordPatterns = useMemo(() => {
+        if (!highlightAmericanWords || !dictionary || Object.keys(dictionary).length === 0) {
+            return [];
+        }
+
+        const isMuricanSide = Object.keys(dictionary).includes("color");
+        const wordsToHighlight = isMuricanSide
+            ? Object.keys(dictionary)
+            : Object.values(dictionary).filter(Boolean);
+
+        return wordsToHighlight.map(word => {
+            const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return [
+                new RegExp(`\\b${escapedWord}\\b`, 'gi'),
+                new RegExp(`["']${escapedWord}["']`, 'gi'),
+                new RegExp(`["']${escapedWord}\\b`, 'gi'),
+                new RegExp(`\\b${escapedWord}["']`, 'gi'),
+                new RegExp(`\\b${escapedWord}[,.;:!?)]`, 'gi'),
+                new RegExp(`[([{]${escapedWord}\\b`, 'gi'),
+            ];
+        });
+    }, [dictionary, highlightAmericanWords]);
+
     // Handle word and quote highlighting (original logic)
     const handleWordHighlighting = () => {
         // Collect all items to highlight
         const highlightItems = [];
 
-        // Add words to highlight based on the dictionary
-        if (highlightAmericanWords && dictionary && Object.keys(dictionary).length > 0) {
-            // Get all words to highlight (either American or British depending on the dictionary)
-            const wordsToHighlight = [];
-
-            // Check if this is the left ('Murican) or right (British) side
-            // We can determine this by checking if the dictionary has "color" as a key
-            const isMuricanSide = Object.keys(dictionary).includes("color");
-
-            if (isMuricanSide) {
-                // This is the 'Murican side (americanToBritishDict)
-                // Highlight American words (keys)
-                // Add all keys from the dictionary (American words)
-                Object.keys(dictionary).forEach(americanWord => {
-                    wordsToHighlight.push(americanWord);
-                });
-            } else {
-                // This is the British side (britishToAmericanDict)
-                // Highlight American words (values)
-                // Add all values from the dictionary (American words)
-                Object.values(dictionary).forEach(americanWord => {
-                    if (americanWord) {
-                        wordsToHighlight.push(americanWord);
-                    }
-                });
-            }
-
-            // Use a more comprehensive approach to find words
-            for (const word of wordsToHighlight) {
-                // Escape special regex characters in the word
-                const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-                // Create several regex patterns to match different cases
-                const patterns = [
-                    // Match the word as-is with word boundaries
-                    new RegExp(`\\b${escapedWord}\\b`, 'gi'),
-
-                    // Match the word with quotes around it
-                    new RegExp(`["']${escapedWord}["']`, 'gi'),
-
-                    // Match the word with a quote at the beginning
-                    new RegExp(`["']${escapedWord}\\b`, 'gi'),
-
-                    // Match the word with a quote at the end
-                    new RegExp(`\\b${escapedWord}["']`, 'gi'),
-
-                    // Match the word with punctuation at the end
-                    new RegExp(`\\b${escapedWord}[,.;:!?)]`, 'gi'),
-
-                    // Match the word with punctuation at the beginning
-                    new RegExp(`[([{]${escapedWord}\\b`, 'gi')
-                ];
-
-                // Try each pattern
+        // Add words to highlight using pre-compiled patterns
+        if (compiledWordPatterns.length > 0) {
+            for (const patterns of compiledWordPatterns) {
                 for (const pattern of patterns) {
+                    // Reset lastIndex for global regexes
+                    pattern.lastIndex = 0;
                     let match;
                     while ((match = pattern.exec(value)) !== null) {
                         const matchedText = match[0];

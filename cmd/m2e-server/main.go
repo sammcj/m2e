@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/sammcj/m2e/pkg/converter"
@@ -37,12 +38,37 @@ func main() {
 		port = "8080"
 	}
 
-	http.HandleFunc("/api/v1/health", healthHandler)
-	http.HandleFunc("/api/v1/convert", convertHandler)
+	conv, err := converter.NewConverter()
+	if err != nil {
+		log.Fatalf("Failed to create converter: %v", err)
+	}
+
+	corsOrigin := os.Getenv("CORS_ORIGIN")
+	if corsOrigin == "" {
+		corsOrigin = "*"
+	}
+
+	http.HandleFunc("/api/v1/health", withCORS(healthHandler, corsOrigin))
+	http.HandleFunc("/api/v1/convert", withCORS(makeConvertHandler(conv), corsOrigin))
 
 	log.Printf("Server starting on port %s\n", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
+	}
+}
+
+// withCORS wraps a handler with CORS headers.
+func withCORS(next http.HandlerFunc, origin string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next(w, r)
 	}
 }
 
@@ -118,50 +144,59 @@ func generateChanges(originalText, convertedText string, conv *converter.Convert
 	return changes
 }
 
-func convertHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-		return
-	}
+func makeConvertHandler(conv *converter.Converter) http.HandlerFunc {
+	var mu sync.Mutex
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+			return
+		}
 
-	var req ConvertRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Error decoding request body", http.StatusBadRequest)
-		return
-	}
+		// Validate Content-Type
+		ct := r.Header.Get("Content-Type")
+		if ct != "" && !strings.HasPrefix(ct, "application/json") {
+			http.Error(w, "Content-Type must be application/json", http.StatusUnsupportedMediaType)
+			return
+		}
 
-	conv, err := converter.NewConverter()
-	if err != nil {
-		http.Error(w, "Error initializing converter", http.StatusInternalServerError)
-		return
-	}
+		// Limit request body to 10 MB to prevent abuse
+		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+		defer func() { _ = r.Body.Close() }()
 
-	// Get optional parameters with defaults
-	convertUnits := false
-	if req.ConvertUnits != nil {
-		convertUnits = *req.ConvertUnits
-	}
+		var req ConvertRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Error decoding request body", http.StatusBadRequest)
+			return
+		}
 
-	normaliseSmartQuotes := true
-	if req.NormaliseSmartQuotes != nil {
-		normaliseSmartQuotes = *req.NormaliseSmartQuotes
-	}
+		// Get optional parameters with defaults
+		convertUnits := false
+		if req.ConvertUnits != nil {
+			convertUnits = *req.ConvertUnits
+		}
 
-	// Set unit processing based on parameter
-	conv.SetUnitProcessingEnabled(convertUnits)
+		normaliseSmartQuotes := true
+		if req.NormaliseSmartQuotes != nil {
+			normaliseSmartQuotes = *req.NormaliseSmartQuotes
+		}
 
-	originalText := req.Text
-	convertedText := conv.ConvertToBritish(req.Text, normaliseSmartQuotes)
+		// Mutex protects shared converter state from concurrent requests
+		mu.Lock()
+		conv.SetUnitProcessingEnabled(convertUnits)
+		originalText := req.Text
+		convertedText := conv.ConvertToBritish(req.Text, normaliseSmartQuotes)
+		mu.Unlock()
 
-	// Generate change information
-	changes := generateChanges(originalText, convertedText, conv)
+		// Generate change information
+		changes := generateChanges(originalText, convertedText, conv)
 
-	resp := ConvertResponse{
-		Text:    convertedText,
-		Changes: changes,
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		resp := ConvertResponse{
+			Text:    convertedText,
+			Changes: changes,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		}
 	}
 }

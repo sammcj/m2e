@@ -25,3 +25,6 @@ build/**/m2e
 # serena https://github.com/oraios/serena
 .serena/cache
 cpu.prof
+
+m2e-mcp
+m2e-server

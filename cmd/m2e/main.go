@@ -482,39 +482,32 @@ func createUnifiedDiff(original, converted, filename string, inline bool) string
 // createLineBasedUnifiedDiff creates a simple line-based diff showing only lines with actual changes
 func createLineBasedUnifiedDiff(original, converted, filename string) string {
 	originalLines := strings.Split(original, "\n")
+	convertedLines := strings.Split(converted, "\n")
 
 	var result strings.Builder
-	result.WriteString(fmt.Sprintf("--- %s\n", filename+".orig"))
-	result.WriteString(fmt.Sprintf("+++ %s\n", filename))
+	fmt.Fprintf(&result, "--- %s\n", filename+".orig")
+	fmt.Fprintf(&result, "+++ %s\n", filename)
 
 	hasAnyChanges := false
 
-	// Process each line through the converter individually to see what changed
-	// This gives us the cleanest diff showing exactly what words changed on each line
-	for i := 0; i < len(originalLines); i++ {
-		origLine := originalLines[i]
+	// Compare original and converted lines directly
+	lineCount := max(len(originalLines), len(convertedLines))
 
-		// Skip empty lines
-		if strings.TrimSpace(origLine) == "" {
-			continue
+	for i := 0; i < lineCount; i++ {
+		var origLine, convLine string
+		if i < len(originalLines) {
+			origLine = originalLines[i]
+		}
+		if i < len(convertedLines) {
+			convLine = convertedLines[i]
 		}
 
-		// Process this single line through a fresh converter to see what it becomes
-		tempConv, err := converter.NewConverter()
-		if err != nil {
-			continue // Skip this line if converter fails
-		}
-
-		convertedLine := tempConv.ConvertToBritish(origLine, true) // normalise smart quotes = true
-
-		if origLine != convertedLine {
-			if !hasAnyChanges {
-				hasAnyChanges = true
-			}
+		if origLine != convLine {
+			hasAnyChanges = true
 			lineNum := i + 1
-			result.WriteString(fmt.Sprintf("@@ -%d,1 +%d,1 @@\n", lineNum, lineNum))
-			result.WriteString(fmt.Sprintf("-%s\n", origLine))
-			result.WriteString(fmt.Sprintf("+%s\n", convertedLine))
+			fmt.Fprintf(&result, "@@ -%d,1 +%d,1 @@\n", lineNum, lineNum)
+			fmt.Fprintf(&result, "-%s\n", origLine)
+			fmt.Fprintf(&result, "+%s\n", convLine)
 		}
 	}
 

@@ -7,6 +7,25 @@ import (
 	"github.com/alecthomas/chroma/v2/lexers"
 )
 
+// Pre-compiled regex patterns for code block detection and comment extraction.
+var (
+	backtickFenceRegex = regexp.MustCompile(`(?ms)^` + "`{3}" + `([a-zA-Z0-9+-]*)\n?(.*?)\n?` + "`{3}" + `\s*$`)
+	tildeFenceRegex    = regexp.MustCompile(`(?ms)^~~~([a-zA-Z0-9+-]*)\n?(.*?)\n?~~~\s*$`)
+	inlineCodeRegex    = regexp.MustCompile("`([^`\n]+)`")
+	splitFenceRegex    = regexp.MustCompile(`(?s)` + "`{3}" + `([a-zA-Z0-9+-]*)\n?(.*?)\n?` + "`{3}" + `|(?s)~~~([a-zA-Z0-9+-]*)\n?(.*?)\n?~~~`)
+
+	lineCommentPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`//.*?(?:\n|$)`),
+		regexp.MustCompile(`#.*?(?:\n|$)`),
+	}
+	blockCommentPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?s)/\*.*?\*/`),
+		regexp.MustCompile(`(?s)""".*?"""`),
+		regexp.MustCompile(`(?s)'''.*?'''`),
+		regexp.MustCompile(`<!--.*?-->`),
+	}
+)
+
 // CodeBlock represents a detected code block in text
 type CodeBlock struct {
 	Start    int    // Start position in original text
@@ -48,13 +67,8 @@ func (c *Converter) DetectCodeBlocks(text string) []CodeBlock {
 func (c *Converter) detectMarkdownCodeBlocks(text string) []CodeBlock {
 	var blocks []CodeBlock
 
-	// Regex for fenced code blocks with optional language specification
-	// We'll handle backtick and tilde fences separately since Go doesn't support backreferences
-	backtickRegex := regexp.MustCompile(`(?ms)^` + "`{3}" + `([a-zA-Z0-9+-]*)\n?(.*?)\n?` + "`{3}" + `\s*$`)
-	tildeRegex := regexp.MustCompile(`(?ms)^~~~([a-zA-Z0-9+-]*)\n?(.*?)\n?~~~\s*$`)
-
 	// Process backtick fenced blocks
-	matches := backtickRegex.FindAllStringSubmatchIndex(text, -1)
+	matches := backtickFenceRegex.FindAllStringSubmatchIndex(text, -1)
 	for _, match := range matches {
 		start := match[0]
 		end := match[1]
@@ -83,7 +97,7 @@ func (c *Converter) detectMarkdownCodeBlocks(text string) []CodeBlock {
 	}
 
 	// Process tilde fenced blocks
-	matches = tildeRegex.FindAllStringSubmatchIndex(text, -1)
+	matches = tildeFenceRegex.FindAllStringSubmatchIndex(text, -1)
 	for _, match := range matches {
 		start := match[0]
 		end := match[1]
@@ -118,10 +132,7 @@ func (c *Converter) detectMarkdownCodeBlocks(text string) []CodeBlock {
 func (c *Converter) detectInlineCode(text string) []CodeBlock {
 	var blocks []CodeBlock
 
-	// Regex for inline code (single backticks)
-	inlineRegex := regexp.MustCompile("`([^`\n]+)`")
-
-	matches := inlineRegex.FindAllStringSubmatchIndex(text, -1)
+	matches := inlineCodeRegex.FindAllStringSubmatchIndex(text, -1)
 	for _, match := range matches {
 		start := match[0]
 		end := match[1]
@@ -242,20 +253,6 @@ func (c *Converter) extractCommentsManually(code string) []CommentBlock {
 // extractCommentsManuallyWithConversion provides comment detection with optional unit conversion
 func (c *Converter) extractCommentsManuallyWithConversion(code string, convertUnits bool, normaliseSmartQuotes bool) []CommentBlock {
 	var comments []CommentBlock
-
-	// Line comment patterns that should include newlines
-	lineCommentPatterns := []*regexp.Regexp{
-		regexp.MustCompile(`//.*?(?:\n|$)`), // Line comments: // comment with newline
-		regexp.MustCompile(`#.*?(?:\n|$)`),  // Hash comments: # comment with newline
-	}
-
-	// Block comment patterns (already include their boundaries)
-	blockCommentPatterns := []*regexp.Regexp{
-		regexp.MustCompile(`(?s)/\*.*?\*/`), // Block comments: /* comment */
-		regexp.MustCompile(`(?s)""".*?"""`), // Python docstrings: """comment"""
-		regexp.MustCompile(`(?s)'''.*?'''`), // Python docstrings: '''comment'''
-		regexp.MustCompile(`<!--.*?-->`),    // HTML comments: <!-- comment -->
-	}
 
 	// Find line comments (include newline if present)
 	for _, pattern := range lineCommentPatterns {
@@ -392,11 +389,8 @@ func (c *Converter) processInlineCode(text string, normaliseSmartQuotes bool) st
 		return text
 	}
 
-	// Use regex to find and preserve inline code while converting surrounding text
-	inlineRegex := regexp.MustCompile("`([^`\n]+)`")
-
 	// Check if there are any inline code matches
-	if !inlineRegex.MatchString(text) {
+	if !inlineCodeRegex.MatchString(text) {
 		// No inline code, process as regular text
 		converted := c.ConvertToBritishSimple(text, normaliseSmartQuotes)
 		if c.unitProcessor != nil && c.unitProcessor.IsEnabled() {
@@ -406,8 +400,8 @@ func (c *Converter) processInlineCode(text string, normaliseSmartQuotes bool) st
 	}
 
 	// Split the text by inline code blocks and process the non-code parts
-	parts := inlineRegex.Split(text, -1)
-	matches := inlineRegex.FindAllString(text, -1)
+	parts := inlineCodeRegex.Split(text, -1)
+	matches := inlineCodeRegex.FindAllString(text, -1)
 
 	var result strings.Builder
 	for i, part := range parts {
@@ -443,11 +437,8 @@ type TextPart struct {
 func (c *Converter) splitByFencedBlocks(text string) []TextPart {
 	var parts []TextPart
 
-	// Simple regex to match fenced blocks
-	fenceRegex := regexp.MustCompile(`(?s)` + "`{3}" + `([a-zA-Z0-9+-]*)\n?(.*?)\n?` + "`{3}" + `|(?s)~~~([a-zA-Z0-9+-]*)\n?(.*?)\n?~~~`)
-
 	lastEnd := 0
-	matches := fenceRegex.FindAllStringSubmatchIndex(text, -1)
+	matches := splitFenceRegex.FindAllStringSubmatchIndex(text, -1)
 
 	for _, match := range matches {
 		start := match[0]
