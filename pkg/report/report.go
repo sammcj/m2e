@@ -171,11 +171,11 @@ func (r *Reporter) GenerateMultiFileReport(results []FileResult) (string, error)
 
 	// Generate summary first
 	output.WriteString("# Multi-File Conversion Report\n\n")
-	output.WriteString(fmt.Sprintf("📁 **Files processed:** %d\n", totalFiles))
-	output.WriteString(fmt.Sprintf("📝 **Files with changes:** %d\n", changedFiles))
+	fmt.Fprintf(&output, "📁 **Files processed:** %d\n", totalFiles)
+	fmt.Fprintf(&output, "📝 **Files with changes:** %d\n", changedFiles)
 
 	if len(errorFiles) > 0 {
-		output.WriteString(fmt.Sprintf("⚠️  **Files with errors:** %d\n", len(errorFiles)))
+		fmt.Fprintf(&output, "⚠️  **Files with errors:** %d\n", len(errorFiles))
 	}
 
 	if !r.hasChange {
@@ -190,7 +190,7 @@ func (r *Reporter) GenerateMultiFileReport(results []FileResult) (string, error)
 	if len(errorFiles) > 0 {
 		output.WriteString("## ⚠️ Errors\n\n")
 		for _, filePath := range errorFiles {
-			output.WriteString(fmt.Sprintf("- `%s`\n", filePath))
+			fmt.Fprintf(&output, "- `%s`\n", filePath)
 		}
 		output.WriteString("\n")
 	}
@@ -221,7 +221,7 @@ func (r *Reporter) GenerateMultiFileReport(results []FileResult) (string, error)
 func (r *Reporter) generateSingleFileReport(result FileResult) (string, error) {
 	var output strings.Builder
 
-	output.WriteString(fmt.Sprintf("### 📄 %s\n\n", result.FilePath))
+	fmt.Fprintf(&output, "### 📄 %s\n\n", result.FilePath)
 
 	if r.options.ShowDiff {
 		diff, err := r.generateDiff(result.Original, result.Converted)
@@ -262,18 +262,18 @@ func (r *Reporter) generateAggregateStats(stats ChangeStats) string {
 	var output strings.Builder
 
 	output.WriteString("## 📊 Aggregate Statistics\n\n")
-	output.WriteString(fmt.Sprintf("📊 **Total words processed:** %d\n", stats.TotalWords))
+	fmt.Fprintf(&output, "📊 **Total words processed:** %d\n", stats.TotalWords)
 
 	if stats.SpellingChanges > 0 {
-		output.WriteString(fmt.Sprintf("🔤 **Total spelling changes:** %d\n", stats.SpellingChanges))
+		fmt.Fprintf(&output, "🔤 **Total spelling changes:** %d\n", stats.SpellingChanges)
 	}
 
 	if stats.UnitConversions > 0 {
-		output.WriteString(fmt.Sprintf("📏 **Total unit conversions:** %d\n", stats.UnitConversions))
+		fmt.Fprintf(&output, "📏 **Total unit conversions:** %d\n", stats.UnitConversions)
 	}
 
 	if stats.QuoteChanges > 0 {
-		output.WriteString(fmt.Sprintf("❝ **Total quote normalizations:** %d\n", stats.QuoteChanges))
+		fmt.Fprintf(&output, "❝ **Total quote normalizations:** %d\n", stats.QuoteChanges)
 	}
 
 	return output.String()
@@ -284,18 +284,18 @@ func (r *Reporter) generateFileStats(stats ChangeStats) string {
 	var output strings.Builder
 
 	output.WriteString("**File statistics:**\n\n")
-	output.WriteString(fmt.Sprintf("- Words processed: %d\n", stats.TotalWords))
+	fmt.Fprintf(&output, "- Words processed: %d\n", stats.TotalWords)
 
 	if stats.SpellingChanges > 0 {
-		output.WriteString(fmt.Sprintf("- Spelling changes: %d\n", stats.SpellingChanges))
+		fmt.Fprintf(&output, "- Spelling changes: %d\n", stats.SpellingChanges)
 	}
 
 	if stats.UnitConversions > 0 {
-		output.WriteString(fmt.Sprintf("- Unit conversions: %d\n", stats.UnitConversions))
+		fmt.Fprintf(&output, "- Unit conversions: %d\n", stats.UnitConversions)
 	}
 
 	if stats.QuoteChanges > 0 {
-		output.WriteString(fmt.Sprintf("- Quote normalizations: %d\n", stats.QuoteChanges))
+		fmt.Fprintf(&output, "- Quote normalizations: %d\n", stats.QuoteChanges)
 	}
 
 	// Show some example changes
@@ -305,10 +305,10 @@ func (r *Reporter) generateFileStats(stats ChangeStats) string {
 		for i, change := range stats.ChangedWords {
 			if i >= maxShow {
 				remaining := len(stats.ChangedWords) - maxShow
-				output.WriteString(fmt.Sprintf("- ... and %d more\n", remaining))
+				fmt.Fprintf(&output, "- ... and %d more\n", remaining)
 				break
 			}
-			output.WriteString(fmt.Sprintf("- `%s` → `%s`\n", change.Original, change.Changed))
+			fmt.Fprintf(&output, "- `%s` → `%s`\n", change.Original, change.Changed)
 		}
 	}
 
@@ -318,11 +318,11 @@ func (r *Reporter) generateFileStats(stats ChangeStats) string {
 		for i, change := range stats.ChangedUnits {
 			if i >= maxShow {
 				remaining := len(stats.ChangedUnits) - maxShow
-				output.WriteString(fmt.Sprintf("- ... and %d more\n", remaining))
+				fmt.Fprintf(&output, "- ... and %d more\n", remaining)
 				break
 			}
-			output.WriteString(fmt.Sprintf("- `%s` → `%s` (%s)\n",
-				change.Original, change.Changed, change.UnitType))
+			fmt.Fprintf(&output, "- `%s` → `%s` (%s)\n",
+				change.Original, change.Changed, change.UnitType)
 		}
 	}
 
@@ -426,33 +426,33 @@ func (r *Reporter) generateStatsOutput(stats ChangeStats) string {
 		return output.String()
 	}
 
-	output.WriteString(fmt.Sprintf("📊 **Total words processed:** %d\n", stats.TotalWords))
+	fmt.Fprintf(&output, "📊 **Total words processed:** %d\n", stats.TotalWords)
 
 	if stats.SpellingChanges > 0 {
-		output.WriteString(fmt.Sprintf("🔤 **Spelling changes needed:** %d\n", stats.SpellingChanges))
+		fmt.Fprintf(&output, "🔤 **Spelling changes needed:** %d\n", stats.SpellingChanges)
 	}
 
 	if stats.UnitConversions > 0 {
-		output.WriteString(fmt.Sprintf("📏 **Unit conversions needed:** %d\n", stats.UnitConversions))
+		fmt.Fprintf(&output, "📏 **Unit conversions needed:** %d\n", stats.UnitConversions)
 	}
 
 	if stats.QuoteChanges > 0 {
-		output.WriteString(fmt.Sprintf("❝ **Quote normalizations needed:** %d\n", stats.QuoteChanges))
+		fmt.Fprintf(&output, "❝ **Quote normalizations needed:** %d\n", stats.QuoteChanges)
 	}
 
 	// Show detailed changes if there are any
 	if len(stats.ChangedWords) > 0 {
 		output.WriteString("\n### Spelling Changes\n")
 		for _, change := range stats.ChangedWords {
-			output.WriteString(fmt.Sprintf("- `%s` → `%s`\n", change.Original, change.Changed))
+			fmt.Fprintf(&output, "- `%s` → `%s`\n", change.Original, change.Changed)
 		}
 	}
 
 	if len(stats.ChangedUnits) > 0 {
 		output.WriteString("\n### Unit Conversions\n")
 		for _, change := range stats.ChangedUnits {
-			output.WriteString(fmt.Sprintf("- `%s` → `%s` (%s)\n",
-				change.Original, change.Changed, change.UnitType))
+			fmt.Fprintf(&output, "- `%s` → `%s` (%s)\n",
+				change.Original, change.Changed, change.UnitType)
 		}
 	}
 

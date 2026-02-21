@@ -268,19 +268,38 @@ func (cip *CommentIgnoreProcessor) ApplySelectiveIgnore(text string, ignoreMatch
 	}
 
 	lines := strings.Split(text, "\n")
-	var processedLines []string
+	processedLines := make([]string, len(lines))
+
+	// Pre-build a set of ignored line numbers for O(1) lookup instead of
+	// iterating all ignore matches per line.
+	ignoredLines := cip.buildIgnoredLineSet(ignoreMatches)
 
 	for i, line := range lines {
-		if cip.ShouldIgnoreLine(i, ignoreMatches) {
-			// Keep the original line without conversion
-			processedLines = append(processedLines, line)
+		if ignoredLines[i] {
+			processedLines[i] = line
 		} else {
-			// Apply conversion to this line
-			processedLines = append(processedLines, convertFunc(line))
+			processedLines[i] = convertFunc(line)
 		}
 	}
 
 	return strings.Join(processedLines, "\n")
+}
+
+// buildIgnoredLineSet pre-computes which line numbers should be ignored.
+func (cip *CommentIgnoreProcessor) buildIgnoredLineSet(ignoreMatches []IgnoreMatch) map[int]bool {
+	if len(ignoreMatches) == 0 {
+		return nil
+	}
+	ignored := make(map[int]bool)
+	for _, match := range ignoreMatches {
+		switch match.Directive {
+		case IgnoreLine:
+			ignored[match.LineNumber] = true
+		case IgnoreNext:
+			ignored[match.LineNumber+1] = true
+		}
+	}
+	return ignored
 }
 
 // ExtractIgnoreStats returns statistics about ignore directives found

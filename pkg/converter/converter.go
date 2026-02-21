@@ -4,16 +4,32 @@ package converter
 import (
 	"embed"
 	"maps"
-	"regexp"
+	"runtime"
 	"strings"
-	"unicode"
+	"sync"
 )
 
 //go:embed data/*.json
 var dictFS embed.FS
 
-// Regex to detect URLs and skip them during conversion
-var urlRegex = regexp.MustCompile(`(?i)(https?://|www\.)\S+`)
+// isURL checks if a token looks like a URL using fast string prefix checks
+// instead of running a regex on every token.
+func isURL(s string) bool {
+	n := len(s)
+	if n < 4 {
+		return false
+	}
+	// Case-insensitive prefix check via OR-with-0x20 to lowercase ASCII letters.
+	c0 := s[0] | 0x20
+	if c0 == 'h' && n > 7 {
+		pre := strings.ToLower(s[:8])
+		return strings.HasPrefix(pre, "http://") || strings.HasPrefix(pre, "https://")
+	}
+	if c0 == 'w' && n > 4 {
+		return strings.EqualFold(s[:4], "www.")
+	}
+	return false
+}
 
 // Dictionaries holds the mapping for American to British English spellings
 type Dictionaries struct {
@@ -210,25 +226,38 @@ func lookupWithCase(word string, dict map[string]string) (string, bool) {
 	return replacement, true
 }
 
-// tokeniseLine splits a line into tokens preserving whitespace boundaries.
-func tokeniseLine(line string) (tokens []string, wsFlags []bool) {
-	var b strings.Builder
-	currentIsWS := false
+// isASCIISpace checks if a byte is ASCII whitespace (space, tab, CR, LF, VT, FF).
+func isASCIISpace(c byte) bool {
+	return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v' || c == '\f'
+}
 
-	for _, char := range line {
-		charIsWS := unicode.IsSpace(char)
-		if b.Len() > 0 && currentIsWS != charIsWS {
-			tokens = append(tokens, b.String())
+// tokeniseLine splits a line into tokens preserving whitespace boundaries.
+// Optimised for ASCII-dominant text by operating on bytes directly.
+func tokeniseLine(line string) (tokens []string, wsFlags []bool) {
+	if len(line) == 0 {
+		return nil, nil
+	}
+
+	// Pre-allocate: estimate ~1 token per 5 chars as a rough heuristic
+	estTokens := len(line)/5 + 1
+	tokens = make([]string, 0, estTokens)
+	wsFlags = make([]bool, 0, estTokens)
+
+	start := 0
+	currentIsWS := isASCIISpace(line[0])
+
+	for i := 1; i < len(line); i++ {
+		charIsWS := isASCIISpace(line[i])
+		if currentIsWS != charIsWS {
+			tokens = append(tokens, line[start:i])
 			wsFlags = append(wsFlags, currentIsWS)
-			b.Reset()
+			start = i
+			currentIsWS = charIsWS
 		}
-		b.WriteRune(char)
-		currentIsWS = charIsWS
 	}
-	if b.Len() > 0 {
-		tokens = append(tokens, b.String())
-		wsFlags = append(wsFlags, currentIsWS)
-	}
+	// Append the final token
+	tokens = append(tokens, line[start:])
+	wsFlags = append(wsFlags, currentIsWS)
 	return tokens, wsFlags
 }
 
@@ -406,11 +435,33 @@ func convertHyphenatedWord(word string, dict map[string]string) (string, bool) {
 	return "", false
 }
 
+// hasSpecialChars checks whether a word contains quotes, hyphens, or trailing punctuation
+// that would require the more expensive conversion strategies.
+func hasSpecialChars(word string) bool {
+	for i := 0; i < len(word); i++ {
+		c := word[i]
+		if c == '\'' || c == '"' || c == '-' {
+			return true
+		}
+		// Check for trailing punctuation (non-letter, non-digit at the end)
+		if i == len(word)-1 && !isLetter(c) && !isDigit(c) {
+			return true
+		}
+	}
+	return false
+}
+
 // convertToken applies all conversion strategies to a single token.
 func convertToken(word string, dict map[string]string) string {
-	// Direct dictionary match
+	// Direct dictionary match (most common hit path)
 	if repl, ok := lookupWithCase(word, dict); ok {
 		return repl
+	}
+
+	// Fast path: if the word has no special characters (quotes, hyphens, trailing
+	// punctuation), none of the fallback strategies can possibly match, so skip them.
+	if !hasSpecialChars(word) {
+		return word
 	}
 
 	// Quoted word variations
@@ -436,30 +487,66 @@ func convertToken(word string, dict map[string]string) string {
 	return word
 }
 
-// convert performs the actual conversion using the provided dictionary
+// parallelLineThreshold is the minimum number of lines before we use parallel processing.
+const parallelLineThreshold = 500
+
+// convertLine processes a single line through tokenisation and dictionary lookup.
+func convertLine(line string, dict map[string]string) string {
+	if line == "" {
+		return ""
+	}
+
+	tokens, wsFlags := tokeniseLine(line)
+
+	for i := range tokens {
+		if wsFlags[i] {
+			continue
+		}
+		if isURL(tokens[i]) {
+			continue
+		}
+		tokens[i] = convertToken(tokens[i], dict)
+	}
+
+	return strings.Join(tokens, "")
+}
+
+// convert performs the actual conversion using the provided dictionary.
+// For large texts, lines are processed in parallel across available CPU cores.
 func (c *Converter) convert(text string, dict map[string]string) string {
 	lines := strings.Split(text, "\n")
 	resultLines := make([]string, len(lines))
 
-	for lineIdx, line := range lines {
-		if line == "" {
-			resultLines[lineIdx] = ""
-			continue
+	if len(lines) < parallelLineThreshold {
+		// Sequential path for small/medium texts
+		for lineIdx, line := range lines {
+			resultLines[lineIdx] = convertLine(line, dict)
 		}
+	} else {
+		// Parallel path for large texts
+		numWorkers := runtime.GOMAXPROCS(0)
+		var wg sync.WaitGroup
+		chunkSize := (len(lines) + numWorkers - 1) / numWorkers
 
-		tokens, wsFlags := tokeniseLine(line)
+		for w := range numWorkers {
+			start := w * chunkSize
+			if start >= len(lines) {
+				break
+			}
+			end := start + chunkSize
+			if end > len(lines) {
+				end = len(lines)
+			}
 
-		for i := range tokens {
-			if wsFlags[i] {
-				continue
-			}
-			if urlRegex.MatchString(tokens[i]) {
-				continue
-			}
-			tokens[i] = convertToken(tokens[i], dict)
+			wg.Add(1)
+			go func(start, end int) {
+				defer wg.Done()
+				for i := start; i < end; i++ {
+					resultLines[i] = convertLine(lines[i], dict)
+				}
+			}(start, end)
 		}
-
-		resultLines[lineIdx] = strings.Join(tokens, "")
+		wg.Wait()
 	}
 
 	return strings.Join(resultLines, "\n")

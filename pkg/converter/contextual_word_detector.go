@@ -39,6 +39,7 @@ func NewContextAwareWordDetector() *ContextAwareWordDetector {
 		minConfidence: config.MinConfidence,
 		enabled:       config.Enabled,
 	}
+	detector.buildQuickCheckWords()
 
 	return detector
 }
@@ -66,8 +67,24 @@ func NewContextAwareWordDetectorWithConfig(config *ContextualWordConfig) *Contex
 		minConfidence: config.MinConfidence,
 		enabled:       config.Enabled,
 	}
+	detector.buildQuickCheckWords()
 
 	return detector
+}
+
+// buildQuickCheckWords pre-computes the list of lowercase base words for fast pre-screening.
+func (d *ContextAwareWordDetector) buildQuickCheckWords() {
+	seen := make(map[string]bool)
+	for baseWord, wordConfig := range d.config.WordConfigs {
+		if !wordConfig.Enabled {
+			continue
+		}
+		lower := strings.ToLower(baseWord)
+		if !seen[lower] {
+			d.quickCheckWords = append(d.quickCheckWords, lower)
+			seen[lower] = true
+		}
+	}
 }
 
 // DetectWords finds contextual words in the given text and returns matches with confidence scores
@@ -76,11 +93,35 @@ func (d *ContextAwareWordDetector) DetectWords(text string) []ContextualWordMatc
 		return nil
 	}
 
+	// Fast pre-check: skip all regex work if text contains none of the base words.
+	// This eliminates the vast majority of lines from expensive regex processing.
+	textLower := strings.ToLower(text)
+	hasAny := false
+	for _, w := range d.quickCheckWords {
+		if strings.Contains(textLower, w) {
+			hasAny = true
+			break
+		}
+	}
+	if !hasAny {
+		return nil
+	}
+
+	// Check full-text exclusion once instead of per-pattern.
+	if d.patterns.IsExcluded(text) {
+		return nil
+	}
+
 	var matches []ContextualWordMatch
 
-	// Process each configured word
+	// Process only words that are actually present in the text
 	for baseWord, wordConfig := range d.config.WordConfigs {
 		if !wordConfig.Enabled {
+			continue
+		}
+
+		// Skip words not present in the text (avoids running patterns for absent words)
+		if !strings.Contains(textLower, strings.ToLower(baseWord)) {
 			continue
 		}
 
@@ -100,14 +141,10 @@ func (d *ContextAwareWordDetector) DetectWords(text string) []ContextualWordMatc
 	return matches
 }
 
-// findPatternMatches finds all matches for a specific pattern in the text
+// findPatternMatches finds all matches for a specific pattern in the text.
+// The caller should check full-text exclusion via IsExcluded before calling this.
 func (d *ContextAwareWordDetector) findPatternMatches(text string, pattern ContextualWordPattern) []ContextualWordMatch {
 	var matches []ContextualWordMatch
-
-	// Check if text should be excluded
-	if d.patterns.IsExcluded(text) {
-		return matches
-	}
 
 	// Find all matches for this pattern
 	allMatches := pattern.Pattern.FindAllStringSubmatchIndex(text, -1)
@@ -391,6 +428,9 @@ func (d *ContextAwareWordDetector) UpdateConfiguration(config *ContextualWordCon
 			}
 		}
 	}
+
+	// Rebuild the quick check word list
+	d.buildQuickCheckWords()
 }
 
 // GetConfig returns the current configuration (backward compatibility)

@@ -364,8 +364,8 @@ func createLineBasedUnifiedDiff(original, converted, filename string) string {
 	originalLines := strings.Split(original, "\n")
 
 	var result strings.Builder
-	result.WriteString(fmt.Sprintf("--- %s\n", filename+".orig"))
-	result.WriteString(fmt.Sprintf("+++ %s\n", filename))
+	fmt.Fprintf(&result, "--- %s\n", filename+".orig")
+	fmt.Fprintf(&result, "+++ %s\n", filename)
 
 	hasAnyChanges := false
 
@@ -392,9 +392,9 @@ func createLineBasedUnifiedDiff(original, converted, filename string) string {
 				hasAnyChanges = true
 			}
 			lineNum := i + 1
-			result.WriteString(fmt.Sprintf("@@ -%d,1 +%d,1 @@\n", lineNum, lineNum))
-			result.WriteString(fmt.Sprintf("-%s\n", origLine))
-			result.WriteString(fmt.Sprintf("+%s\n", convertedLine))
+			fmt.Fprintf(&result, "@@ -%d,1 +%d,1 @@\n", lineNum, lineNum)
+			fmt.Fprintf(&result, "-%s\n", origLine)
+			fmt.Fprintf(&result, "+%s\n", convertedLine)
 		}
 	}
 

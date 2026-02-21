@@ -75,8 +75,9 @@ type ContextAwareWordDetector struct {
 	config   *ContextualWordConfig
 
 	// Configuration for contextual detection
-	minConfidence float64 // Minimum confidence threshold for matches
-	enabled       bool    // Whether contextual detection is enabled
+	minConfidence   float64  // Minimum confidence threshold for matches
+	enabled         bool     // Whether contextual detection is enabled
+	quickCheckWords []string // Pre-computed lowercase base words for fast pre-screening
 }
 
 // ContextualWordConfig holds all configuration options for contextual word conversion
