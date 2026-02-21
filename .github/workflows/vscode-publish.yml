@@ -45,7 +45,7 @@ jobs:
           go-version-file: 'go.mod'
 
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -71,7 +71,7 @@ jobs:
         run: make build-mcp
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: go-binaries
           path: build/bin/
