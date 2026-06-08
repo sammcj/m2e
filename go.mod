@@ -1,6 +1,6 @@
 module github.com/sammcj/m2e
 
-go 1.26.0
+go 1.26.4
 
 require (
 	github.com/alecthomas/chroma/v2 v2.23.1
