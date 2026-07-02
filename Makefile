@@ -15,6 +15,7 @@ help:
 	@echo "  build-server    - Build the server application only"
 	@echo "  build-mcp       - Build the MCP server application only"
 	@echo "  clean           - Clean build artifacts"
+	@echo "  install         - Install M2E.app to /Applications (clears quarantine) and m2e CLI to GOPATH/bin"
 	@echo "  all             - Run lint, test, and build (default)"
 	@echo ""
 	@echo "VSCode Extension targets:"
@@ -125,6 +126,25 @@ security:
 		go install golang.org/x/vuln/cmd/govulncheck@latest; \
 		govulncheck ./...; \
 	fi
+
+# Install the app to /Applications (clearing quarantine attributes) and the
+# CLI to GOPATH/bin. Requires artifacts from a prior 'make build'.
+.PHONY: install
+install:
+	@if [ "$(shell uname -s)" != "Darwin" ]; then \
+		echo "ERROR: make install is only supported on macOS."; exit 1; \
+	fi
+	@if [ ! -d "build/bin/M2E.app" ] || [ ! -f "build/bin/m2e" ]; then \
+		echo "ERROR: build artifacts missing - run 'make build' first"; exit 1; \
+	fi
+	@echo "Installing M2E.app to /Applications..."
+	rm -rf /Applications/M2E.app
+	cp -R build/bin/M2E.app /Applications/
+	xattr -c /Applications/M2E.app
+	@echo "Installing m2e CLI to $$(go env GOPATH)/bin/m2e..."
+	@mkdir -p "$$(go env GOPATH)/bin"
+	install -m 0755 build/bin/m2e "$$(go env GOPATH)/bin/m2e"
+	@echo "Installed: /Applications/M2E.app and $$(go env GOPATH)/bin/m2e"
 
 # Install-app command that copies the built build/bin/M2E.app to /Applications (overrides existing app)
 .PHONY: install-app

@@ -16,6 +16,7 @@
 
 ### Added
 
+- `make install`: installs M2E.app to /Applications (clearing quarantine attributes with `xattr -c`) and the m2e CLI to GOPATH/bin
 - Around 730 new dictionary mappings imported from [tmgldn/en-mappings](https://github.com/tmgldn/en-mappings), kindly offered by its author in [issue #29](https://github.com/sammcj/m2e/issues/29). The import tooling and curated exclusion blocklist live in `scripts/import-en-mappings`
 - Dictionary hygiene test (`tests/dictionary_hygiene_test.go`) enforcing invariants: lowercase single-token keys, no self-mappings, and no conversion target that is also a conversion source (prevents double-conversion chains and converting valid British English)
 - Regression tests covering dictionary fixes, imported entries, blocklisted exclusions, British-text stability, and conversion idempotency
