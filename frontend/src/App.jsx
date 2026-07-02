@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
-import { ConvertToBritishWithUnits, SaveConvertedFile, GetCurrentFilePath, ClearCurrentFile, GetUnitProcessingStatus, SetUnitProcessingEnabled, ReadClipboardHTML } from "../wailsjs/go/main/App";
+import { ConvertToBritishWithUnits, SaveConvertedFile, GetCurrentFilePath, ClearCurrentFile, GetUnitProcessingStatus, SetUnitProcessingEnabled, ReadClipboardHTML, GetAmericanToBritishDictionary } from "../wailsjs/go/main/App";
 import HighlightedTextarea from './components/HighlightedTextarea';
 
 function App() {
@@ -60,18 +60,11 @@ function App() {
             console.error('Error getting unit processing status:', err);
         });
 
-        // Get the dictionary directly from the backend
-        // We've added methods to the backend to expose the dictionary
-        import("../wailsjs/go/main/App").then(({ GetAmericanToBritishDictionary }) => {
-            // Get the American to British dictionary
-            GetAmericanToBritishDictionary().then(dict => {
-                // American to British dictionary loaded successfully
-                setAmericanToBritishDict(dict);
-            }).catch(err => {
-                // Handle error loading American to British dictionary
-            });
+        // Get the American to British dictionary directly from the backend
+        GetAmericanToBritishDictionary().then(dict => {
+            setAmericanToBritishDict(dict);
         }).catch(err => {
-            // Handle error importing App methods
+            // Handle error loading American to British dictionary
         });
 
         const smartQuotesMap = {

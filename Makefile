@@ -51,9 +51,14 @@ test: build-cli vscode-build
 	@echo "Running VSCode extension tests..."
 	cd vscode-extension && npm test
 
-# Build all applications
+# Build all applications.
+# build-wails must complete first: `wails build` wipes build/bin/, which would
+# delete the CLI binary that `test` already produced via build-cli (Make runs a
+# shared prerequisite only once per invocation). Rebuilding the Go binaries in a
+# sub-make forces them to run after the wipe regardless of that de-duplication.
 .PHONY: build
-build: build-wails build-cli build-server build-mcp vscode-build
+build: build-wails vscode-build
+	$(MAKE) build-cli build-server build-mcp
 	ls -tarl build/bin/
 	@echo "All applications built successfully!"
 
@@ -168,3 +173,25 @@ vscode-clean:
 	@echo "Cleaning VSCode extension build artifacts..."
 	cd vscode-extension && rm -rf out dist node_modules *.vsix
 	cd vscode-extension && rm -rf resources/bin
+
+# Freeze CHANGELOG [Unreleased] using the version currently in VERSION.
+# No-op if [Unreleased] is empty. Refuses to stamp a version that is already
+# tagged - bump first with: make version V=X.Y.Z
+.PHONY: stamp-version
+stamp-version:
+	@V=$$(cat VERSION | tr -d '[:space:]'); \
+	if git tag -l "v$$V" | grep -q .; then \
+		echo "ERROR: v$$V is already tagged - bump VERSION first (make version V=X.Y.Z)"; exit 1; \
+	fi; \
+	python3 scripts/version.py stamp --version "$$V" --changelog-only
+
+# Bump version: writes VERSION, freezes CHANGELOG. Usage: make version V=0.2.0
+.PHONY: version
+version:
+	@if [ -z "$(V)" ]; then \
+		echo "ERROR: pass V=X.Y.Z, e.g. make version V=0.2.0"; exit 1; \
+	fi
+	@if ! echo "$(V)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$$'; then \
+		echo "ERROR: '$(V)' is not a valid semver string"; exit 1; \
+	fi
+	@python3 scripts/version.py stamp --version "$(V)"
