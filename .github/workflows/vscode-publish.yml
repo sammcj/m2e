@@ -37,7 +37,7 @@ jobs:
     if: ${{ !contains(github.event.head_commit.message, '[skip-ci]') && !contains(github.event.pull_request.title, '[skip-ci]') }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -71,7 +71,7 @@ jobs:
         run: make build-mcp
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: go-binaries
           path: build/bin/
@@ -86,7 +86,7 @@ jobs:
     if: ${{ !contains(github.event.head_commit.message, '[skip-ci]') && !contains(github.event.pull_request.title, '[skip-ci]') }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -142,7 +142,7 @@ jobs:
       commit-sha: ${{ steps.version-bump.outputs.commit-sha }}
     steps:
       - name: Checkout code with full history
-        uses: actions/checkout@v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -243,7 +243,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout code with updated version
-        uses: actions/checkout@v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: ${{ needs.version-bump.outputs.commit-sha || github.ref_name }}
 
