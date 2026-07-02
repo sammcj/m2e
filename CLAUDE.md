@@ -119,3 +119,4 @@ Requires Go 1.24+ (specified in go.mod with toolchain go1.24.1)
 
 - Always run `make lint && make test` before stating you have completed the task.
 - When building the app always use 'make build' which will also run the tests for you.
+- After completing changes, update CHANGELOG.md under the `[Unreleased]` section with concise bullets grouped under Added/Changed/Fixed/Removed. Combine items refined within the same session. Never write version numbers or dates; at release time `make version V=X.Y.Z` bumps VERSION and freezes the changelog (`make stamp-version` freezes using the existing VERSION). Keep the `## Known Bugs` section pinned above `[Unreleased]`.

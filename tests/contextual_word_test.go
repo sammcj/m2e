@@ -126,9 +126,11 @@ func TestContextualWordConversion(t *testing.T) {
 			expected: "The company licences its technology widely",
 		},
 		{
-			name:     "Licensing (present participle)",
+			// license is the verb in British English, so the participle keeps
+			// the s (cf. the UK Licensing Act); licencing is a misspelling
+			name:     "Licensing (present participle, stays unchanged)",
 			input:    "They are licensing their patents to competitors",
-			expected: "They are licencing their patents to competitors",
+			expected: "They are licensing their patents to competitors",
 		},
 
 		// MIXED CONTEXTS
