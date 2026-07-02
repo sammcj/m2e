@@ -23,16 +23,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version-file: 'go.mod'
           check-latest: true
 
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
         with:
           path: |
             ~/.cache/go-build
@@ -67,16 +67,16 @@ jobs:
             suffix: darwin-arm64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version-file: 'go.mod'
           check-latest: true
 
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
         with:
           path: |
             ~/.cache/go-build
@@ -105,7 +105,7 @@ jobs:
 
       - name: Upload CLI tools as artifact
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: m2e-cli-tools-${{ matrix.suffix }}
           path: build/bin/m2e-cli-tools-${{ matrix.suffix }}.*
@@ -117,16 +117,16 @@ jobs:
     if: ${{ (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && !contains(github.event.head_commit.message, '[skip-ci]') && !contains(github.event.pull_request.title, '[skip-ci]') }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version-file: 'go.mod'
           check-latest: true
 
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
         with:
           path: |
             ~/.cache/go-build
@@ -141,7 +141,7 @@ jobs:
           echo "PATH=/opt/homebrew/opt/gnu-tar/libexec/gnubin:$PATH" >> $GITHUB_ENV
 
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -228,7 +228,7 @@ jobs:
           git push origin "v${{ steps.version.outputs.version }}"
 
       - name: Download all CLI tool artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: m2e-cli-tools-*
           path: cli-artifacts
@@ -244,7 +244,7 @@ jobs:
           cd ../..
 
       - name: Upload app as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: m2e-macos-arm64
           path: |
@@ -254,7 +254,7 @@ jobs:
 
       - name: Create GitHub Release
         id: create_release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Release v${{ steps.version.outputs.version }}
