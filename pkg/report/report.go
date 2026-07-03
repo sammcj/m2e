@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/glamour"
+	"charm.land/glamour/v2"
 )
 
 // OutputFormat represents the different output formats available
@@ -85,9 +85,11 @@ type Reporter struct {
 
 // NewReporter creates a new Reporter with the given options
 func NewReporter(options ReportOptions) (*Reporter, error) {
-	// Create glamour renderer with auto-style detection and word wrapping
+	// Create glamour renderer with word wrapping. glamour v2 removed
+	// WithAutoStyle; WithEnvironmentConfig honours GLAMOUR_STYLE (defaulting to
+	// the dark theme) so users can select dark/light themselves.
 	renderer, err := glamour.NewTermRenderer(
-		glamour.WithAutoStyle(),
+		glamour.WithEnvironmentConfig(),
 		glamour.WithWordWrap(options.Width),
 	)
 	if err != nil {
