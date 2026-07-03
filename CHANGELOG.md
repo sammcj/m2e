@@ -13,6 +13,7 @@
 - Pinned all GitHub Actions to full commit SHAs and bumped to their latest major versions (checkout v7, setup-go v6, setup-node v6, cache v6, upload-artifact v7, download-artifact v8, action-gh-release v3)
 - Updated Go dependencies to latest stable: Wails v2.12.0 (now matching the CLI), chroma v2.27.0, glamour v1.0.0, mcp-go v0.55.1
 - Updated frontend and VSCode extension npm dependencies to latest stable; VSCode extension `npm audit` vulnerabilities reduced from 9 to 0 (serialize-javascript and diff resolved via overrides pending upstream mocha)
+- Updated vscode-extension dependencies (@types/vscode, vscode engine, typescript-eslint, serialize-javascript)
 - Removed an ineffective dynamic import in `frontend/src/App.jsx` (module was already statically imported)
 
 ### Added
