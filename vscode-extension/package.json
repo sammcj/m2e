@@ -15,7 +15,7 @@
   },
   "homepage": "https://github.com/sammcj/m2e#readme",
   "engines": {
-    "vscode": "^1.127.0"
+    "vscode": "^1.130.0"
   },
   "categories": [
     "Formatters",
@@ -302,13 +302,13 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/mocha": "^10.0.10",
-    "@types/node": "26.0.1",
+    "@types/node": "26.1.1",
     "@types/vscode": "^1.125.0",
-    "@typescript-eslint/eslint-plugin": "8.62.1",
-    "@typescript-eslint/parser": "8.62.1",
+    "@typescript-eslint/eslint-plugin": "8.65.0",
+    "@typescript-eslint/parser": "8.65.0",
     "@vscode/test-electron": "^3.0.0",
     "@vscode/vsce": "^3.9.2",
-    "eslint": "^10.6.0",
+    "eslint": "^10.7.0",
     "glob": "^13.0.6",
     "mocha": "^11.7.6",
     "rimraf": "^6.1.3",

@@ -5,11 +5,11 @@ go 1.26.4
 require (
 	charm.land/glamour/v2 v2.0.1
 	github.com/alecthomas/chroma/v2 v2.27.0
-	github.com/mark3labs/mcp-go v0.55.1
+	github.com/mark3labs/mcp-go v0.57.0
 	github.com/martinlindhe/unit v0.0.0-20230420213220-4adfd7d0a0d6
 	github.com/neurosnap/sentences v1.1.2
 	github.com/sergi/go-diff v1.4.0
-	github.com/wailsapp/wails/v2 v2.12.0
+	github.com/wailsapp/wails/v2 v2.13.0
 )
 
 require (
