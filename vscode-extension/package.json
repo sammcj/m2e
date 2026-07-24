@@ -319,7 +319,7 @@
     "node-fetch": "^3.3.2"
   },
   "overrides": {
-    "serialize-javascript": "^7.0.6",
+    "serialize-javascript": "^7.0.7",
     "diff": "^9.0.0"
   },
   "os": [
