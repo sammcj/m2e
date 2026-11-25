@@ -1,6 +1,6 @@
 module github.com/sammcj/m2e
 
-go 1.26.4
+go 1.26.11
 
 require (
 	charm.land/glamour/v2 v2.0.1
@@ -8,7 +8,7 @@ require (
 	github.com/mark3labs/mcp-go v0.55.1
 	github.com/martinlindhe/unit v0.0.0-20230420213220-4adfd7d0a0d6
 	github.com/neurosnap/sentences v1.1.2
-	github.com/sergi/go-diff v1.4.0
+	github.com/sergi/go-diff v1.4.5
 	github.com/wailsapp/wails/v2 v2.12.0
 )
 
